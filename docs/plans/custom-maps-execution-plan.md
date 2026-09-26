@@ -1,6 +1,6 @@
 # Custom Maps community site — execution plan
 
-**Status:** in-progress
+**Status:** local implementation complete; packaging checks and release proposal in progress
 **Execution authorization:** approved by the user on 2026-09-26; local implementation, scoped commits, isolated branches/worktrees and reviewed integration may proceed. Public deployment remains separate.
 **Prepared:** 2026-09-26
 
@@ -26,7 +26,10 @@ Out of scope: changes to game rules or AI, multiplayer, public accounts, a repla
 
 ## Evidence and fixture inventory
 
-Observed through read-only inspection; no engine execution or validity proof has been completed:
+The following inventory records the initial planning inspection. Implementation
+and validation results appear under **Implementation progress** and in the
+[simulation review](../../community/docs/validation-review.md); the initial
+uncertainties below are retained as provenance, not current gate status.
 
 | Evidence | Planning consequence |
 |---|---|
@@ -95,7 +98,7 @@ The user approved execution on 2026-09-26. Implement the DAG in verified increme
 - Use `codex/custom-maps-<branch_suffix>` task branches and separate Git worktrees for concurrent writes. Forking when necessary is already authorized; a worktree is normally sufficient for parallel work in this repository. No fork or implementation branch is needed merely to write this plan.
 - After user approval, commit the reviewed plan into the integration state before creating task worktrees so every agent receives it. Branch from that state after each declared dependency passes. Make small, task-scoped commits after relevant checks; include commit IDs, changed files, actual test results and limitations in handoff.
 - Only the coordinator integrates/cherry-picks or merges reviewed task commits into the integration branch, after checking actual diffs. Serialize overlapping writes and integration. Do not force-push, rewrite unrelated history or merge unreviewed work into the existing default branch.
-- Current checkout is `master`; existing untracked `AGENTS.md`, `.agents/` and `.skills-directory/` belong to the user's setup. Preserve them and never include them through broad staging. Downloads fixtures and untracked guidance are not automatically copied into worktrees; provide relevant instructions and approved selected fixtures explicitly.
+- The implementation checkout is `codex/custom-maps-integration`; existing untracked `AGENTS.md`, `.agents/` and `.skills-directory/` belong to the user's setup. Preserve them and never include them through broad staging. Downloads fixtures and untracked guidance are not automatically copied into worktrees; provide relevant instructions and approved selected fixtures explicitly.
 - `files_write` is the task's ownership boundary. If more files or shared contracts are needed, the coordinator updates the plan/conflict declarations first and splits oversized tasks. Do not expand scope silently.
 - Preserve kickoff/design, pre-merge, pre-release and post-release checks appropriate to this new service. No additional permission is needed for already-authorized local implementation and commits.
 - Local task commits, necessary isolation/forks and integration of reviewed work are already authorized for the eventual implementation. Public deployment, paid infrastructure and contact with the original developer are separate actions; prepare concrete evidence before seeking any still-missing authorization.
@@ -147,7 +150,7 @@ Initial ready set after approval: **T-toolchain**. T-contracts follows; runtime 
 | Isolated reference | Fixed release imports maps and produces states without original-service traffic. | Unlocks adapter fixtures and real frontend integration. |
 | Verified simulation | Independent review passes parity, recording round trips and adversarial validation. | Unlocks authoritative run submission and results. |
 | Integrated local feature | Curator-to-player-to-verified-result flow passes with saves/navigation intact. | Unlocks release preparation. |
-| Release proposal | Operational evidence plus resolved distribution/hosting decisions. | Produces a reviewable proposal, not an automatic deployment. |
+| Release proposal | Operational evidence and explicit distribution/hosting decisions still required before deployment. | Produces a reviewable proposal, not an automatic deployment. |
 
 ## Implementation progress
 
@@ -165,7 +168,7 @@ Initial ready set after approval: **T-toolchain**. T-contracts follows; runtime 
 - [x] T-modifier-coverage
 - [x] T-game-launch — fifth button and binding-aware launch/restart/resume; actual browser navigation and ordinary-mode smoke passed.
 - [x] T-recording
-- [ ] T-validation-review
+- [x] T-validation-review — production mutation batching restored; independent correction review passed and the full Prison comparison matches all 136 checkpoints through victory on turn 12.
 - [x] T-anonymous-ratings — opaque browser sessions, editable revision-specific ratings and quotas; 5 database tests passed.
 - [x] T-run-submission
 - [x] T-verified-results
@@ -174,6 +177,14 @@ Initial ready set after approval: **T-toolchain**. T-contracts follows; runtime 
 - [x] T-local-assembly
 - [ ] T-operations
 - [ ] T-release-review
+
+At integration commit `b8a5e742`, the complete local suite passed **123 tests,
+zero failures and zero skips** in 183.1 seconds, using real PostgreSQL, pinned
+Chromium and the supplied map fixtures. The integrated browser test exercises
+curator upload/preview/publication, the fifth button, a server-validated win,
+live rating totals and archive, while checking an unchanged player URL. Separate
+tests cover the full save/rewind/resume and adversarial validation boundaries.
+This is local evidence; the new CI workflow has not run on a remote service.
 
 ## Task details
 
@@ -196,9 +207,9 @@ scope: S
 
 **Acceptance:**
 
-- [ ] Provide working build and parameterized test commands used below; document the chosen Node/browser versions in package configuration.
-- [ ] Ignore generated runtime copies, local profiles, recordings, environment secrets, and scratch outputs. Preserve the original tracked release.
-- [ ] Keep dependency and lockfile changes owned by this task/coordinator; future agents request additions rather than editing these files concurrently.
+- [x] Provide working build and parameterized test commands used below; document the chosen Node/browser versions in package configuration.
+- [x] Ignore generated runtime copies, local profiles, recordings, environment secrets, and scratch outputs. Preserve the original tracked release.
+- [x] Keep dependency and lockfile changes owned by this task/coordinator; future agents request additions rather than editing these files concurrently.
 
 **Verification:** Run a clean dependency install, build, and a minimal test-runner smoke check. Confirm existing website instructions still describe the original Jekyll site.
 
@@ -219,10 +230,10 @@ scope: S
 
 **Acceptance:**
 
-- [ ] Separate format version, map revision/hash, engine bundle hash, adapter version, difficulty and rule configuration. The server resolves trusted starting data.
-- [ ] Specify semantic player decisions and an injectable executable SupportedConfigurations policy for engine/difficulty/plugin eligibility; do not expose arbitrary reducer events or client-controlled internal flags as authority. Record unresolved capture mapping for the runtime investigation.
-- [ ] Separate verified victory, valid unfinished/defeated play, invalid submission, unsupported configuration, and infrastructure failure. Document idempotency, save/resume, rewind handling and error display.
-- [ ] Define ratings and aggregate completion semantics without claiming unique human identity. Freeze the versioned contract before consumers start; changes return to the coordinator.
+- [x] Separate format version, map revision/hash, engine bundle hash, adapter version, difficulty and rule configuration. The server resolves trusted starting data.
+- [x] Specify semantic player decisions and an injectable executable SupportedConfigurations policy for engine/difficulty/plugin eligibility; do not expose arbitrary reducer events or client-controlled internal flags as authority. Record unresolved capture mapping for the runtime investigation.
+- [x] Separate verified victory, valid unfinished/defeated play, invalid submission, unsupported configuration, and infrastructure failure. Document idempotency, save/resume, rewind handling and error display.
+- [x] Define ratings and aggregate completion semantics without claiming unique human identity. Freeze the versioned contract before consumers start; changes return to the coordinator.
 
 **Verification:** Proposed: npm --prefix community test -- tests/contracts.test.ts. Cover accepted envelopes, malformed data, size bounds, unsupported versions and outcome distinctions.
 
@@ -243,10 +254,10 @@ scope: M
 
 **Acceptance:**
 
-- [ ] Pin/checksum the main/vendor bundles, required assets, map registry, rule inputs and browser version. Fail clearly on an unexpected upstream bundle.
-- [ ] Disable or replace original authentication, cloud writes, analytics, error reporting, remote configuration/content and service-worker update paths before they can make external requests.
-- [ ] Prove new-map import through the existing session/import path, explicitly select Normal or Hard, and expose state inspection and player-action entry points.
-- [ ] Run with isolated storage and denied external network access; keep required resources local. Record cold-boot, import and state-read evidence.
+- [x] Pin/checksum the main/vendor bundles, required assets, map registry, rule inputs and browser version. Fail clearly on an unexpected upstream bundle.
+- [x] Disable or replace original authentication, cloud writes, analytics, error reporting, remote configuration/content and service-worker update paths before they can make external requests.
+- [x] Prove new-map import through the existing session/import path, explicitly select Normal or Hard, and expose state inspection and player-action entry points.
+- [x] Run with isolated storage and denied external network access; keep required resources local. Record cold-boot, import and state-read evidence.
 
 **Verification:** Proposed: npm --prefix community test -- tests/reference-runtime.test.ts. Inspect attempted network requests, repeat cold boots, and import both supplied maps. Do not contact the original developer's services.
 
@@ -314,9 +325,9 @@ scope: S
 
 **Acceptance:**
 
-- [ ] Decode v7 map data with compressed/decompressed size limits and strict JSON/data validation; reject invalid references and untrusted scripts/resources.
-- [ ] Preserve game-affecting field/collection order, content hashes and supported built-in plugin names. Format acceptance is distinct from independently proven engine support.
-- [ ] Both supplied maps pass format checks; malformed and oversized examples fail before reaching the runtime.
+- [x] Decode v7 map data with compressed/decompressed size limits and strict JSON/data validation; reject invalid references and untrusted scripts/resources.
+- [x] Preserve game-affecting field/collection order, content hashes and supported built-in plugin names. Format acceptance is distinct from independently proven engine support.
+- [x] Both supplied maps pass format checks; malformed and oversized examples fail before reaching the runtime.
 
 **Verification:** `npm --prefix community test -- tests/map-format.test.ts`; compare metadata against known input files without committing profiles.
 
@@ -385,10 +396,10 @@ scope: M
 
 **Acceptance:**
 
-- [ ] Include Sherwood's partial Hard trace and the profile's latest Prison Hard surrender trace with provenance and compatibility marked unverified until replayed.
-- [ ] Collect fresh complete wins and non-winning traces for Normal and Hard, including legal surrender, defeat, and an unfinished run. Record exact runtime inputs.
-- [ ] Compare gameplay-relevant state after player actions and AI turns. Investigate ordering/cosmetic differences before excluding any field from comparisons.
-- [ ] Confirm history begins at the trusted start. Do not mislabel a cropped replay, a profile completion summary, or a client snapshot as proof of a win.
+- [x] Include Sherwood's partial Hard trace and the profile's latest Prison Hard surrender trace with provenance and compatibility marked unverified until replayed.
+- [x] Collect fresh complete wins and non-winning traces for Normal and Hard, including legal surrender, defeat, and an unfinished run. Record exact runtime inputs.
+- [x] Compare gameplay-relevant state after player actions and AI turns. Investigate ordering/cosmetic differences before excluding any field from comparisons.
+- [x] Confirm history begins at the trusted start. Do not mislabel a cropped replay, a profile completion summary, or a client snapshot as proof of a win.
 
 **Verification:** Proposed: npm --prefix community test -- tests/fixture-import.test.ts. Run the browser reference repeatedly and compare traces; summarize corpus coverage and gaps without committing personal progress/preferences.
 
@@ -532,10 +543,20 @@ scope: S
 
 - [x] Independently run browser-to-adapter comparisons, recording round trips and adversarial cases on the exact reviewed commits.
 - [x] Document findings, fixes/rechecks, engine support, measured resource envelope and verdict: pass, changes required, or unsupported approach.
-- [ ] Require all blocking findings fixed and rechecked; do not equate a client victory claim, replay viewer success or the author's self-report with verification.
+- [x] Require all blocking findings fixed and rechecked; do not equate a client victory claim, replay viewer success or the author's self-report with verification.
 - [x] If the Node target fails, return a concrete fallback decision to the user; unrelated catalog/curation work may continue.
 
-**Current follow-up:** The initial 21-case adapter/boundary/modifier check and five recording checks passed independently. A longer current-browser Prison comparison later found a turn-four difference in hex history and faction credit; this reopens the parity gate until explained and fixed. The compiled game remains unchanged, and public statistics remain disabled by default.
+**Resolved follow-up:** A longer current-browser Prison comparison exposed an
+omitted production mutation-batching flag in the Node adapter. Correction
+`52f814f5` restores that configuration without changing the original engine.
+Independent review passed 23 adapter/boundary/modifier checks and confirmed a
+negative control reproduces the earlier divergence. The coordinator's full
+79-decision comparison matches all 136 browser checkpoints and independently
+derives offered-surrender victory on turn 12. Two original renderer warnings
+remain documented, and only cosmetic region names are excluded from comparison.
+See the [review](../../community/docs/validation-review.md) for exact provenance,
+support limits and resource measurements. Public feature switches stay off by
+default; local review explicitly enables them.
 
 **Verification:** Re-run the commands documented by T-adapter-core, T-validation-boundary, T-modifier-coverage and T-recording. Record actual results and commit hashes, not assumed passes.
 
@@ -748,27 +769,28 @@ scope: S
 | Hosting, budget, expected traffic, operator and retention unspecified | Resolve before deployment using measured adapter workload. No provider purchase or external provisioning is authorized by this document. |
 | Curator access provider and engine support window unspecified | Choose before release; local tests use explicit fixtures. Do not introduce public-player sign-in. |
 
-## Completion criteria for the eventual implementation
+## Completion criteria
 
-- [ ] Fifth Custom Maps button opens a usable catalog on desktop and compact layouts.
-- [ ] Both supplied maps import and preview correctly; all published plugin combinations are tested.
-- [ ] Catalog title/tag queries, sorting, list/grid views and map details work against real stored data.
-- [ ] Curators can draft, revise, preview, publish and archive maps through server-protected operations.
-- [ ] Playing uses the fixed original engine; leaving/winning returns to preserved catalog context.
-- [ ] Undo, rewind, restart and save/resume retain correct complete run recordings.
-- [ ] Normal/Hard adapter outcomes match the pinned browser reference; illegal/tampered submissions cannot enter verified statistics.
-- [ ] Anonymous ratings, once-per-run completion accounting and revision/difficulty-specific fewest-turn records behave as specified.
-- [ ] Network/worker/storage failures preserve retryable data and display honest status.
+- [x] Fifth Custom Maps button opens a usable catalog on desktop and compact layouts.
+- [x] Both supplied maps import and preview correctly; all published plugin combinations are tested.
+- [x] Catalog title/tag queries, sorting, list/grid views and map details work against real stored data.
+- [x] Curators can draft, revise, preview, publish and archive maps through server-protected operations.
+- [x] Playing uses the fixed original engine; leaving/winning returns to preserved catalog context.
+- [x] Undo, rewind, restart and save/resume retain correct complete run recordings.
+- [x] Normal/Hard adapter outcomes match the pinned browser reference; illegal/tampered submissions cannot enter verified statistics.
+- [x] Anonymous ratings, once-per-run completion accounting and revision/difficulty-specific fewest-turn records behave as specified.
+- [x] Network/worker/storage failures preserve retryable data and display honest status.
 - [ ] Original cloud integrations are disabled/replaced; local and packaged tests prove isolation.
 - [ ] Reviewed commits, compatibility evidence, CI checks and an operational/release proposal are available.
 - [ ] Public release decisions and any required authorization are resolved before deployment.
 
 ## Plan-writing verification
 
-This section records checks of the plan document only. It does not imply that implementation or engine validation has run.
+This section records the original plan-writing checks. Implementation evidence
+is recorded above and in the linked reports.
 
 - [x] Task IDs, dependency references and the DAG agree; the graph forms an acyclic graph, with T-map-format extracted as an independent task during execution with T-toolchain initially ready after user review.
 - [x] All tasks declare owned files, dependencies, parallel/conflict rules, scope, acceptance and verification.
 - [x] Overlapping file ownership has symmetric conflicts; task scope is small/medium and no task declares more than five writable files. Reads of planned files have a completed upstream owner.
-- [x] Local evidence links resolve, input files are referenced rather than copied, and only this plan is added by the current task.
+- [x] At the plan-only checkpoint, local evidence links resolved, input files were referenced rather than copied, and only this plan was added.
 - [x] Independent read-only plan review checked support-policy ownership, run binding before play, instrumentation ownership, validation gates and plan-only scope; its reported issues were corrected and rechecked.
