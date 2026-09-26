@@ -27,6 +27,15 @@ export interface CatalogMountOptions {
 
 const SORTS: CatalogSort[] = ['name', 'rating', 'completions', 'newest'];
 const PAGE_SIZE = 24;
+const RATING_UPDATED = 'community:rating-updated';
+const ratingText = (rating: CatalogEntry['rating']) => rating.count && rating.average !== null ? `${rating.average.toFixed(1)} / 5 · ${rating.count} ${rating.count === 1 ? 'rating' : 'ratings'}` : 'No ratings yet';
+
+/** Update the enclosing detail aggregate without replacing its controls or unsaved edits. */
+export function updateCatalogRating(container: HTMLElement, entry: CatalogEntry, rating: CatalogEntry['rating']): void {
+  entry.rating = { ...rating };
+  container.dispatchEvent(new CustomEvent(RATING_UPDATED, { bubbles: true, detail: entry }));
+}
+
 export function defaultCatalogState(): CatalogUiState {
   return { version: 1, search: '', tags: [], sort: 'newest', difficulty: 'all', view: 'grid', offset: 0, scrollTop: 0, detailId: null };
 }
@@ -101,6 +110,14 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
   };
   const captureScroll = () => { if (!state.detailId && !paused && !restoringScroll) { state.scrollTop = root.scrollTop; save(); } };
   root.addEventListener('scroll', captureScroll, { passive: true });
+  const updateRating = (event: Event) => {
+    const entry = (event as CustomEvent<CatalogEntry>).detail;
+    if (!loadedEntry || entry.map.id !== loadedEntry.map.id || entry.revision.id !== loadedEntry.revision.id) return;
+    loadedEntry.rating = entry.rating;
+    const aggregate = root.querySelector('.catalog-detail .catalog-rating');
+    if (aggregate) aggregate.textContent = ratingText(entry.rating);
+  };
+  root.addEventListener(RATING_UPDATED, updateRating);
   const setQuery = (patch: Partial<CatalogUiState>) => { state = { ...state, ...patch, detailId: null, offset: 0, scrollTop: 0 }; save(); void render(); };
   const restoreScroll = (focusMap = false) => {
     win.requestAnimationFrame(() => {
@@ -138,15 +155,18 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
   };
   const stats = (entry: CatalogEntry, detail = false) => {
     const wrap = el('div', 'catalog-stats');
-    wrap.append(el('span', '', entry.rating.count && entry.rating.average !== null ? `${entry.rating.average.toFixed(1)} / 5 · ${entry.rating.count} ${entry.rating.count === 1 ? 'rating' : 'ratings'}` : 'No ratings yet'));
+    wrap.append(el('span', 'catalog-rating', ratingText(entry.rating)));
     if (options.verifiedResultsEnabled) {
       if (detail) {
         for (const difficulty of ['normal', 'hard'] as const) {
           const score = entry.scores.find(score => score.difficulty === difficulty);
           const label = difficulty === 'normal' ? 'Normal' : 'Hard';
-          wrap.append(el('span', '', score?.completions ? `${label}: ${score.completions} finishes · best ${score.bestTurns} turns` : `${label}: no verified finishes yet`));
+          wrap.append(el('span', '', score?.completions ? `${label}: ${score.completions} ${score.completions === 1 ? 'finish' : 'finishes'} · best ${score.bestTurns} ${score.bestTurns === 1 ? 'turn' : 'turns'}` : `${label}: no verified finishes yet`));
         }
-      } else wrap.append(el('span', '', `${entry.scores.reduce((total, score) => total + score.completions, 0)} verified finishes`));
+      } else {
+        const completions = entry.scores.reduce((total, score) => total + score.completions, 0);
+        wrap.append(el('span', '', `${completions} verified ${completions === 1 ? 'finish' : 'finishes'}`));
+      }
     } else if (detail) wrap.append(el('span', '', 'Finish records are not available yet.'));
     return wrap;
   };
@@ -260,6 +280,6 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
     refresh: () => { loadedEntry = null; return render(); },
     suspend: () => { captureScroll(); paused = true; generation++; save(); },
     resume: (returnToList = true) => { paused = false; if (returnToList) { state.detailId = null; loadedEntry = null; } save(); return render(returnToList); },
-    destroy: () => { captureScroll(); save(); destroyed = true; generation++; root.removeEventListener('scroll', captureScroll); root.replaceChildren(); root.classList.remove('community-catalog'); root.removeAttribute('aria-label'); },
+    destroy: () => { captureScroll(); save(); destroyed = true; generation++; root.removeEventListener('scroll', captureScroll); root.removeEventListener(RATING_UPDATED, updateRating); root.replaceChildren(); root.classList.remove('community-catalog'); root.removeAttribute('aria-label'); },
   };
 }

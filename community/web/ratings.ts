@@ -1,4 +1,5 @@
 import type { CatalogEntry } from '../shared/contracts.ts';
+import { updateCatalogRating } from './catalog.ts';
 export interface VisitorClient { csrfToken():Promise<string> }
 export function createVisitorClient():VisitorClient {
   let pending:Promise<string>|undefined;
@@ -18,7 +19,7 @@ export function ratingControls(visitor:VisitorClient,onChanged:()=>void=()=>{}) 
     void visitor.csrfToken().then(()=>fetch(endpoint)).then(async response=>{if(response.ok){const data=await response.json();if(!edited&&data.revisionId===entry.revision.id&&data.mine)select.value=String(data.mine);}}).catch(()=>{});
     form.onsubmit=event=>{event.preventDefault();const rating=Number(select.value);edited=true;button.disabled=true;
       void visitor.csrfToken().then(csrf=>fetch(endpoint,{method:'PUT',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({revisionId:entry.revision.id,rating})})).then(async response=>{
-        const data=await response.json();if(!response.ok)throw new Error(data.error??'Could not save rating');status.textContent=`Saved. ${data.rating.average.toFixed(1)} average from ${data.rating.count} ratings.`;onChanged();
+        const data=await response.json();if(!response.ok)throw new Error(data.error??'Could not save rating');updateCatalogRating(root,entry,data.rating);status.textContent=`Saved. ${data.rating.average.toFixed(1)} average from ${data.rating.count} ${data.rating.count===1?'rating':'ratings'}.`;onChanged();
       }).catch(error=>{status.textContent=error.message;}).finally(()=>{button.disabled=false;});
     };
   };

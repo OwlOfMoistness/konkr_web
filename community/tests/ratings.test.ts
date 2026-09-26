@@ -84,21 +84,26 @@ declare global { interface Window {
   ratingRaceTest: { deliverVote: () => void; deliverCsrf?: () => void; posted?: { revisionId: string; rating: number } };
 } }
 
-test('rating controls preserve edits across delayed initial votes and capture the submitted value before waiting for CSRF', async () => {
+test('saving a rating updates the catalog aggregate in place while preserving later edits across delayed requests', async () => {
   const bundle = await build({ stdin: { contents: `
     import {ratingControls} from './web/ratings.ts';
+    import {mountCatalog} from './web/catalog.ts';
     const probe=window.ratingRaceTest={}; let sessionCalls=0;
     window.fetch=async (_url,init)=>{
-      if(init?.method==='PUT') { probe.posted=JSON.parse(init.body); return Response.json({rating:{average:probe.posted.rating,count:1}}); }
+      if(init?.method==='PUT') { probe.posted=JSON.parse(init.body); return Response.json({revisionId:'r1',rating:{average:probe.posted.rating,count:1}}); }
       return new Promise(resolve=>{probe.deliverVote=()=>resolve(Response.json({revisionId:'r1',mine:1}));});
     };
     const visitor={csrfToken(){return ++sessionCalls===1?Promise.resolve('test-csrf'):new Promise(resolve=>{probe.deliverCsrf=()=>resolve('test-csrf');});}};
-    ratingControls(visitor)(document.querySelector('main'),{map:{id:'map'},revision:{id:'r1'}});
+    const entry={map:{id:'map',metadata:{title:'Rating island',creator:'Community',description:'',tags:[]}},revision:{id:'r1',revision:1,width:6,height:6},rating:{average:null,count:0},scores:[{difficulty:'normal',engineHash:'fixture',completions:1,bestTurns:1}],previewUrl:null};
+    mountCatalog(document.querySelector('main'),{reader:{async list(){return {entries:[entry],total:1};},async get(){return entry;}},storage:null,onPlay(){},verifiedResultsEnabled:true,renderDetailActions:ratingControls(visitor)});
   `, loader: 'ts', resolveDir: fileURLToPath(new URL('..', import.meta.url)) }, bundle: true, write: false, format: 'iife', platform: 'browser' });
   const browser = await chromium.launch();
   try {
     const page = await browser.newPage();
     await page.setContent('<main></main>'); await page.addScriptTag({ content: bundle.outputFiles[0].text });
+    await page.getByRole('button', { name: 'Rating island', exact: true }).click();
+    await page.getByText('No ratings yet', { exact: true }).waitFor();
+    const originalSelect = await page.getByLabel('Your rating').elementHandle();
     await page.waitForFunction(() => !!window.ratingRaceTest.deliverVote);
     await page.getByLabel('Your rating').selectOption('5');
     await page.evaluate(async () => { window.ratingRaceTest.deliverVote(); await new Promise(resolve => setTimeout(resolve, 0)); });
@@ -110,5 +115,12 @@ test('rating controls preserve edits across delayed initial votes and capture th
     await page.getByRole('status').filter({ hasText: 'Saved.' }).waitFor();
     assert.deepEqual(await page.evaluate(() => window.ratingRaceTest.posted), { revisionId: 'r1', rating: 5 });
     assert.equal(await page.getByLabel('Your rating').inputValue(), '2', 'The later edit remains available for a separate save');
+    assert.equal(await originalSelect!.evaluate(node => node.isConnected), true, 'The control is updated without being rebuilt');
+    await page.getByText('5.0 / 5 · 1 rating', { exact: true }).waitFor();
+    await page.getByText('Saved. 5.0 average from 1 rating.', { exact: true }).waitFor();
+    await page.getByText('Normal: 1 finish · best 1 turn', { exact: true }).waitFor();
+    await page.getByRole('button', { name: '← All maps', exact: true }).click();
+    await page.getByText('5.0 / 5 · 1 rating', { exact: true }).waitFor();
+    await page.getByText('1 verified finish', { exact: true }).waitFor();
   } finally { await browser.close(); }
 });
