@@ -156,7 +156,7 @@ Initial ready set after approval: **T-toolchain**. T-contracts follows; runtime 
 - [x] T-catalog — PostgreSQL queries and responsive same-URL catalog, 9 tests passed.
 - [x] T-curator-access — protected local curator sessions, roles, CSRF and audit, 5 tests passed.
 - [x] T-map-format — bounded data-only decoder and reference validation; both supplied maps plus malformed/resource-limit cases pass.
-- [ ] T-map-import
+- [x] T-map-import — private immutable uploads, metadata/revision editing and concurrency checks, 6 database tests passed; integrated UI check follows.
 - [ ] T-publishing
 - [ ] T-fixtures
 - [ ] T-adapter-core
@@ -325,7 +325,7 @@ id: T-map-import
 depends_on: ["T-curator-access","T-reference-runtime","T-map-format"]
 parallel_safe: true
 conflicts_with: []
-files_write: ["community/api/maps-admin.ts","community/web/map-editor.ts","community/tests/map-import.test.ts"]
+files_write: ["community/api/maps-admin.ts","community/web/map-editor.ts","community/tests/map-import.test.ts","community/db/005-map-import.sql"]
 files_read: ["community/shared/contracts.ts","community/runtime/manifest.json","community/db/001-catalog.sql"]
 branch_suffix: map-import
 scope: M
