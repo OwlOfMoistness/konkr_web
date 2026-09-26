@@ -152,9 +152,9 @@ Initial ready set after approval: **T-toolchain**. T-contracts follows; runtime 
 
 - [x] T-toolchain — isolated workspace and locked dependencies created.
 - [x] T-contracts — strict semantic-input contracts; typecheck and 5 boundary tests passed.
-- [ ] T-reference-runtime
-- [ ] T-catalog
-- [ ] T-curator-access
+- [x] T-reference-runtime — isolated Chromium imports and player/AI turn smoke, 6 tests passed.
+- [x] T-catalog — PostgreSQL queries and responsive same-URL catalog, 9 tests passed.
+- [x] T-curator-access — protected local curator sessions, roles, CSRF and audit, 5 tests passed.
 - [x] T-map-format — bounded data-only decoder and reference validation; both supplied maps plus malformed/resource-limit cases pass.
 - [ ] T-map-import
 - [ ] T-publishing
