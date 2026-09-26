@@ -110,6 +110,7 @@ dag:
   - T-contracts → T-reference-runtime
   - T-contracts → T-catalog
   - T-contracts → T-map-format
+  - T-contracts → T-object-storage
   - T-catalog → T-curator-access
   - T-curator-access, T-reference-runtime, T-map-format → T-map-import
   - T-map-import → T-publishing
@@ -124,7 +125,7 @@ dag:
   - T-validation-review, T-anonymous-ratings → T-run-submission
   - T-run-submission → T-verified-results
   - T-verified-results, T-recording → T-results-experience
-  - T-publishing, T-results-experience → T-local-assembly
+  - T-publishing, T-results-experience, T-object-storage → T-local-assembly
   - T-local-assembly → T-operations
   - T-operations → T-release-review
   - T-reference-runtime || T-catalog
@@ -151,8 +152,8 @@ Initial ready set after approval: **T-toolchain**. T-contracts follows; runtime 
 ## Implementation progress
 
 - [x] T-toolchain — isolated workspace and locked dependencies created.
-- [x] T-contracts — strict semantic-input contracts; typecheck and 5 boundary tests passed.
-- [x] T-reference-runtime — isolated Chromium imports and player/AI turn smoke, 6 tests passed.
+- [x] T-contracts — strict semantic-input contracts; typecheck and 6 boundary/identity tests passed.
+- [x] T-reference-runtime — isolated Chromium imports and player/AI turn smoke, 8 tests passed, including preparation lock/cache guards.
 - [x] T-catalog — PostgreSQL queries and responsive same-URL catalog, 9 tests passed.
 - [x] T-curator-access — protected local curator sessions, roles, CSRF and audit, 5 tests passed.
 - [x] T-map-format — bounded data-only decoder and reference validation; both supplied maps plus malformed/resource-limit cases pass.
@@ -162,13 +163,14 @@ Initial ready set after approval: **T-toolchain**. T-contracts follows; runtime 
 - [ ] T-adapter-core
 - [ ] T-validation-boundary
 - [ ] T-modifier-coverage
-- [ ] T-game-launch
+- [x] T-game-launch — fifth button and binding-aware launch/restart/resume; actual browser navigation and ordinary-mode smoke passed.
 - [ ] T-recording
 - [ ] T-validation-review
 - [x] T-anonymous-ratings — opaque browser sessions, editable revision-specific ratings and quotas; 5 database tests passed.
 - [ ] T-run-submission
 - [ ] T-verified-results
 - [ ] T-results-experience
+- [x] T-object-storage — atomic private blobs with size/key/integrity checks; 2 filesystem tests passed.
 - [ ] T-local-assembly
 - [ ] T-operations
 - [ ] T-release-review
@@ -632,14 +634,37 @@ scope: M
 
 **Verification:** Proposed: npm --prefix community test -- tests/results-experience.test.ts tests/game-launch.test.ts. Test failed run issuance, binding before first action, restart/new binding, resume/original binding, offline completion, reconnect, reload, duplicate requests and unsupported runs.
 
+### T-object-storage: Persist private blobs atomically
+
+```yaml
+id: T-object-storage
+depends_on: ["T-contracts"]
+parallel_safe: true
+conflicts_with: []
+files_write: ["community/api/storage.ts","community/tests/storage.test.ts"]
+files_read: ["community/shared/contracts.ts"]
+branch_suffix: object-storage
+scope: S
+```
+
+**Description:** Extract the independent storage port implementation from composition. Store maps, previews and submissions privately with bounded reads and atomic writes; only API authorization decides which blobs are public.
+
+**Acceptance:**
+
+- [x] Preserve bytes and MIME types with an integrity checksum and atomic replacement.
+- [x] Reject invalid/traversal keys, symlink escapes and oversized objects; detect stored corruption.
+- [x] Distinguish missing objects from corrupt/unavailable storage for retry/recovery.
+
+**Verification:** `npm --prefix community test -- tests/storage.test.ts` covers concurrent replacement, corruption, traversal and symlinks using disposable directories.
+
 ### T-local-assembly: Integrate the complete local community service
 
 ```yaml
 id: T-local-assembly
-depends_on: ["T-publishing","T-results-experience"]
+depends_on: ["T-publishing","T-results-experience","T-object-storage"]
 parallel_safe: false
 conflicts_with: []
-files_write: ["community/api/server.ts","community/api/storage.ts","community/web/index.html","community/web/main.ts","community/tests/community-e2e.test.ts"]
+files_write: ["community/api/server.ts","community/web/index.html","community/web/main.ts","community/tests/community-e2e.test.ts"]
 files_read: ["community/runtime/bootstrap.ts","community/api/catalog.ts","community/api/publication.ts","community/worker/validate-job.ts","community/shared/supported-configurations.json"]
 branch_suffix: local-assembly
 scope: M
