@@ -30,6 +30,7 @@ test('invalid references, controllers, duplicates and executable additions fail 
     { ...map(), factions: [{ id: 1, controller: 'remote', regions: [1] }] },
     { ...map(), map: { ...map().map, plugins: ['load-external-code'] } },
     { ...map(), hexHistory: { 101: [2] } },
+    { ...map(), map: { ...map().map, fixedAIDifficulty: 'hard' } },
     { ...map(), regions: [{ id: 1, hexes: [101], attrition: 'wrong-type' }] },
   ];
   for (const value of variants) assert.throws(() => parseMap(encode(value)), ContractError);

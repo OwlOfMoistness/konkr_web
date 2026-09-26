@@ -94,12 +94,11 @@ export function parseMap(encoded: string): ParsedMap {
   const map = record(state.map, 'map');
   // Scripts, custom win conditions and arbitrary rule overrides require a separate
   // reviewed schema/support extension; accepting JSON alone does not make them safe.
-  allowed(map, ['width', 'height', 'plugins', 'levelId', 'name', 'author', 'description', 'introduction', 'theme', 'fixedAIDifficulty'], 'map');
+  allowed(map, ['width', 'height', 'plugins', 'levelId', 'name', 'author', 'description', 'introduction', 'theme'], 'map');
   const width = integer(map.width, 'width', 3, 99);
   const height = integer(map.height, 'height', 3, 99);
   const levelId = text(map.levelId, 'level ID', 128);
   if (!/^[A-Za-z0-9_-]+$/.test(levelId)) fail('Invalid level ID');
-  if (map.fixedAIDifficulty !== undefined && !['normal', 'hard'].includes(map.fixedAIDifficulty as string)) fail('Invalid fixed difficulty');
   if (map.theme !== undefined && !['default', 'winter'].includes(map.theme as string)) fail('Unsupported theme');
   text(map.introduction, 'introduction', LIMITS.descriptionLength);
   const plugins = array(map.plugins ?? [], 'plugins', PLUGINS.size).map(value => text(value, 'plugin', 64));
