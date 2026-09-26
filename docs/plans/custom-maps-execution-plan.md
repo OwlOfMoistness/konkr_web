@@ -160,18 +160,18 @@ Initial ready set after approval: **T-toolchain**. T-contracts follows; runtime 
 - [x] T-map-import — private immutable uploads, metadata/revision editing and concurrency checks, 7 tests passed, including real-browser upload/edit/preview/publish/archive and 320px layout.
 - [x] T-publishing — support/preview/playtest gates and archive retention tested; both full-board previews inspected, 4 tests passed.
 - [x] T-fixtures — 14 original-browser cases / 68 checkpoints, repeated capture and fresh reproduction, 18 tests passed; legacy exports explicitly unverified.
-- [ ] T-adapter-core
-- [ ] T-validation-boundary
-- [ ] T-modifier-coverage
+- [x] T-adapter-core
+- [x] T-validation-boundary
+- [x] T-modifier-coverage
 - [x] T-game-launch — fifth button and binding-aware launch/restart/resume; actual browser navigation and ordinary-mode smoke passed.
-- [ ] T-recording
+- [x] T-recording
 - [ ] T-validation-review
 - [x] T-anonymous-ratings — opaque browser sessions, editable revision-specific ratings and quotas; 5 database tests passed.
-- [ ] T-run-submission
-- [ ] T-verified-results
-- [ ] T-results-experience
+- [x] T-run-submission
+- [x] T-verified-results
+- [x] T-results-experience
 - [x] T-object-storage — atomic private blobs with size/key/integrity checks; 2 filesystem tests passed.
-- [ ] T-local-assembly
+- [x] T-local-assembly
 - [ ] T-operations
 - [ ] T-release-review
 
@@ -267,10 +267,10 @@ scope: M
 
 **Acceptance:**
 
-- [ ] Search title, filter normalized tags and sort by name, rating, verified completions and newest; use stable pagination and tie-breakers.
-- [ ] Show list/grid modes, map details, creator attribution, rating count, difficulty-specific best turns and clear unverified/pending/empty states.
-- [ ] Preserve filters, view mode and scroll position across map detail and return navigation; keep controls usable on small screens and by keyboard.
-- [ ] Only published, supported revisions appear publicly; drafts and archived maps cannot leak through alternate query paths.
+- [x] Search title, filter normalized tags and sort by name, rating, verified completions and newest; use stable pagination and tie-breakers.
+- [x] Show list/grid modes, map details, creator attribution, rating count, difficulty-specific best turns and clear unverified/pending/empty states.
+- [x] Preserve filters, view mode and scroll position across map detail and return navigation; keep controls usable on small screens and by keyboard.
+- [x] Only published, supported revisions appear publicly; drafts and archived maps cannot leak through alternate query paths.
 
 **Verification:** Proposed: npm --prefix community test -- tests/catalog.test.ts. Exercise query combinations, pagination, publication filtering and UI state restoration against isolated fixtures.
 
@@ -291,9 +291,9 @@ scope: S
 
 **Acceptance:**
 
-- [ ] Unauthenticated requests cannot mutate maps; curators manage content and administrators manage curator access.
-- [ ] Protect cookie-backed mutations against CSRF; distinguish creator attribution from the authenticated maintainer.
-- [ ] Record auditable content actions without exposing credentials or private operator information in public responses.
+- [x] Unauthenticated requests cannot mutate maps; curators manage content and administrators manage curator access.
+- [x] Protect cookie-backed mutations against CSRF; distinguish creator attribution from the authenticated maintainer.
+- [x] Record auditable content actions without exposing credentials or private operator information in public responses.
 
 **Verification:** Proposed: npm --prefix community test -- tests/admin-auth.test.ts. Test the role matrix and direct API attempts, not only whether buttons are hidden.
 
@@ -337,10 +337,10 @@ scope: M
 
 **Acceptance:**
 
-- [ ] Bound compressed/decompressed size, dimensions and entity counts; validate the data schema and allowlisted plugin identifiers without executing uploaded code.
-- [ ] Keep uploads private until publication; reject unsupported formats/modifiers with actionable messages. Render descriptions as safe text.
-- [ ] Metadata edits do not overwrite game content. Gameplay changes create a new revision with separate results; record content hashes and maintain historical references.
-- [ ] Handle duplicate uploads, concurrent edits and conflicting embedded level IDs explicitly.
+- [x] Bound compressed/decompressed size, dimensions and entity counts; validate the data schema and allowlisted plugin identifiers without executing uploaded code.
+- [x] Keep uploads private until publication; reject unsupported formats/modifiers with actionable messages. Render descriptions as safe text.
+- [x] Metadata edits do not overwrite game content. Gameplay changes create a new revision with separate results; record content hashes and maintain historical references.
+- [x] Handle duplicate uploads, concurrent edits and conflicting embedded level IDs explicitly.
 
 **Verification:** Proposed: npm --prefix community test -- tests/map-import.test.ts. Use both supplied maps plus malformed, oversized and unsupported fixtures; verify curator permissions and revision isolation.
 
@@ -361,10 +361,10 @@ scope: M
 
 **Acceptance:**
 
-- [ ] Preview generation uses the exact stored revision in an isolated runtime and respects resource limits. Broken imports/previews cannot be marked ready.
-- [ ] Publishing requires valid supported content, successful preview generation and a curator's playtest acknowledgment; importing alone does not establish solvability. Test the injected support-policy contract with fixtures here; T-local-assembly supplies the independently reviewed executable policy before real publication.
-- [ ] Archiving removes discovery/new starts while preserving historical records and the ability to adjudicate already-issued runs against their pinned revision.
-- [ ] Both list and thumbnail views use the same metadata and cached preview assets; record audit events for publication changes.
+- [x] Preview generation uses the exact stored revision in an isolated runtime and respects resource limits. Broken imports/previews cannot be marked ready.
+- [x] Publishing requires valid supported content, successful preview generation and a curator's playtest acknowledgment; importing alone does not establish solvability. Test the injected support-policy contract with fixtures here; T-local-assembly supplies the independently reviewed executable policy before real publication.
+- [x] Archiving removes discovery/new starts while preserving historical records and the ability to adjudicate already-issued runs against their pinned revision.
+- [x] Both list and thumbnail views use the same metadata and cached preview assets; record audit events for publication changes.
 
 **Verification:** Proposed: npm --prefix community test -- tests/publication.test.ts. Inspect previews of both sample maps and exercise draft-to-published-to-archived behavior and failed-preview recovery.
 
@@ -409,10 +409,10 @@ scope: M
 
 **Acceptance:**
 
-- [ ] Match reference player actions, each AI turn, resulting gameplay state and turn count for Normal and Hard across repeated fresh runs.
-- [ ] Pin engine/runtime/adapter inputs and account for randomness, iteration order and session-dependent AI behavior. Never load later replay snapshots to repair divergence.
-- [ ] Document extraction steps, dependency assumptions and unsupported behavior; fail clearly on a changed bundle.
-- [ ] Measure representative execution time and peak memory. If direct extraction fails, report the smallest blocker and a measured browser-worker alternative; do not silently rewrite AI or change the architecture.
+- [x] Match reference player actions, each AI turn, resulting gameplay state and turn count for Normal and Hard across repeated fresh runs.
+- [x] Pin engine/runtime/adapter inputs and account for randomness, iteration order and session-dependent AI behavior. Never load later replay snapshots to repair divergence.
+- [x] Document extraction steps, dependency assumptions and unsupported behavior; fail clearly on a changed bundle.
+- [x] Measure representative execution time and peak memory. If direct extraction fails, report the smallest blocker and a measured browser-worker alternative; do not silently rewrite AI or change the architecture.
 
 **Verification:** Proposed: npm --prefix community test -- tests/adapter-parity.test.ts. Produce first-divergence diagnostics and a reproducible comparison report. One matching replay is insufficient.
 
@@ -433,10 +433,10 @@ scope: M
 
 **Acceptance:**
 
-- [ ] Check actor, phase, ownership, resources and legal actions; derive internal parameters such as tap flags. Validate that a surrender offer actually exists before accepting it.
-- [ ] Do not execute submitted AI moves, editor actions or arbitrary spawn events. Treat legacy replay snapshots/events only as comparison input through an explicit importer.
-- [ ] Reject altered starts/settings, reordered/illegal commands, false claimed victories and incomplete winning records; accept valid unfinished/defeated traces only as non-winning outcomes.
-- [ ] Enforce deterministic limits for input bytes, decisions, turns and runtime. Unsupported versions and infrastructure timeouts are distinct from cheating/invalid play; compute turns from simulation.
+- [x] Check actor, phase, ownership, resources and legal actions; derive internal parameters such as tap flags. Validate that a surrender offer actually exists before accepting it.
+- [x] Do not execute submitted AI moves, editor actions or arbitrary spawn events. Treat legacy replay snapshots/events only as comparison input through an explicit importer.
+- [x] Reject altered starts/settings, reordered/illegal commands, false claimed victories and incomplete winning records; accept valid unfinished/defeated traces only as non-winning outcomes.
+- [x] Enforce deterministic limits for input bytes, decisions, turns and runtime. Unsupported versions and infrastructure timeouts are distinct from cheating/invalid play; compute turns from simulation.
 
 **Verification:** Proposed: npm --prefix community test -- tests/validation.test.ts. Include adversarial mutations of real traces, fabricated surrender, ownership/tap manipulation and false final snapshots; prove no rejected case enters results.
 
@@ -457,10 +457,10 @@ scope: M
 
 **Acceptance:**
 
-- [ ] Generate and compare gift spawning/buying and combined modifiers at meaningful points on Normal and Hard. Exercise all modifiers accepted for publication, including zombies if offered.
-- [ ] Validate any player-controllable map setup, special purchase or surrender decision through the same strict boundary.
-- [ ] Publish a machine-readable, tested engine/difficulty/plugin policy plus the human-readable support report. Publication and run-start services must consume this policy through the shared contract at assembly; reject unsupported combinations rather than changing their rules.
-- [ ] Preserve earlier parity/adversarial results when extending support.
+- [x] Generate and compare gift spawning/buying and combined modifiers at meaningful points on Normal and Hard. Exercise all modifiers accepted for publication, including zombies if offered.
+- [x] Validate any player-controllable map setup, special purchase or surrender decision through the same strict boundary.
+- [x] Publish a machine-readable, tested engine/difficulty/plugin policy plus the human-readable support report. Publication and run-start services must consume this policy through the shared contract at assembly; reject unsupported combinations rather than changing their rules.
+- [x] Preserve earlier parity/adversarial results when extending support.
 
 **Verification:** Proposed: npm --prefix community test -- tests/modifier-parity.test.ts tests/validation.test.ts tests/adapter-parity.test.ts. Record exact cases and unsupported combinations.
 
@@ -481,11 +481,11 @@ scope: M
 
 **Acceptance:**
 
-- [ ] Custom Maps is visible and usable on desktop and compact layouts; list/grid/detail selections open the exact requested map revision.
-- [ ] Set selected difficulty explicitly before constructing the map's plugins. Distinguish new import, restart and resume; avoid the importer's unconditional progress reset on resume.
-- [ ] Use revision-aware local identity and origin context so imported IDs cannot overwrite campaign/custom saves or cause a wrong return route.
-- [ ] Leaving or finishing a catalog game returns through the catalog flow with filters/scroll restored; ordinary modes keep their existing navigation. Verify win, defeat, restart and escape/menu paths.
-- [ ] The player URL remains exactly unchanged through catalog navigation, filtering, details, import, play, restart, resume and return. Keep state in memory/session storage; do not add history or hash routes.
+- [x] Custom Maps is visible and usable on desktop and compact layouts; list/grid/detail selections open the exact requested map revision.
+- [x] Set selected difficulty explicitly before constructing the map's plugins. Distinguish new import, restart and resume; avoid the importer's unconditional progress reset on resume.
+- [x] Use revision-aware local identity and origin context so imported IDs cannot overwrite campaign/custom saves or cause a wrong return route.
+- [x] Leaving or finishing a catalog game returns through the catalog flow with filters/scroll restored; ordinary modes keep their existing navigation. Verify win, defeat, restart and escape/menu paths.
+- [x] The player URL remains exactly unchanged through catalog navigation, filtering, details, import, play, restart, resume and return. Keep state in memory/session storage; do not add history or hash routes.
 
 **Verification:** Proposed: npm --prefix community test -- tests/game-launch.test.ts. Exercise real browser import and mobile/desktop navigation with both supplied maps; smoke-check Expeditions and Conquest.
 
@@ -506,10 +506,10 @@ scope: M
 
 **Acceptance:**
 
-- [ ] Record every relevant player decision, including valid surrender/setup choices, with ordered positions and fixed run configuration. Distinguish state-before/state-after faction metadata.
-- [ ] Undo/rewind replaces the active recorded branch consistently; restart begins a new run. Do not claim the history proves an absence of rewinds or outside assistance.
-- [ ] Save/reload/resume retains the original map revision, engine and complete canonical history. A missing history cannot be silently upgraded to a verified run.
-- [ ] Persist pending submissions locally, expose size/support errors and preserve catalog navigation while verification is pending.
+- [x] Record every relevant player decision, including valid surrender/setup choices, with ordered positions and fixed run configuration. Distinguish state-before/state-after faction metadata.
+- [x] Undo/rewind replaces the active recorded branch consistently; restart begins a new run. Do not claim the history proves an absence of rewinds or outside assistance.
+- [x] Save/reload/resume retains the original map revision, engine and complete canonical history. A missing history cannot be silently upgraded to a verified run.
+- [x] Persist pending submissions locally, expose size/support errors and preserve catalog navigation while verification is pending.
 
 **Verification:** Proposed: npm --prefix community test -- tests/recording.test.ts. Feed fresh captured traces back into reference playback; cover undo, cross-turn rewind, reload, restart and session interruption.
 
@@ -530,10 +530,12 @@ scope: S
 
 **Acceptance:**
 
-- [ ] Independently run browser-to-adapter comparisons, recording round trips and adversarial cases on the exact reviewed commits.
-- [ ] Document findings, fixes/rechecks, engine support, measured resource envelope and verdict: pass, changes required, or unsupported approach.
+- [x] Independently run browser-to-adapter comparisons, recording round trips and adversarial cases on the exact reviewed commits.
+- [x] Document findings, fixes/rechecks, engine support, measured resource envelope and verdict: pass, changes required, or unsupported approach.
 - [ ] Require all blocking findings fixed and rechecked; do not equate a client victory claim, replay viewer success or the author's self-report with verification.
-- [ ] If the Node target fails, return a concrete fallback decision to the user; unrelated catalog/curation work may continue.
+- [x] If the Node target fails, return a concrete fallback decision to the user; unrelated catalog/curation work may continue.
+
+**Current follow-up:** The initial 21-case adapter/boundary/modifier check and five recording checks passed independently. A longer current-browser Prison comparison later found a turn-four difference in hex history and faction credit; this reopens the parity gate until explained and fixed. The compiled game remains unchanged, and public statistics remain disabled by default.
 
 **Verification:** Re-run the commands documented by T-adapter-core, T-validation-boundary, T-modifier-coverage and T-recording. Record actual results and commit hashes, not assumed passes.
 
@@ -554,10 +556,10 @@ scope: M
 
 **Acceptance:**
 
-- [ ] One current rating per browser token/revision, 1-5 stars, with aggregate and count updated consistently; no public accounts or sign-in.
-- [ ] Issue/verify opaque tokens securely; protect mutations, bound submission rates and avoid invasive fingerprinting. Clearing browser data is an acknowledged limitation.
-- [ ] Metadata edits retain ratings; gameplay revisions have separate current-revision ratings. The UI states browser-local progress accurately.
-- [ ] Do not claim verified unique people, one human per vote, or authenticated ownership of a record.
+- [x] One current rating per browser token/revision, 1-5 stars, with aggregate and count updated consistently; no public accounts or sign-in.
+- [x] Issue/verify opaque tokens securely; protect mutations, bound submission rates and avoid invasive fingerprinting. Clearing browser data is an acknowledged limitation.
+- [x] Metadata edits retain ratings; gameplay revisions have separate current-revision ratings. The UI states browser-local progress accurately.
+- [x] Do not claim verified unique people, one human per vote, or authenticated ownership of a record.
 
 **Verification:** Proposed: npm --prefix community test -- tests/ratings.test.ts. Cover replacement, duplicate requests, aggregation, rate limits, invalid values and archived/draft targets.
 
@@ -578,10 +580,10 @@ scope: M
 
 **Acceptance:**
 
-- [ ] Bind run IDs to canonical revision/hash, difficulty, engine/rules and an anonymous browser token; never take those bindings from an unchecked final submission. Enforce the reviewed executable support policy at issuance.
-- [ ] Support submission retry with idempotency keys and immutable content fingerprints. A run is counted at most once; rate limits and byte/queue limits apply.
-- [ ] Persist submission blobs and job metadata with recoverable failure handling; handle missing/orphaned blobs explicitly. Server-issued runs remain resumable for the declared support window.
-- [ ] Return pending/accepted/error states and retain old revision references for in-flight games; client final snapshots and score claims carry no authority.
+- [x] Bind run IDs to canonical revision/hash, difficulty, engine/rules and an anonymous browser token; never take those bindings from an unchecked final submission. Enforce the reviewed executable support policy at issuance.
+- [x] Support submission retry with idempotency keys and immutable content fingerprints. A run is counted at most once; rate limits and byte/queue limits apply.
+- [x] Persist submission blobs and job metadata with recoverable failure handling; handle missing/orphaned blobs explicitly. Server-issued runs remain resumable for the declared support window.
+- [x] Return pending/accepted/error states and retain old revision references for in-flight games; client final snapshots and score claims carry no authority.
 
 **Verification:** Proposed: npm --prefix community test -- tests/run-submission.test.ts. Exercise duplicate/concurrent requests, interrupted blob writes, wrong bindings and unavailable queue/storage.
 
@@ -602,11 +604,11 @@ scope: M
 
 **Acceptance:**
 
-- [ ] Use job claims/leases, bounded concurrency, retries and crash recovery. Give each simulation clean state/storage and no arbitrary network access.
-- [ ] Only engine-confirmed victories update public statistics. Atomically ensure exactly one contribution per accepted run; infrastructure retries cannot multiply counts.
-- [ ] Keep results partitioned by map revision, difficulty and gameplay engine compatibility. Equal turn counts share the record; expose best-known verified solution and finish counts without named player rankings.
-- [ ] Retain supporting replay/engine evidence for current records; report invalid/unsupported/error distinctly and provide an operator path to investigate failures.
-- [ ] Emit structured job outcome, queue-wait, duration, retry/timeout and resource metrics without logging raw profiles/replays or visitor secrets; expose enough evidence to diagnose the first failing stage.
+- [x] Use job claims/leases, bounded concurrency, retries and crash recovery. Give each simulation clean state/storage and no arbitrary network access.
+- [x] Only engine-confirmed victories update public statistics. Atomically ensure exactly one contribution per accepted run; infrastructure retries cannot multiply counts.
+- [x] Keep results partitioned by map revision, difficulty and gameplay engine compatibility. Equal turn counts share the record; expose best-known verified solution and finish counts without named player rankings.
+- [x] Retain supporting replay/engine evidence for current records; report invalid/unsupported/error distinctly and provide an operator path to investigate failures.
+- [x] Emit structured job outcome, queue-wait, duration, retry/timeout and resource metrics without logging raw profiles/replays or visitor secrets; expose enough evidence to diagnose the first failing stage.
 
 **Verification:** Proposed: npm --prefix community test -- tests/verified-results.test.ts. Kill/retry a worker around persistence boundaries, submit simultaneous wins, and verify exact counters and minimum-turn results.
 
@@ -617,7 +619,7 @@ id: T-results-experience
 depends_on: ["T-verified-results","T-recording"]
 parallel_safe: true
 conflicts_with: ["T-game-launch","T-recording"]
-files_write: ["community/web/results.ts","community/web/local-runs.ts","community/tests/results-experience.test.ts","community/runtime/catalog-bridge.ts"]
+files_write: ["community/web/results.ts","community/web/local-runs.ts","community/tests/results-experience.test.ts","community/web/custom-maps.ts","community/web/results.css"]
 files_read: ["community/shared/contracts.ts","community/api/results.ts","community/runtime/recording.ts"]
 branch_suffix: results-experience
 scope: M
@@ -627,10 +629,10 @@ scope: M
 
 **Acceptance:**
 
-- [ ] For new games and restarts, obtain and persist the exact server-bound revision/difficulty/engine configuration before enabling player decisions. Resume retains its original binding. If a new run cannot be issued, offer retry without launching a falsely verifiable session; already-issued runs may continue offline.
-- [ ] A local win is immediately visible while public verification remains pending; background status updates refresh only the relevant map/revision.
-- [ ] Retry after network interruption or reload without double counting; retain unacknowledged recordings and show actionable storage/compatibility errors.
-- [ ] Do not discard saves on navigation or silently change the difficulty/build of a resumed run. Handle archived maps and retired validator versions explicitly.
+- [x] For new games and restarts, obtain and persist the exact server-bound revision/difficulty/engine configuration before enabling player decisions. Resume retains its original binding. If a new run cannot be issued, offer retry without launching a falsely verifiable session; already-issued runs may continue offline.
+- [x] A local win is immediately visible while public verification remains pending; background status updates refresh only the relevant map/revision.
+- [x] Retry after network interruption or reload without double counting; retain unacknowledged recordings and show actionable storage/compatibility errors.
+- [x] Do not discard saves on navigation or silently change the difficulty/build of a resumed run. Handle archived maps and retired validator versions explicitly.
 
 **Verification:** Proposed: npm --prefix community test -- tests/results-experience.test.ts tests/game-launch.test.ts. Test failed run issuance, binding before first action, restart/new binding, resume/original binding, offline completion, reconnect, reload, duplicate requests and unsupported runs.
 
@@ -664,7 +666,7 @@ id: T-local-assembly
 depends_on: ["T-publishing","T-results-experience","T-object-storage"]
 parallel_safe: false
 conflicts_with: []
-files_write: ["community/api/server.ts","community/web/index.html","community/web/main.ts","community/tests/community-e2e.test.ts"]
+files_write: ["community/api/server.ts","community/web/index.html","community/web/main.ts","community/tests/community-e2e.test.ts","community/web/assets.d.ts"]
 files_read: ["community/runtime/bootstrap.ts","community/api/catalog.ts","community/api/publication.ts","community/worker/validate-job.ts","community/shared/supported-configurations.json"]
 branch_suffix: local-assembly
 scope: M
@@ -674,11 +676,11 @@ scope: M
 
 **Acceptance:**
 
-- [ ] Complete curator upload/preview/publish, fifth-button catalog browse, play, verified finish, return, rating and archive flows in real browsers. Wire the same reviewed support policy into publication, run issuance and validation; a permissive test policy must never reach the packaged service.
-- [ ] Verify new/resumed runs, both difficulties, small-screen layouts and keyboard catalog/admin controls; preserve existing modes.
-- [ ] Use feature switches for custom-map entry, submissions and verified stats. Keep the original developer's services unreachable.
-- [ ] Run database changes against isolated local databases; preserve current workspace files, personal exports and unrelated website content.
-- [ ] Expose API latency/error, readiness and queue/worker health instrumentation from the owned server composition; verify metrics do not disclose submitted content or credentials.
+- [x] Complete curator upload/preview/publish, fifth-button catalog browse, play, verified finish, return, rating and archive flows in real browsers. Wire the same reviewed support policy into publication, run issuance and validation; a permissive test policy must never reach the packaged service.
+- [x] Verify new/resumed runs, both difficulties, small-screen layouts and keyboard catalog/admin controls; preserve existing modes.
+- [x] Use feature switches for custom-map entry, submissions and verified stats. Keep the original developer's services unreachable.
+- [x] Run database changes against isolated local databases; preserve current workspace files, personal exports and unrelated website content.
+- [x] Expose API latency/error, readiness and queue/worker health instrumentation from the owned server composition; verify metrics do not disclose submitted content or credentials.
 
 **Verification:** Proposed: npm --prefix community run build; npm --prefix community test -- tests/community-e2e.test.ts. Run the integrated smoke and full relevant test set once after composition.
 

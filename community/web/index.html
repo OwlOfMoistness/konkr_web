@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Konkr Community Maps</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/community.css">
+  <style>html,body{margin:0;width:100%;height:100%;background:#132e3b;color:white}body{overflow:hidden}#phaser-game{width:100%;height:100%}.hidden,[hidden]{display:none!important}#status{position:absolute;inset:40% 10%;text-align:center}#news-box{position:absolute;max-width:260px}#file-drop-zone{position:absolute;inset:0;pointer-events:none}#community-alert{position:fixed;bottom:0;left:0;right:0;background:#71321e;padding:.6rem;z-index:100}body.admin-page{overflow:auto}#admin-root{max-width:76rem;margin:auto}</style>
+  <!-- The server inserts pinned defer scripts here on the player page only. -->
+  <!-- COMMUNITY_RUNTIME -->
+  <script defer src="/community.js"></script>
+</head>
+<body>
+  <div id="loader"></div>
+  <article id="status">Loading Konkr Community Maps…</article>
+  <div id="phaser-game" class="hidden"></div>
+  <div id="news-box"><article id="news-box-body"></article></div>
+  <div id="file-drop-zone" class="hidden"><div>Import map</div></div>
+  <main id="catalog-root" hidden></main>
+  <main id="admin-root" hidden></main>
+  <p id="community-alert" role="alert" hidden></p>
+</body>
+</html>

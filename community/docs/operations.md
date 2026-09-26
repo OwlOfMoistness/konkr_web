@@ -55,7 +55,7 @@ curl --fail http://127.0.0.1:8080/readyz
 ```
 
 Open `http://127.0.0.1:8080/`. The player remains on this URL through catalog,
-details, play and return. Curators use `/admin` with the generated local key.
+details, play and return. Curators use `/admin/maps` with the generated local key.
 The key is a local fixture, not an approved public authentication method.
 Bootstrap inserts the named administrator only if no curator exists; migrations
 do not create identities. Keep the same database password when restarting an
