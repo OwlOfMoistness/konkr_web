@@ -79,3 +79,14 @@ Metadata edits retain ratings; new gameplay revisions keep separate ratings.
 before JSON parsing, decompressed size while decoding, and action/turn/runtime
 limits during execution. Benchmark supported maps before the release review;
 unsupported size/configuration must produce explicit errors, never partial runs.
+
+## Runtime save identity
+
+The client and server derive the same `cl-community-` level ID from map, revision,
+engine and difficulty using `shared/runtime-identity.ts`. Only the in-memory
+`map.levelId` is replaced; canonical stored file bytes and their hash remain intact.
+This prevents imported IDs from colliding with campaign and unrelated map saves.
+The pinned simulation stores this field and includes it in serialization; its
+AI and RNG do not read it. Parity fixtures must check renamed starts explicitly.
+Browser fixture runs without server bindings can still use the original ID;
+production comparisons and final hashes use the derived ID on both sides.

@@ -1,3 +1,4 @@
+import { runtimeLevelId } from '../shared/runtime-identity.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ContractError, LIMITS, decodeSubmission, normalizeTags, parseDecision, parseSubmission, supports } from '../shared/contracts.ts';
@@ -43,4 +44,13 @@ test('tag normalization handles hashtag input and rejects unsafe names', () => {
   assert.deepEqual(normalizeTags(['#Xmas', ' xmas ', 'zombie']), ['xmas', 'zombie']);
   assert.throws(() => normalizeTags(['<script>']), ContractError);
   assert.throws(() => normalizeTags(['']), ContractError);
+});
+
+test('runtime save identity is deterministic and separates revisions, engines and difficulty', async () => {
+  const binding = { mapId: 'map', revisionId: 'revision', engineHash: 'engine', difficulty: 'normal' as const };
+  const id = await runtimeLevelId(binding);
+  assert.match(id, /^cl-community-[0-9a-f]{32}$/);
+  assert.equal(await runtimeLevelId({ ...binding }), id);
+  for (const different of [{ ...binding, mapId: 'map2' }, { ...binding, revisionId: 'revision2' }, { ...binding, engineHash: 'engine2' }, { ...binding, difficulty: 'hard' as const }]) assert.notEqual(await runtimeLevelId(different), id);
+  await assert.rejects(runtimeLevelId({ ...binding, mapId: '../bad' }));
 });
