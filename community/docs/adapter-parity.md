@@ -229,3 +229,27 @@ Reproduce the backend checks with
 `npm test -- tests/happy-present-replay.test.ts`; no Downloads files, browser or
 database are needed. Explicit victory-condition support and the diplomacy
 variation need separate investigation before accepting this map publicly.
+
+### Occupation nineteen-turn worker regression
+
+The supplied `replay-2026-06-18-occupation-19t.konkr` records Normal difficulty,
+90 player decisions and 18 turn endings, ending with acceptance of surrender.
+[The compact fixture](../tests/fixtures/occupation-nineteen-turns.json) retains
+the first snapshot, semantic player decisions, source-file SHA-256 and observed
+worker result. AI actions, later snapshots and the filename's claimed score are
+not validator inputs; player actions were identified by the preceding faction.
+
+The [regression](../tests/occupation-replay.test.ts) uses the actual
+`NodeSimulationAdapter` worker with all normal legality and surrender-offer
+checks. With an explicitly test-only `capture-towns` policy, it returns
+`verified / victory / turns: 19` and the recorded full gameplay-state hash.
+The initial diagnostic completed in approximately 11.8 seconds. Removing the
+final acceptance must instead produce an unfinished turn-19 result.
+
+The community service's support policy still rejects this configuration as
+`unsupported / configuration-not-reviewed`; the test covers that restriction
+separately. No production rules or support list changed. This extends outcome
+coverage under Normal difficulty, not public publication eligibility, proof of
+the legacy export's originating engine, or fresh browser state-parity coverage.
+A full compatibility review is still required before enabling `capture-towns`
+in the service. Reproduce with `npm test -- tests/occupation-replay.test.ts`.
