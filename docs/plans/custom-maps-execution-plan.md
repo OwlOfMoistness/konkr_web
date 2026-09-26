@@ -121,7 +121,7 @@ dag:
   - T-catalog, T-reference-runtime → T-game-launch
   - T-game-launch, T-fixtures → T-recording
   - T-modifier-coverage, T-recording → T-validation-review
-  - T-catalog → T-anonymous-ratings
+  - T-catalog, T-curator-access, T-map-import → T-anonymous-ratings
   - T-validation-review, T-anonymous-ratings → T-run-submission
   - T-run-submission → T-verified-results
   - T-verified-results, T-recording → T-results-experience
@@ -159,7 +159,7 @@ Initial ready set after approval: **T-toolchain**. T-contracts follows; runtime 
 - [x] T-map-format — bounded data-only decoder and reference validation; both supplied maps plus malformed/resource-limit cases pass.
 - [x] T-map-import — private immutable uploads, metadata/revision editing and concurrency checks, 7 tests passed, including real-browser upload/edit/preview/publish/archive and 320px layout.
 - [x] T-publishing — support/preview/playtest gates and archive retention tested; both full-board previews inspected, 4 tests passed.
-- [ ] T-fixtures
+- [x] T-fixtures — 14 original-browser cases / 68 checkpoints, repeated capture and fresh reproduction, 18 tests passed; legacy exports explicitly unverified.
 - [ ] T-adapter-core
 - [ ] T-validation-boundary
 - [ ] T-modifier-coverage
@@ -209,7 +209,7 @@ id: T-contracts
 depends_on: ["T-toolchain"]
 parallel_safe: false
 conflicts_with: []
-files_write: ["community/shared/contracts.ts","community/tests/contracts.test.ts","community/docs/protocol.md"]
+files_write: ["community/shared/contracts.ts","community/tests/contracts.test.ts","community/docs/protocol.md","community/shared/runtime-identity.ts"]
 files_read: ["docs/plans/custom-maps-execution-plan.md"]
 branch_suffix: contracts
 scope: S
@@ -375,7 +375,7 @@ id: T-fixtures
 depends_on: ["T-reference-runtime"]
 parallel_safe: true
 conflicts_with: []
-files_write: ["community/scripts/import-fixtures.ts","community/tests/fixtures/manifest.json","community/tests/fixtures/base-cases.json","community/tests/fixture-import.test.ts"]
+files_write: ["community/scripts/import-fixtures.ts","community/tests/fixtures/manifest.json","community/tests/fixtures/base-cases.json","community/tests/fixture-import.test.ts","community/.gitattributes"]
 files_read: ["community/runtime/bootstrap.ts","community/runtime/manifest.json"]
 branch_suffix: fixtures
 scope: M
@@ -541,7 +541,7 @@ scope: S
 
 ```yaml
 id: T-anonymous-ratings
-depends_on: ["T-catalog"]
+depends_on: ["T-catalog","T-curator-access","T-map-import"]
 parallel_safe: true
 conflicts_with: []
 files_write: ["community/api/visitors.ts","community/api/ratings.ts","community/web/ratings.ts","community/db/003-ratings.sql","community/tests/ratings.test.ts"]
