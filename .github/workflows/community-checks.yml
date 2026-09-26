@@ -136,6 +136,23 @@ jobs:
           const metrics = await fetch('http://127.0.0.1:8080/api/admin/metrics');
           if (metrics.status !== 401) throw new Error('Metrics must require curator authentication');
           NODE
+      - name: Render a map inside the hardened app container
+        run: |
+          node --input-type=module <<'NODE' > "$RUNNER_TEMP/community-preview.konkr"
+          import { readFile } from 'node:fs/promises';
+          const { cases } = JSON.parse(await readFile('community/tests/fixtures/base-cases.json', 'utf8'));
+          const fixture = cases.find(item => item.id === 'tiny-win-hard');
+          if (!fixture?.encodedMap) throw new Error('Missing preview fixture');
+          process.stdout.write(fixture.encodedMap);
+          NODE
+          docker compose -f community/deploy/compose.yaml exec -T app node --input-type=module -e '
+          import assert from "node:assert/strict";
+          import { BrowserPreviewRenderer } from "./runtime/preview.ts";
+          const chunks = [];
+          for await (const chunk of process.stdin) chunks.push(chunk);
+          const png = await new BrowserPreviewRenderer(undefined, 30000).render(Buffer.concat(chunks).toString("utf8"), "hard");
+          assert.equal(Buffer.from(png).subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
+          ' < "$RUNNER_TEMP/community-preview.konkr"
       - name: Exercise disposable backup, restore and restart
         run: |
           docker compose -f community/deploy/compose.yaml stop app

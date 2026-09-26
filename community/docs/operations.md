@@ -278,8 +278,9 @@ GitHub Action revisions, locked npm dependencies, Node 26.4.0, Chromium from
 Playwright 1.63.0 and disposable PostgreSQL 16.13. It obtains supplied-map bytes
 from the committed reference corpus, runs tests serially, and fails on any skip.
 It verifies unchanged original release files. The package job builds without
-publishing, checks final image contents and private-route denial, applies
-migrations twice, restores disposable data and restarts the local service.
+publishing, checks final image contents and private-route denial, starts the
+original preview renderer inside the hardened app container, applies migrations
+twice, restores disposable data and restarts the local service.
 No production secrets, publishing token or deployment permission are needed.
 
 The optional [Jekyll exclusion overlay](../deploy/jekyll-excludes.yml) preserves
@@ -290,10 +291,11 @@ The community service does not use Jekyll or the original service-worker setup.
 Inspect any Jekyll output before publishing; do not mix its output with the
 community service's allowlisted assets.
 
-At authoring time, Compose configuration and static checks can run locally, but
-the Docker daemon is unavailable and the repository's locked Bundler is not
-installed. A container build/start, container backup/restore and Jekyll output
-inspection therefore remain unverified until their real commands succeed.
-Do not call the complete operations/release gate passed solely because these
-files exist. Record exact commit, command results and remaining limitations in
-the final release review.
+On 2026-09-26, the actual Docker build and hardened Compose service passed local
+review on integrated code `b8a5e742`: real curator preview, original-game finish,
+server validation, rating, kill switches, populated database/blob restore and
+restart. The final [release review](release-review.md) records exact scope and
+image identity. A separate agent's read-only packaging review found no material
+issues. Hosted CI was not dispatched. The repository's locked Bundler is not
+installed, so actual Jekyll output inspection remains unverified. These local
+checks do not approve public deployment or establish production capacity.

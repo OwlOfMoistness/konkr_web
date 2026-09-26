@@ -8,8 +8,9 @@ work; it does not approve public deployment or production capacity.
 
 ## Follow-up: long-trace gate reopened, 2026-09-26
 
-A fresh current-browser execution of the 79-decision Prison branch differed from
-the Node execution at turn 4, faction 2, in gameplay bookkeeping including
+This section records the temporary gate reopening; the correction and current
+approval appear in the next section. A fresh current-browser execution of the
+79-decision Prison branch differed from the Node execution at turn 4, faction 2, in gameplay bookkeeping including
 `hexHistory` and credit fields. This reopened the gate. The earlier
 short traces remain reproducible evidence, but they do not establish parity for
 this longer trajectory. Keep submissions and verified statistics disabled by
@@ -31,9 +32,10 @@ sprite is not yet established. These source findings do not explain or excuse
 the Node/browser bookkeeping divergence. Keep the warnings visible and retain
 them in diagnostic evidence rather than suppressing them.
 
-The production resource envelope also remains open. Docker execution,
-container restore drills and actual Jekyll output inspection remain unverified
-in the current local environment. No release or deployment pass is issued.
+At this historical checkpoint Docker execution and restore drills had not run.
+Their subsequent results are recorded in the [release review](release-review.md).
+Production capacity and public deployment remain separate decisions; actual
+Jekyll output inspection is still unverified.
 
 ## Follow-up: corrected simulation gate approved, 2026-09-26
 
@@ -189,23 +191,24 @@ replay steps and difficulty metadata are committed, not profile progress,
 preferences or statistics. The Prison extract ends in accepted surrender on
 turn 12; that observation alone does not prove a valid complete run.
 
-The production resource envelope is **not closed**. After this review, the
-coordinator reported that the selected legacy Prison trace, reduced to 79 player
-decisions, exceeded a 60-second local validation deadline; the adapter author is
-investigating. This report did not independently reproduce or classify that long
-trace. The timeout neither invalidates the completed differential comparisons nor
-establishes correctness through the uncompleted trace. Production time, memory,
-concurrency, queue and retention limits require representative long-run and
-worst-case measurements. Timeouts must remain infrastructure errors, not wins or
-allegations of invalid play.
+The production resource envelope is **not closed**. The initial 79-decision
+Prison investigation exceeded a 60-second deadline; the subsequent VM performance
+correction and production-batching correction are now verified as described
+above. The complete current-engine trajectory matches in approximately 30.5
+seconds locally. This resolves the observed timeout/divergence investigation,
+not worst-case production sizing. Time, process memory, concurrency, queue and
+retention limits still need representative measurements. Timeouts remain
+infrastructure errors, not wins or allegations of invalid play.
 
-The service must still resolve authoritative run/map bindings, enforce anonymous
-token ownership, expiry, quotas and idempotency, and count an accepted run once.
-Publication, run issuance and validation must receive the same reviewed policy;
-permissive test policies must not reach assembly. Database/job atomicity,
-operational metrics, backup/restore, packaged isolation, full end-to-end flows,
-release sizing, distribution permission and public deployment authorization
-remain separate execution-plan gates.
+The service gates that were pending during the initial review are implemented
+in worker `bbefb969` and assembly `dc749daf`: authoritative immutable bindings,
+anonymous ownership, expiry, quotas, idempotency and atomic once-only accounting.
+The independent worker/service suite passed 13 tests without skips, including
+real HTTP, PostgreSQL and browser flows. The coordinator's integrated regression
+at `b8a5e742` passed all 123 tests without skips. Publication, issuance and
+validation share the reviewed policy. See the [release review](release-review.md)
+for packaging/restore evidence and the remaining public-release decisions;
+this simulation approval alone does not authorize deployment.
 
 ## Reproduction
 
