@@ -30,3 +30,37 @@ export function mountAdmin(root: HTMLElement, onReady: (client: AdminClient, ses
     })().catch(error => { input.value = ''; status.textContent = error.message ?? 'Sign-in unavailable'; }).finally(() => { button.disabled = false; });
   };
 }
+
+/** The server separately enforces administrator rights for every read and mutation. */
+export function mountCuratorAccess(root: HTMLElement, client: AdminClient): void {
+  const heading = document.createElement('h2'); heading.textContent = 'Curator access';
+  const note = document.createElement('p'); note.textContent = 'Grant access to an identity from the configured private access provider.';
+  const status = document.createElement('p'); status.setAttribute('role', 'status');
+  const list = document.createElement('ul');
+  const form = document.createElement('form');
+  const identityLabel = document.createElement('label'); identityLabel.textContent = 'Curator identity';
+  const identity = document.createElement('input'); identity.required = true; identity.maxLength = 128; identity.pattern = '[A-Za-z0-9_-]+'; identityLabel.append(identity);
+  const roleLabel = document.createElement('label'); roleLabel.textContent = 'Access role';
+  const role = document.createElement('select');
+  for (const value of ['curator', 'admin']) { const option = document.createElement('option'); option.value = value; option.textContent = value; role.append(option); }
+  roleLabel.append(role);
+  const enabledLabel = document.createElement('label'); const enabled = document.createElement('input'); enabled.type = 'checkbox'; enabled.checked = true;
+  enabledLabel.append(enabled, document.createTextNode(' Access enabled'));
+  const save = document.createElement('button'); save.textContent = 'Update curator access';
+  form.append(identityLabel, roleLabel, enabledLabel, save); root.replaceChildren(heading, note, list, form, status);
+  const refresh = async () => {
+    const data = await client.request('/api/admin/curators'); list.replaceChildren();
+    for (const curator of data.curators) {
+      const item = document.createElement('li'); const button = document.createElement('button'); button.type = 'button';
+      button.textContent = `${curator.id} · ${curator.role} · ${curator.enabled ? 'enabled' : 'disabled'}`;
+      button.onclick = () => { identity.value = curator.id; role.value = curator.role; enabled.checked = curator.enabled; identity.focus(); };
+      item.append(button); list.append(item);
+    }
+  };
+  form.onsubmit = event => {
+    event.preventDefault(); save.disabled = true;
+    void client.request('/api/admin/curators', { method: 'PUT', body: JSON.stringify({ id: identity.value, role: role.value, enabled: enabled.checked }) })
+      .then(refresh).then(() => { status.textContent = 'Curator access updated.'; }).catch(error => { status.textContent = error.message; }).finally(() => { save.disabled = false; });
+  };
+  void refresh().catch(error => { status.textContent = error.message; });
+}

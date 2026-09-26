@@ -1,0 +1,17 @@
+.community-admin { box-sizing: border-box; width: min(960px, 100%); max-height: 100dvh; overflow: auto; margin: 0 auto; padding: 24px; background: #193847; color: #f7f1df; font: 16px/1.5 system-ui, sans-serif; }
+.community-admin h1, .community-admin h2 { line-height: 1.2; }
+.community-admin form, .community-admin section { display: grid; gap: 16px; margin: 24px 0; }
+.community-admin label { display: grid; gap: 6px; margin: 16px 0; }
+.community-admin input, .community-admin textarea, .community-admin button { box-sizing: border-box; max-width: 100%; font: inherit; }
+.community-admin input:not([type=checkbox]), .community-admin textarea { width: 100%; padding: 10px; border: 1px solid #849eaa; border-radius: 4px; background: #112c38; color: #fff; }
+.community-admin textarea { min-height: 110px; }
+.community-admin input[type=checkbox] { width: 22px; height: 22px; }
+.community-admin button { min-height: 44px; padding: 10px 16px; border: 0; border-radius: 4px; background: #f4d072; color: #142b36; cursor: pointer; }
+.community-admin button:disabled { opacity: .65; cursor: wait; }
+.community-admin a { color: #f4d072; overflow-wrap: anywhere; }
+.community-admin :focus-visible { outline: 3px solid white; outline-offset: 3px; }
+.community-admin ul { padding-left: 20px; }
+.community-admin li { margin: 10px 0; }
+.community-admin p, .community-admin details { overflow-wrap: anywhere; }
+.community-admin [role=status]:empty { display: none; }
+@media(max-width: 480px) { .community-admin { padding: 16px; } }

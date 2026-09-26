@@ -1,9 +1,15 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
 import { readFile } from 'node:fs/promises';
+import { createServer } from 'node:http';
+import { fileURLToPath } from 'node:url';
+import { build } from 'esbuild';
+import { chromium } from 'playwright';
 import { Pool } from 'pg';
 import { CuratorAuth, developmentIdentityProvider } from '../api/admin-auth.ts';
 import { MapsAdmin } from '../api/maps-admin.ts';
+import { PublicationService } from '../api/publication.ts';
+import { PostgresCatalogReader } from '../api/catalog.ts';
 import { decodeKonkrData } from '../engine/map-format.ts';
 import type { ObjectStorage } from '../shared/contracts.ts';
 
@@ -83,5 +89,45 @@ describe('private draft uploads and revision changes', { skip: !url }, () => {
       assert.deepEqual(actual.revisions[0].plugins, expected.map.plugins ?? []);
       assert.equal(actual.map.title, expected.map.name);
     }
+  });
+  it('lets a curator upload, edit, preview, publish and archive through the browser', {timeout:40_000}, async () => {
+    let auth: CuratorAuth; let browserMaps: MapsAdmin; let publication: PublicationService;
+    const policy = {version:1 as const,configurations:[{engineHash:'pinned-engine',difficulty:'hard' as const,plugins:[],evidence:'test-only'}]};
+    const source = `import {mountAdmin} from './web/admin.ts'; import {mountMapEditor} from './web/map-editor.ts'; import {publicationControls} from './web/publication.ts';
+      const root=document.querySelector('main');mountAdmin(root,(client)=>mountMapEditor(root,client,{renderPublication:publicationControls(client)}));`;
+    const bundle = await build({stdin:{contents:source,resolveDir:fileURLToPath(new URL('..',import.meta.url)),loader:'ts'},bundle:true,write:false,format:'iife',platform:'browser'});
+    const css = await readFile(new URL('../web/admin.css',import.meta.url),'utf8');
+    const server = createServer((incoming,outgoing)=>{void(async()=>{
+      if(!incoming.url?.startsWith('/api/')){outgoing.writeHead(200,{'Content-Type':'text/html'});outgoing.end(`<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#193847}${css}</style><main></main><script>${bundle.outputFiles[0].text}</script>`);return;}
+      const chunks:Buffer[]=[];for await(const chunk of incoming)chunks.push(Buffer.from(chunk));
+      const request = new Request(`http://${incoming.headers.host}${incoming.url}`,{method:incoming.method,headers:incoming.headers as Record<string,string>,body:['GET','HEAD'].includes(incoming.method!)?undefined:Buffer.concat(chunks)});
+      const response=await auth.route(request)??await browserMaps.route(request)??await publication.route(request);
+      outgoing.writeHead(response?.status??404,response?Object.fromEntries(response.headers):{});outgoing.end(response?Buffer.from(await response.arrayBuffer()):'');
+    })().catch(()=>outgoing.writeHead(500).end());});
+    await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));const address=server.address();assert(address&&typeof address!=='string');const base=`http://127.0.0.1:${address.port}`;
+    const key='browser-test-curator-'.repeat(3);auth=new CuratorAuth(db,developmentIdentityProvider([{id:'curator',key}]),base);
+    browserMaps=new MapsAdmin(db,storage,auth,'pinned-engine');
+    const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLttAAAAABJRU5ErkJggg==','base64');
+    publication=new PublicationService(browserMaps,policy,{async render(){return png;}});
+    const browser=await chromium.launch({headless:true});
+    try{
+      const page=await browser.newPage({viewport:{width:1024,height:900}});const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
+      await page.goto(base+'/admin/maps');await page.getByLabel('Curator access key').fill(key);await page.getByRole('button',{name:'Sign in',exact:true}).click();
+      await page.getByLabel('Add a .konkr map').setInputFiles({name:'browser.konkr',mimeType:'application/octet-stream',buffer:Buffer.from(encode(raw('Browser draft')))});
+      // Embedded IDs are identifiers; the human-readable title is separate.
+      await page.getByRole('status').filter({hasText:'Invalid level ID'}).waitFor();
+      const data=raw('browser-map');data.map.name='Browser draft';
+      await page.getByLabel('Add a .konkr map').setInputFiles({name:'browser.konkr',mimeType:'application/octet-stream',buffer:Buffer.from(encode(data))});
+      await page.getByRole('heading',{name:'Browser draft',exact:true}).waitFor();
+      await page.getByLabel('Title',{exact:true}).fill('Curator browser map');await page.getByLabel('Creator',{exact:true}).fill('Example creator');
+      await page.getByLabel('Tags (comma separated)').fill('#Xmas, island');await page.getByRole('button',{name:'Save metadata',exact:true}).click();
+      await page.getByRole('heading',{name:'Curator browser map',exact:true}).waitFor();
+      await page.setViewportSize({width:320,height:800});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+      await page.getByRole('button',{name:'Generate preview',exact:true}).click();await page.getByRole('img',{name:'Map preview: Curator browser map'}).waitFor();
+      await page.getByRole('checkbox').check();await page.getByRole('button',{name:'Publish',exact:true}).click();await page.getByText(/published · revision 1/).waitFor();
+      const publicEntry=(await new PostgresCatalogReader(db,policy).list({search:'Curator browser map'})).entries[0];assert.ok(publicEntry);assert.deepEqual(publicEntry.map.metadata.tags,['xmas','island']);
+      await page.getByRole('button',{name:'Archive',exact:true}).click();await page.getByText(/archived · revision 1/).waitFor();
+      assert.equal(await new PostgresCatalogReader(db,policy).get(publicEntry.map.id),null);assert.deepEqual(errors,[]);
+    }finally{await browser.close();server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}
   });
 });
