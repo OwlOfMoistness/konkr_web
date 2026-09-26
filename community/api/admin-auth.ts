@@ -131,7 +131,13 @@ export class CuratorAuth {
           const client = await this.db.connect();
           try {
             await client.query('BEGIN');
+            // All access changes share one lock; authority may change while a request reads its body or waits.
+            await client.query("SELECT pg_advisory_xact_lock(hashtextextended('community:curator-access:v1',0))");
+            const authorized = await client.query(`SELECT 1 FROM curators c JOIN curator_sessions s ON s.curator_id=c.id
+              WHERE c.id=$1 AND c.enabled AND c.role='admin' AND s.token_hash=$2 AND s.expires_at>now()`, [actor.id, hashSecret(this.token(request))]);
+            if (!authorized.rowCount) throw new AdminError(403, 'Administrator access changed. Sign in again before editing access.');
             await client.query('INSERT INTO curators(id,role,enabled) VALUES($1,$2,$3) ON CONFLICT(id) DO UPDATE SET role=$2,enabled=$3,updated_at=now()', [data.id, data.role, data.enabled]);
+            if (!(await client.query("SELECT 1 FROM curators WHERE enabled AND role='admin' LIMIT 1")).rowCount) throw new AdminError(409, 'At least one enabled administrator is required');
             await audit(client, actor, 'curator-access', data.id, { role: data.role, enabled: data.enabled });
             await client.query('COMMIT');
           } catch (error) { await client.query('ROLLBACK'); throw error; } finally { client.release(); }

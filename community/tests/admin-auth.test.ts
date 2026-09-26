@@ -45,6 +45,30 @@ describe('curator authorization', { skip: !databaseUrl }, () => {
     const audit = JSON.stringify((await db.query('SELECT * FROM curator_audit')).rows);
     assert.doesNotMatch(audit, /credential/); assert.ok(!audit.includes(owner.Cookie));
   });
+  it('serializes concurrent cross-demotions and rechecks administrator access after waiting', { timeout: 10_000 }, async () => {
+    await db.query("INSERT INTO curators(id,role) VALUES('alpha','admin'),('beta','admin')");
+    const raceAuth = new CuratorAuth(db, developmentIdentityProvider(['alpha','beta'].map(id => ({ id, key: key(id) }))), origin);
+    const sessions = await Promise.all(['alpha','beta'].map(async id => {
+      const response = (await raceAuth.route(request('/api/admin/session', 'POST', { credential: key(id) })))!;
+      assert.equal(response.status, 200);
+      return { Cookie: response.headers.get('set-cookie')!.split(';')[0], 'X-CSRF-Token': (await response.json()).csrfToken as string };
+    }));
+    let waiting = 0; let release!: () => void;
+    const bothAuthorized = new Promise<void>(resolve => { release = resolve; });
+    const demote = (headers: Record<string,string>, target: string) => {
+      // Body reads occur after require(); hold both requests here to reproduce stale authority.
+      const body = new ReadableStream<Uint8Array>({ async pull(controller) {
+        if (++waiting === 2) release(); await bothAuthorized;
+        controller.enqueue(new TextEncoder().encode(JSON.stringify({ id: target, role: 'curator', enabled: true }))); controller.close();
+      } }, { highWaterMark: 0 });
+      return raceAuth.route(new Request(origin + '/api/admin/curators', { method: 'PUT', headers: { Origin: origin, 'Content-Type': 'application/json', ...headers }, body, duplex: 'half' } as RequestInit));
+    };
+    const responses = await Promise.all([demote(sessions[0], 'beta'), demote(sessions[1], 'alpha')]);
+    assert.deepEqual(responses.map(response => response!.status).sort(), [200, 403]);
+    const remaining = await db.query("SELECT id FROM curators WHERE id IN ('alpha','beta') AND role='admin' AND enabled");
+    assert.equal(remaining.rowCount, 1);
+    assert.equal((await db.query("SELECT count(*) FROM curator_audit WHERE action='curator-access' AND target_id IN ('alpha','beta')")).rows[0].count, '1');
+  });
   it('rejects expired/revoked sessions and safely signs out', async () => {
     let editor = await session('editor');
     await db.query("UPDATE curator_sessions SET expires_at=now()-interval '1 second' WHERE curator_id='editor'");
