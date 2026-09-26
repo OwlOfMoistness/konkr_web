@@ -1,10 +1,39 @@
 # Independent simulation and recording review
 
-Reviewed on 2026-09-26. The simulation, strict player-command boundary and client
-recording review gate is approved for the exact engine/difficulty/plugin matrix
-below. No blocking correctness or authority findings remained in the reviewed
-commits. This approval permits the dependent service work in the execution plan;
-it does not approve public deployment or close the production resource envelope.
+Initially reviewed on 2026-09-26. The short-corpus simulation, strict
+player-command boundary and client recording review passed for the exact matrix
+and commits below, permitting dependent service work. That historical approval
+is superseded by the open long-trace gate described next; it is not a current
+approval for verified statistics or public deployment.
+
+## Follow-up: long-trace gate reopened, 2026-09-26
+
+A fresh current-browser execution of the 79-decision Prison branch differs from
+the Node execution at turn 4, faction 2, in gameplay bookkeeping including
+`hexHistory` and credit fields. The mismatch is under investigation. The earlier
+short traces remain reproducible evidence, but they do not establish parity for
+this longer trajectory. Keep submissions and verified statistics disabled by
+default. A correction needs repeated current-browser comparisons, the existing
+adversarial/regression suite and independent review before this gate closes.
+Do not exclude the differing gameplay fields to make the comparison pass.
+
+The diagnostic browser capture also reports missing pawn IDs 245 and 286.
+Inspection of the pinned 2.35.30 main bundle identifies these as presentation
+warnings: module `54029` (`playPawnMove`) looks up a rendered pawn through
+`PawnsManager.getById`; module `74742` implements that lookup against its sprite
+dictionary `pawnsById`, not the engine pawn collection. Caller `54231` passes
+already-computed `update.stateAfter`. On a missing sprite, the warning path calls
+`handleNonFatalError` and, outside the debug overlay, `WorldMapScene.syncState`.
+Module `71472` rebuilds presentation objects from that state through a
+`StaticGameStateModel`; no controller play, reducer or gameplay-state setter
+occurs in this warning/recovery path. The precise animation timing that lost the
+sprite is not yet established. These source findings do not explain or excuse
+the Node/browser bookkeeping divergence. Keep the warnings visible and retain
+them in diagnostic evidence rather than suppressing them.
+
+The production resource envelope also remains open. Docker execution,
+container restore drills and actual Jekyll output inspection remain unverified
+in the current local environment. No release or deployment pass is issued.
 
 ## Reviewed changes
 
