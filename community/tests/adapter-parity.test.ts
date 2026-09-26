@@ -6,6 +6,7 @@ import type { EngineSession } from '../engine/adapter.ts';
 import { loadEngineSources, guardMainBundle, sha256 } from '../engine/platform.ts';
 import { runtimeLevelId } from '../shared/runtime-identity.ts';
 import type { Difficulty, PlayerDecision } from '../shared/contracts.ts';
+import { applyPlayerDecision } from '../engine/player-commands.ts';
 
 const repositoryRoot = process.env.KONKR_REFERENCE_ROOT;
 const sources = () => loadEngineSources(repositoryRoot ? { repositoryRoot } : {});
@@ -50,6 +51,24 @@ test('original AI advances an unfinished game back to the player', async () => {
   assert.equal(session.model.currentPhase.faction.id, 1);
   assert.equal(session.model.currentPhase.turnNumber, 2);
   assert.equal(session.outcome, undefined);
+});
+
+test('preserves the pinned production configuration consumed by simulation', async () => {
+  const session = createEngineSession(await sources(), tinyMap(), 'hard');
+  const production: Record<string, any> = {};
+  // Evaluate only the hash-pinned configuration factory. Its two dependencies
+  // supply presentation/host defaults; this does not run application startup.
+  session.requireModule.m[5964]({ exports: production }, production, (id: number) => {
+    if (id === 29727) return { common: {} };
+    if (id === 97069) return { isRunningAt: () => false, isPortableModeRequested: () => false };
+    throw new Error(`Unexpected production configuration dependency ${id}`);
+  });
+  assert.equal(production.productionConfig.flags.mergeMutations, true);
+  const actual = session.requireModule(56876).config;
+  assert.equal(actual.flags.mergeMutations, production.productionConfig.flags.mergeMutations);
+  for (const key of ['ai', 'recordStateChanges', 'integrityChecks', 'cheats', 'gameHistory']) {
+    assert.equal(actual.debug[key], production.productionConfig.debug[key], `production debug.${key}`);
+  }
 });
 
 test('namespaced runtime identity changes only the identity field in a legal trajectory', async () => {
@@ -162,4 +181,32 @@ test('sample-map namespaced identities preserve each reference gameplay trajecto
       assert.equal(firstDifference(actual, original.snapshot()), null, `${fixture.id}: identity changed gameplay`);
     }
   }
+});
+
+test('matches four browser turns including capture bookkeeping inside a transaction', async () => {
+  const fixture = JSON.parse(await readFile(new URL('fixtures/prison-four-turn-checkpoints.json', import.meta.url), 'utf8'));
+  const reference = await corpus();
+  const source = reference.cases.find(entry => entry.id === fixture.sourceCaseId);
+  assert.ok(source, 'Canonical Prison map is required');
+  const pinned = await sources();
+  assert.equal(fixture.engineHash, pinned.engineHash);
+  assert.equal(fixture.sourceMapHash, sha256(source.encodedMap));
+  assert.equal(fixture.repeatCaptures, 2);
+  assert.equal(fixture.checkpoints.length, 36);
+  let afterDecision = -1;
+  const actual: { afterDecision: number; phase: string; factionId: number; stateHash: string }[] = [];
+  const session = createEngineSession(pinned, source.encodedMap, fixture.difficulty, {
+    onCheckpoint(checkpoint) {
+      actual.push({ afterDecision, phase: checkpoint.phase, factionId: checkpoint.factionId,
+        stateHash: sha256(JSON.stringify(gameplayState(checkpoint.state))) });
+    },
+  });
+  for (const [index, decision] of (fixture.decisions as PlayerDecision[]).entries()) {
+    afterDecision = index;
+    await applyPlayerDecision(session, decision);
+  }
+  assert.deepEqual(actual, fixture.checkpoints);
+  assert.equal(session.model.currentPhase.turnNumber, 5);
+  assert.equal(session.model.currentPhase.faction.id, 1);
+  assert.equal(session.outcome, undefined);
 });

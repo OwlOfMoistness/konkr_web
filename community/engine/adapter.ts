@@ -62,7 +62,13 @@ export class EngineSession {
     const fatal = (error: unknown): never => { throw error instanceof Error ? error : new Error(String(error)); };
     get(56876).initPlatform({
       events: new (get(40118).TypedEventBus)(), random: get(50061).createRandomGenerator(options.seed ?? 0),
-      storage: new (get(50080).InMemoryStorage)(), config: { debug: {}, flags: {} },
+      // Production config (5964) batches state mutations. This changes which
+      // projections capture bookkeeping sees inside a transaction (76223/77022).
+      storage: new (get(50080).InMemoryStorage)(),
+      config: {
+        debug: { ai: false, recordStateChanges: false, integrityChecks: undefined, cheats: false },
+        flags: { mergeMutations: true },
+      },
       errors: { handleNonFatalError: fatal, handleException: fatal },
     });
     this.controller = new (get(8058).GameStateController)();

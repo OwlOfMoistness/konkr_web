@@ -24,6 +24,27 @@ original Normal modifier is applied correctly. Defaults are an explicit RNG seed
 of zero and a fixed per-context session identity. A trusted server seed may replace
 zero. No replay snapshot is ever loaded after the canonical initial map.
 
+The platform preserves `flags.mergeMutations: true` from the pinned production
+configuration (5964). This is gameplay behavior, not an optional optimization:
+`StateEngine` (76223) defers updates until a transaction commits. Capture handling
+(52798/20598/77022) reads region liveness inside that transaction before applying
+all queued changes. Immediate mutation changes tile history and consequently
+diplomacy. The regression test evaluates the original configuration factory with
+only its host/presentation dependencies replaced, then checks the adapter's value.
+
+An independent audit followed all 266 modules loaded by both supported map paths
+(Prison and the ordered gift modifiers), including bare configuration aliases and
+destructuring. The engine reads only the batching flag and these diagnostic
+settings: `debug.ai` (controller/AI), `recordStateChanges` and
+`integrityChecks?.gameState` (model), and `gameHistory` (history). The adapter
+preserves production values: false, false, undefined, and undefined respectively;
+the transitively loaded cheat setting also remains false. No other top-level
+platform default is consumed by these simulation paths. Transitively imported
+`halloween` and `portableMode` references select presentation themes or campaign
+unlocking and are not called when simulating imported canonical maps. They remain
+absent, as do application URL/reporting, autosave, antialiasing and screen-transition
+configuration. New recovered execution paths require another configuration audit.
+
 The explicit presentation adapters are audio output, diagnostic display and
 breakpoints, and the asynchronous rendering-yield hook. The app's genuine play
 context and session IDs remain present because victory and cancellation checks
@@ -61,6 +82,16 @@ first-difference diagnostics, then matches the canonical projected trace digest.
 Legacy replay extracts are not accepted as reference wins. Separate tests verify
 checksum rejection, import without app/Firebase execution, fresh module isolation,
 and namespaced identity equivalence for the tiny case and both supplied maps.
+
+`tests/fixtures/prison-four-turn-checkpoints.json` adds eleven semantic decisions
+and 36 complete gameplay-state digests through the end of turn four. These states
+were reproduced in two fresh pinned browser sessions: one complete game capture
+and one shorter capture containing all 109 committed native states. The canonical
+map bytes are reused from the base corpus and checked against the fixture's hash.
+The test executes all decisions through the public legality boundary. Disabling
+mutation batching reproduces the first mismatch at checkpoint 30, AI faction 2
+on turn four; retaining production batching matches every checkpoint. No tile
+history, credit, collection ordering or other gameplay field is omitted.
 
 ### Initial resource measurements before the context optimization
 
@@ -128,13 +159,32 @@ as the earlier context. A separate unprofiled first-turn comparison improved
 from 2.23 seconds to 1.25 seconds. Profiling itself adds overhead, so the full-run
 times are workload observations, not a controlled speedup claim.
 
-The legacy final state differs at faction-credit and hex-history fields. Its
-provenance remains unverified; neither legal reconstructed commands nor a matching
-initial map authenticate a legacy replay. A fresh current-browser comparison of
-that longer branch is needed before drawing compatibility conclusions from it.
-The committed repeated-browser corpus and all boundary/modifier tests still pass
-after this optimization, including a check that dynamic string generation remains
-disabled in the isolated realm.
+An independent current-browser replay of those 79 decisions exposed a separate
+adapter configuration error: the original mutation-batching flag was missing.
+The first mismatch occurred at native move 83 (`pawnId: 213` to hex 1913), despite
+identical preceding states and native plays. Node applied connected-region changes
+too early, omitting dead-hex history for 1814 and 1914; diplomacy then diverged.
+Restoring production batching fixes every one of the full trace's 136 checkpoints.
+Both the current-browser and Node final gameplay states have SHA256
+`3daa285fcc827f0ef83b9868ea2c2577326f43980aa49b26a34679c5ad89b47f`, with victory on
+turn twelve. That state also matches the selected legacy final snapshot after the
+existing region-name projection. The originating legacy build remains unknown,
+and this compatibility evidence does not authenticate or grant a server score to
+the old replay. The full current-browser run emitted two missing-sprite renderer
+warnings; source review located only presentation recovery from already-computed
+engine state, with no simulation mutation in that path.
+
+The corrected full trace completed in 26.3 seconds with a 512 MiB heap ceiling
+during the local checkpoint comparison. A separate instrumented run with the
+production namespaced map identity finished in 33.3 seconds under concurrent local
+test load with 303 MiB peak RSS; its final state also matched the legacy snapshot
+after applying the same identity. The original repeated-browser corpus,
+the new four-turn regression, and all boundary/modifier checks pass together
+(23 tests), including disabled dynamic string generation. Local measurements
+support a provisional 120-second worker deadline, 512 MiB V8 heap ceiling and
+one concurrent worker. A heap ceiling is not an RSS ceiling; deployment still
+needs its separate process/container memory and queue limits. The earlier timing
+figures above describe the diagnosed adapter before the batching correction.
 
 Unsupported until reviewed: landing setup, scripted/custom-rule maps, and any
 plugin sequence absent from the injected reviewed support policy. The map parser
