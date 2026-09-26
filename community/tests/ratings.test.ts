@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
-import { after, before, describe, it } from 'node:test';
+import { after, before, describe, it, test } from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { build } from 'esbuild';
+import { chromium } from 'playwright';
 import { readFile } from 'node:fs/promises';
 import { Pool } from 'pg';
 import { Visitors } from '../api/visitors.ts';
@@ -74,4 +77,38 @@ describe('anonymous ratings', { skip: !url }, () => {
     assert.equal((await ratings.route(req(visitor,4,'map','r2')))!.status,200);
     assert.equal((await db.query("SELECT count(*) FROM map_ratings WHERE revision_id='r1'")).rows[0].count,'3');
   });
+});
+
+
+declare global { interface Window {
+  ratingRaceTest: { deliverVote: () => void; deliverCsrf?: () => void; posted?: { revisionId: string; rating: number } };
+} }
+
+test('rating controls preserve edits across delayed initial votes and capture the submitted value before waiting for CSRF', async () => {
+  const bundle = await build({ stdin: { contents: `
+    import {ratingControls} from './web/ratings.ts';
+    const probe=window.ratingRaceTest={}; let sessionCalls=0;
+    window.fetch=async (_url,init)=>{
+      if(init?.method==='PUT') { probe.posted=JSON.parse(init.body); return Response.json({rating:{average:probe.posted.rating,count:1}}); }
+      return new Promise(resolve=>{probe.deliverVote=()=>resolve(Response.json({revisionId:'r1',mine:1}));});
+    };
+    const visitor={csrfToken(){return ++sessionCalls===1?Promise.resolve('test-csrf'):new Promise(resolve=>{probe.deliverCsrf=()=>resolve('test-csrf');});}};
+    ratingControls(visitor)(document.querySelector('main'),{map:{id:'map'},revision:{id:'r1'}});
+  `, loader: 'ts', resolveDir: fileURLToPath(new URL('..', import.meta.url)) }, bundle: true, write: false, format: 'iife', platform: 'browser' });
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage();
+    await page.setContent('<main></main>'); await page.addScriptTag({ content: bundle.outputFiles[0].text });
+    await page.waitForFunction(() => !!window.ratingRaceTest.deliverVote);
+    await page.getByLabel('Your rating').selectOption('5');
+    await page.evaluate(async () => { window.ratingRaceTest.deliverVote(); await new Promise(resolve => setTimeout(resolve, 0)); });
+    assert.equal(await page.getByLabel('Your rating').inputValue(), '5', 'A stale existing vote must not overwrite the current edit');
+    await page.getByRole('button', { name: 'Save rating' }).click();
+    await page.waitForFunction(() => !!window.ratingRaceTest.deliverCsrf);
+    await page.getByLabel('Your rating').selectOption('2');
+    await page.evaluate(() => window.ratingRaceTest.deliverCsrf!());
+    await page.getByRole('status').filter({ hasText: 'Saved.' }).waitFor();
+    assert.deepEqual(await page.evaluate(() => window.ratingRaceTest.posted), { revisionId: 'r1', rating: 5 });
+    assert.equal(await page.getByLabel('Your rating').inputValue(), '2', 'The later edit remains available for a separate save');
+  } finally { await browser.close(); }
 });
