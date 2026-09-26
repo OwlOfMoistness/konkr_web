@@ -1,0 +1,159 @@
+name: Community checks
+'on':
+  pull_request:
+    paths: ['community/**', '_site/releases/2.35.30/**', '.github/workflows/community-checks.yml']
+  push:
+    paths: ['community/**', '_site/releases/2.35.30/**', '.github/workflows/community-checks.yml']
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: community-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:16.13-bookworm
+        env:
+          POSTGRES_USER: community_test
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: community_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd 'pg_isready -U community_test -d community_test'
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    defaults:
+      run:
+        working-directory: community
+    env:
+      CATALOG_TEST_DATABASE_URL: postgresql://community_test:disposable-ci-only@127.0.0.1:5432/community_test
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '26.4.0'
+          cache: npm
+          cache-dependency-path: community/package-lock.json
+      - name: Configure private temporary test directories
+        run: |
+          echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/community-browsers" >> "$GITHUB_ENV"
+          echo "KONKR_MAP_FIXTURES=$RUNNER_TEMP/community-maps" >> "$GITHUB_ENV"
+          echo "KONKR_FIXTURE_DIR=$RUNNER_TEMP/community-maps" >> "$GITHUB_ENV"
+      - run: npm ci --ignore-scripts
+      # https://playwright.dev/docs/ci
+      - run: npx --no-install playwright install --with-deps chromium
+      - name: Extract supplied maps from the committed reference corpus
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile, mkdir, writeFile } from 'node:fs/promises';
+          import path from 'node:path';
+          const { cases } = JSON.parse(await readFile('tests/fixtures/base-cases.json', 'utf8'));
+          await mkdir(process.env.KONKR_MAP_FIXTURES, { recursive: true });
+          for (const [id, file] of [['prison-first-turn-normal', 'prison.konkr'], ['gifts-two-turns-normal', 'escalating-quickly.konkr']]) {
+            const item = cases.find(item => item.id === id);
+            if (!item?.encodedMap) throw new Error(`Missing committed map: ${id}`);
+            await writeFile(path.join(process.env.KONKR_MAP_FIXTURES, file), item.encodedMap);
+          }
+          NODE
+      - run: npm run build
+      - run: npm run prepare:runtime
+      - name: Run all tests serially and reject skipped coverage
+        run: |
+          set -o pipefail
+          node --test --test-concurrency=1 --test-reporter=tap tests/*.test.ts | tee "$RUNNER_TEMP/community-tests.tap"
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          const output = await readFile(`${process.env.RUNNER_TEMP}/community-tests.tap`, 'utf8');
+          if (!/^# skipped 0$/m.test(output) || /# SKIP\b/i.test(output)) throw new Error('CI requires the full test set without skips');
+          NODE
+      - name: Verify original release files remain untouched
+        run: git diff --exit-code -- ../_site/releases/2.35.30 ../releases
+
+  package:
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    env:
+      COMPOSE_PROJECT_NAME: konkr-community-ci
+      COMMUNITY_CUSTOM_MAPS: '1'
+      COMMUNITY_SUBMISSIONS: '0'
+      COMMUNITY_VERIFIED_RESULTS: '0'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '26.4.0'
+      - name: Generate disposable local secrets
+        run: |
+          for name in COMMUNITY_DATABASE_PASSWORD COMMUNITY_CSRF_SECRET COMMUNITY_DEV_CURATOR_KEY; do
+            value=$(openssl rand -hex 32)
+            echo "::add-mask::$value"
+            echo "$name=$value" >> "$GITHUB_ENV"
+          done
+      - name: Validate and build the local image
+        run: |
+          docker compose -f community/deploy/compose.yaml config --quiet
+          docker compose -f community/deploy/compose.yaml build app
+      - name: Check final image excludes private build inputs
+        run: |
+          docker run --rm -i --network none --entrypoint node konkr-community-local:development --input-type=module <<'NODE'
+          import { readdir, access } from 'node:fs/promises';
+          const allowed = new Set(['api','engine','runtime','shared','web','worker','db','scripts','node_modules','package.json','package-lock.json','.runtime','.web','.data']);
+          for (const item of await readdir('/app/community')) if (!allowed.has(item)) throw new Error(`Unexpected image input: ${item}`);
+          for (const file of ['tests','docs','.env','.scratch']) {
+            try { await access(`/app/community/${file}`); } catch { continue; }
+            throw new Error(`Private image input: ${file}`);
+          }
+          NODE
+      - name: Migrate and start loopback-only service
+        run: |
+          docker compose -f community/deploy/compose.yaml up -d --wait db
+          docker compose -f community/deploy/compose.yaml run --rm -T app node api/server.ts --migrate
+          docker compose -f community/deploy/compose.yaml run --rm -T app node api/server.ts --migrate
+          docker compose -f community/deploy/compose.yaml run --rm -T app node api/server.ts --bootstrap-curator
+          docker compose -f community/deploy/compose.yaml up -d --wait --wait-timeout 150 app
+      - name: Probe health and deny private static paths
+        run: |
+          node --input-type=module <<'NODE'
+          for (const route of ['/healthz','/readyz','/api/config','/']) {
+            const response = await fetch(`http://127.0.0.1:8080${route}`);
+            if (!response.ok) throw new Error(`Unhealthy public route: ${route}`);
+          }
+          for (const route of ['/.env','/.data/backup-check','/api/server.ts','/tests/fixtures/base-cases.json','/runtime/manifest.json']) {
+            const response = await fetch(`http://127.0.0.1:8080${route}`);
+            if (response.status !== 404) throw new Error(`Unexpected private route response: ${route} ${response.status}`);
+          }
+          const metrics = await fetch('http://127.0.0.1:8080/api/admin/metrics');
+          if (metrics.status !== 401) throw new Error('Metrics must require curator authentication');
+          NODE
+      - name: Exercise disposable backup, restore and restart
+        run: |
+          docker compose -f community/deploy/compose.yaml stop app
+          docker compose -f community/deploy/compose.yaml exec -T db pg_dump -U community -Fc --no-owner --no-acl community > "$RUNNER_TEMP/community.dump"
+          docker compose -f community/deploy/compose.yaml exec -T db createdb -U community community_restore_check
+          docker compose -f community/deploy/compose.yaml exec -T db pg_restore -U community --no-owner --no-acl --exit-on-error -d community_restore_check < "$RUNNER_TEMP/community.dump"
+          original=$(docker compose -f community/deploy/compose.yaml exec -T db psql -U community -d community -Atc 'SELECT count(*) FROM community_migrations')
+          restored=$(docker compose -f community/deploy/compose.yaml exec -T db psql -U community -d community_restore_check -Atc 'SELECT count(*) FROM community_migrations')
+          test "$original" -gt 0 && test "$restored" = "$original"
+          docker compose -f community/deploy/compose.yaml exec -T db dropdb -U community community_restore_check
+          docker compose -f community/deploy/compose.yaml run --rm -T app node --input-type=module -e "await import('node:fs/promises').then(fs=>fs.writeFile('/app/community/.data/backup-check','disposable backup check'))"
+          docker compose -f community/deploy/compose.yaml run --rm -T app tar -C /app/community/.data -cf - . > "$RUNNER_TEMP/community-objects.tar"
+          docker compose -f community/deploy/compose.yaml run --rm -T app sh -c 'mkdir /tmp/restored; tar -C /tmp/restored -xf -; test "$(cat /tmp/restored/backup-check)" = "disposable backup check"' < "$RUNNER_TEMP/community-objects.tar"
+          docker compose -f community/deploy/compose.yaml up -d --wait --wait-timeout 150 app
+          curl --fail --silent http://127.0.0.1:8080/readyz
+      - name: Report service status
+        if: failure()
+        run: docker compose -f community/deploy/compose.yaml ps -a
+      - name: Delete disposable CI containers and volumes
+        if: always()
+        run: docker compose -f community/deploy/compose.yaml down --volumes --remove-orphans

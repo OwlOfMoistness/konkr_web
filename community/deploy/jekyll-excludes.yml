@@ -1,0 +1,25 @@
+# Optional overlay only; never changes the original website's _config.yml.
+# bundle exec jekyll build --config _config.yml,community/deploy/jekyll-excludes.yml
+# A later configuration replaces this list, so preserve the original exclusions.
+# https://jekyllrb.com/docs/configuration/options/
+exclude:
+  - .sass-cache/
+  - .jekyll-cache/
+  - gemfiles/
+  - Gemfile
+  - Gemfile.lock
+  - node_modules/
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/-
+  - releases/
+  - community/
+  - docs/
+  - .agents/
+  - .skills-directory/
+  - .github/
+  - AGENTS.md
+  - '**/*.konkr'
+  - '**/.env'
+  - '**/.env.*'
