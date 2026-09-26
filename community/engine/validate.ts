@@ -17,6 +17,7 @@ export interface ValidatorOptions {
   timeoutMs?: number;
   memoryMb?: number;
 }
+export const DEFAULT_VALIDATOR_RESOURCES = Object.freeze({ timeoutMs: 120_000, memoryMb: 512 });
 
 function prepareInput(input: ValidationInput, options: ValidatorOptions): ValidationInput | ValidationResult {
   try {
@@ -66,8 +67,8 @@ export class NodeSimulationAdapter implements SimulationAdapter {
   private options: ValidatorOptions;
   constructor(options: ValidatorOptions) {
     this.options = structuredClone(options);
-    const timeout = options.timeoutMs ?? 30_000;
-    const memory = options.memoryMb ?? 256;
+    const timeout = options.timeoutMs ?? DEFAULT_VALIDATOR_RESOURCES.timeoutMs;
+    const memory = options.memoryMb ?? DEFAULT_VALIDATOR_RESOURCES.memoryMb;
     if (!Number.isSafeInteger(timeout) || timeout < 1 || timeout > 300_000 ||
         !Number.isSafeInteger(memory) || memory < 64 || memory > 2048) throw new Error('Invalid validator resource limits');
   }
@@ -81,7 +82,7 @@ export class NodeSimulationAdapter implements SimulationAdapter {
       try {
         worker = new Worker(new URL(import.meta.url), {
           workerData: { kind: 'konkr-validation-v1', input: prepared, options: this.options },
-          resourceLimits: { maxOldGenerationSizeMb: this.options.memoryMb ?? 256 },
+          resourceLimits: { maxOldGenerationSizeMb: this.options.memoryMb ?? DEFAULT_VALIDATOR_RESOURCES.memoryMb },
           stdout: true, stderr: true,
         });
       } catch { resolve({ status: 'error', code: 'worker-start-failure', retryable: true }); return; }
@@ -93,7 +94,7 @@ export class NodeSimulationAdapter implements SimulationAdapter {
         clearTimeout(timer);
         void worker.terminate().then(() => resolve(result), () => resolve(result));
       };
-      const timer = setTimeout(() => finish({ status: 'error', code: 'simulation-timeout', retryable: true }), this.options.timeoutMs ?? 30_000);
+      const timer = setTimeout(() => finish({ status: 'error', code: 'simulation-timeout', retryable: true }), this.options.timeoutMs ?? DEFAULT_VALIDATOR_RESOURCES.timeoutMs);
       worker.once('message', (result: ValidationResult) => finish(result));
       worker.once('error', () => finish({ status: 'error', code: 'worker-failure', retryable: true }));
       worker.once('exit', () => finish({ status: 'error', code: 'worker-exited', retryable: true }));

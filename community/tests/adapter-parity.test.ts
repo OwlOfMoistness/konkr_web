@@ -39,6 +39,7 @@ for (const difficulty of ['normal', 'hard'] as const) {
     assert.equal(second.outcome, undefined);
     assert.equal(second.loadedModules.includes(9332), false);
     assert.equal(second.loadedModules.includes(65606), false);
+    assert.throws(() => second.requireModule(8058).GameStateController.constructor('return globalThis'), /Code generation from strings disallowed/);
   });
 }
 

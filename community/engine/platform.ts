@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { performance } from 'node:perf_hooks';
-import { createContext, runInContext } from 'node:vm';
+import { constants, createContext, runInContext } from 'node:vm';
 
 /** The dynamic boundary is limited to the hash-pinned, recovered game modules. */
 export type Recovered = Record<string, any>;
@@ -58,9 +58,13 @@ export function createModuleLoader(sources: EngineSources): { requireModule: Eng
   if (sources.vendorHash !== PINNED_RELEASE.vendorHash || sha256(sources.vendor) !== sources.vendorHash ||
       sources.engineHash !== PINNED_RELEASE.mainHash) throw new Error('Vendor bundle checksum mismatch');
   const guarded = guardMainBundle(sources.main, sources.mainHash);
-  const context = createContext({ self: {}, performance, crypto: webcrypto }, {
+  // An ordinary fresh-realm global avoids Node's contextified-object lookup
+  // wrapper around hot Boolean/Array/Math calls. The game code stays unchanged.
+  // https://nodejs.org/api/vm.html#vmconstantsdont_contextify
+  const context = createContext(constants.DONT_CONTEXTIFY, {
     name: 'konkr-pinned-engine', codeGeneration: { strings: false, wasm: false },
   });
+  Object.assign(context, { self: {}, performance, crypto: webcrypto });
   runInContext(sources.vendor, context, { timeout: 5_000, filename: PINNED_RELEASE.vendor });
   runInContext(guarded, context, { timeout: 5_000, filename: PINNED_RELEASE.main });
   const requireModule = context.__konkrRequire as EngineRequire;

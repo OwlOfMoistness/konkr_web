@@ -62,7 +62,7 @@ Legacy replay extracts are not accepted as reference wins. Separate tests verify
 checksum rejection, import without app/Firebase execution, fresh module isolation,
 and namespaced identity equivalence for the tiny case and both supplied maps.
 
-### Initial resource measurements
+### Initial resource measurements before the context optimization
 
 Fresh Node processes on macOS arm64, Node 26.4.0, produced these illustrative
 measurements under local development load. Elapsed time includes loading the
@@ -103,6 +103,38 @@ JS
 These short traces establish extraction feasibility, not production throughput
 or a worst-case bound. Long winning runs, concurrency and pathological maps still
 belong to the release benchmark. Worker limits remain provisional until then.
+
+### Longer workload and isolated-global optimization
+
+A private diagnostic converted only player decisions, identified from each
+step's preceding faction, from the selected unverified Prison legacy extract.
+It replayed 79 decisions and eleven turn endings from the canonical supplied map.
+The current engine completed 1,278 attempted native plays and produced an offered
+surrender victory on turn twelve. The earlier context exceeded a 60-second worker
+deadline; a CPU-profiled run finished in 70.5 seconds with 386 MiB peak RSS.
+
+The CPU profile located substantial cost in the original engine's repeated
+global `Boolean`, `Array` and `Math` calls. Node's contextified object wraps global
+lookups. The adapter now creates a fresh realm using
+[`vm.constants.DONT_CONTEXTIFY`](https://nodejs.org/api/vm.html#vmconstantsdont_contextify),
+then assigns exactly the same explicit platform globals. The engine code,
+gameplay, module isolation and disabled string/Wasm generation remain unchanged.
+This creates an ordinary realm global, closer to the browser's global behavior.
+
+The full diagnostic then completed in 29.9 seconds with a 512 MiB heap ceiling
+(380 MiB peak RSS), and 29.7 seconds with a 256 MiB heap ceiling (363 MiB peak RSS).
+Both produced exactly the same current-engine final hash and native-play count
+as the earlier context. A separate unprofiled first-turn comparison improved
+from 2.23 seconds to 1.25 seconds. Profiling itself adds overhead, so the full-run
+times are workload observations, not a controlled speedup claim.
+
+The legacy final state differs at faction-credit and hex-history fields. Its
+provenance remains unverified; neither legal reconstructed commands nor a matching
+initial map authenticate a legacy replay. A fresh current-browser comparison of
+that longer branch is needed before drawing compatibility conclusions from it.
+The committed repeated-browser corpus and all boundary/modifier tests still pass
+after this optimization, including a check that dynamic string generation remains
+disabled in the isolated realm.
 
 Unsupported until reviewed: landing setup, scripted/custom-rule maps, and any
 plugin sequence absent from the injected reviewed support policy. The map parser

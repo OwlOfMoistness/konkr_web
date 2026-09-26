@@ -52,6 +52,15 @@ heap limit and a parent-enforced deadline. Terminating the worker interrupts eve
 synchronous engine work. Limits are provisional pending the release benchmark.
 See the [Node worker documentation](https://nodejs.org/api/worker_threads.html).
 
+The default deadline is 120 seconds and the old-generation heap ceiling is 512
+MiB. The longer Prison workload in `adapter-parity.md` takes about 30 seconds after
+the host-context optimization, so the previous 30-second default had no useful
+headroom. Local composition should explicitly select these limits, one concurrent
+validation, a lease longer than the deadline (180 seconds initially), and bounded
+retries. Provision roughly 1 GiB for the combined API/worker process initially;
+the heap ceiling is not a process RSS limit. Measure deployment hardware and
+longer workloads before increasing concurrency or promising verification latency.
+
 `validateInWorker` is an internal/test entry and does not itself provide a hard
 deadline. Production composition must use `NodeSimulationAdapter`. The VM is not
 a sandbox for uploaded code: only checked release bundles run, map scripts are
