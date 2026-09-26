@@ -2,7 +2,7 @@
  * This is a local compatibility harness, never the public submission validator.
  */
 type Legacy = Record<string, any>;
-type RequireModule = (id: number) => Legacy;
+export type ReferenceModuleLoader = (id: number) => Legacy;
 type Difficulty = "normal" | "hard";
 
 export interface ReferenceState {
@@ -15,7 +15,7 @@ export interface ReferenceState {
 
 declare global {
   interface Window {
-    __konkrCommunityPrepare: (requireModule: RequireModule, config: Legacy) => void;
+    __konkrCommunityPrepare: (requireModule: ReferenceModuleLoader, config: Legacy) => void;
     launchGame: () => Promise<void>;
     tStart: number;
     setLoadingStatus: (message: string, loading?: boolean) => void;
@@ -29,6 +29,7 @@ declare global {
       play: (name: string, payload?: unknown) => void;
       act: (name: string, payload?: unknown) => void;
       exportHistory: () => unknown;
+      withEngine: <T>(operation: (loader: ReferenceModuleLoader) => T) => T;
     };
   }
 }
@@ -36,7 +37,7 @@ declare global {
 const errors: string[] = [];
 const blockedRequests: string[] = [];
 const disabledServices: string[] = [];
-let requireModule: RequireModule;
+let requireModule: ReferenceModuleLoader;
 let prepared = false;
 const plain = <T>(value: T): T => JSON.parse(JSON.stringify(value));
 const diagnostic = (error: unknown) => {
@@ -112,6 +113,11 @@ window.communityReference = {
     return plain(requireModule(32070).inject.gameStateController.history.export({
       snapshotPolicy: ["initial", "final"], includeRewinds: true,
     }));
+  },
+  withEngine(operation) {
+    if (!this.ready) throw new Error("Reference engine is not ready");
+    // Trusted addon seam only: client access can never confer server authority.
+    return operation(requireModule);
   },
 };
 

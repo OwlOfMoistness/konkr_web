@@ -86,6 +86,7 @@ test("fixed browser runtime imports maps with original services disabled before 
         await page.waitForFunction(() => window.communityReference?.ready || window.communityReference?.errors.length, undefined, { timeout: 40_000 });
         assert.deepEqual(await page.evaluate(() => window.communityReference.errors), []);
         assert.equal(await page.evaluate(() => window.communityReference.ready), true);
+        assert.equal(await page.evaluate(() => window.communityReference.withEngine((load) => typeof load(47067).decodeGameState)), "function");
         const initialURL = page.url();
         if (fixture) {
           const encoded = await readFile(path.join(fixtureDirectory!, fixture.name), "utf8");

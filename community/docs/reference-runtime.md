@@ -80,6 +80,10 @@ After `window.communityReference.ready`, the local harness exposes:
   transition; applying the bare reducer play does not switch the UI to its
   spectator mode or automatically drive all AI turns.
 - `exportHistory()`: exports the original history for comparison fixtures.
+- `withEngine(callback)`: after readiness, passes the typed
+  `ReferenceModuleLoader` to trusted addon code for navigation, subscriptions,
+  fixture codecs and session integration. It provides no validation authority;
+  the client and its exposed original development hooks are always tamperable.
 - `errors`, `blockedRequests`, `disabledServices`: local diagnostics.
 
 The reference play/history hooks are not a security boundary and do not prove
