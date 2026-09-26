@@ -109,8 +109,9 @@ dag:
   - T-toolchain → T-contracts
   - T-contracts → T-reference-runtime
   - T-contracts → T-catalog
+  - T-contracts → T-map-format
   - T-catalog → T-curator-access
-  - T-curator-access, T-reference-runtime → T-map-import
+  - T-curator-access, T-reference-runtime, T-map-format → T-map-import
   - T-map-import → T-publishing
   - T-reference-runtime → T-fixtures
   - T-fixtures → T-adapter-core
@@ -154,6 +155,7 @@ Initial ready set after approval: **T-toolchain**. T-contracts follows; runtime 
 - [ ] T-reference-runtime
 - [ ] T-catalog
 - [ ] T-curator-access
+- [x] T-map-format — bounded data-only decoder and reference validation; both supplied maps plus malformed/resource-limit cases pass.
 - [ ] T-map-import
 - [ ] T-publishing
 - [ ] T-fixtures
@@ -173,7 +175,7 @@ Initial ready set after approval: **T-toolchain**. T-contracts follows; runtime 
 
 ## Task details
 
-All paths below are repository-relative proposed files unless already present. No `community/` tooling exists yet. Commands marked **Proposed** must be established by T-toolchain and verified against the actual scripts; they are not claims of existing or passing checks. Each task includes its own tests and should remain small/medium; split it before dispatch if inspection reveals a larger change. Database tests use disposable task-local databases, never shared production state.
+All paths below are repository-relative. The isolated `community/` toolchain and shared contracts are implemented; progress above records completed slices. Commands marked **Proposed** must be established by T-toolchain and verified against the actual scripts; they are not claims of existing or passing checks. Each task includes its own tests and should remain small/medium; split it before dispatch if inspection reveals a larger change. Database tests use disposable task-local databases, never shared production state.
 
 ### T-toolchain: Establish an isolated community workspace
 
@@ -293,14 +295,37 @@ scope: S
 
 **Verification:** Proposed: npm --prefix community test -- tests/admin-auth.test.ts. Test the role matrix and direct API attempts, not only whether buttons are hidden.
 
+### T-map-format: Decode and validate data-only maps
+
+```yaml
+id: T-map-format
+depends_on: ["T-contracts"]
+parallel_safe: true
+conflicts_with: []
+files_write: ["community/engine/map-format.ts","community/tests/map-format.test.ts"]
+files_read: ["community/shared/contracts.ts"]
+branch_suffix: map-format
+scope: S
+```
+
+**Description:** Extract bounded format decoding from the later curator workflow so it can be implemented while runtime/catalog work proceeds. Preserve original bytes and reject malformed or unsupported data before any engine execution.
+
+**Acceptance:**
+
+- [ ] Decode v7 map data with compressed/decompressed size limits and strict JSON/data validation; reject invalid references and untrusted scripts/resources.
+- [ ] Preserve game-affecting field/collection order, content hashes and supported built-in plugin names. Format acceptance is distinct from independently proven engine support.
+- [ ] Both supplied maps pass format checks; malformed and oversized examples fail before reaching the runtime.
+
+**Verification:** `npm --prefix community test -- tests/map-format.test.ts`; compare metadata against known input files without committing profiles.
+
 ### T-map-import: Upload and revise draft maps
 
 ```yaml
 id: T-map-import
-depends_on: ["T-curator-access","T-reference-runtime"]
+depends_on: ["T-curator-access","T-reference-runtime","T-map-format"]
 parallel_safe: true
 conflicts_with: []
-files_write: ["community/api/maps-admin.ts","community/web/map-editor.ts","community/engine/map-format.ts","community/tests/map-import.test.ts"]
+files_write: ["community/api/maps-admin.ts","community/web/map-editor.ts","community/tests/map-import.test.ts"]
 files_read: ["community/shared/contracts.ts","community/runtime/manifest.json","community/db/001-catalog.sql"]
 branch_suffix: map-import
 scope: M
@@ -715,7 +740,7 @@ scope: S
 
 This section records checks of the plan document only. It does not imply that implementation or engine validation has run.
 
-- [x] Task IDs, dependency references and the DAG agree; all 21 tasks and 27 dependency edges form an acyclic graph with T-toolchain initially ready after user review.
+- [x] Task IDs, dependency references and the DAG agree; the graph forms an acyclic graph, with T-map-format extracted as an independent task during execution with T-toolchain initially ready after user review.
 - [x] All tasks declare owned files, dependencies, parallel/conflict rules, scope, acceptance and verification.
 - [x] Overlapping file ownership has symmetric conflicts; task scope is small/medium and no task declares more than five writable files. Reads of planned files have a completed upstream owner.
 - [x] Local evidence links resolve, input files are referenced rather than copied, and only this plan is added by the current task.
