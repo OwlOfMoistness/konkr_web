@@ -70,7 +70,8 @@ test('complete local curator → original game → verified score → rating →
     const row=(await db.query('SELECT state,result,counted FROM runs WHERE id=$1',[binding.id])).rows[0];assert.equal(row.state,'complete');assert.equal(row.result.status,'verified');assert.equal(row.result.turns,1);assert.equal(row.counted,true);
     const score=(await (await fetch(origin+'/api/maps/'+entry.map.id)).json()).scores;assert.deepEqual(score,[{difficulty:'hard',engineHash:binding.engineHash,completions:1,bestTurns:1}]);
     await player.getByRole('button',{name:'Integration island',exact:true}).click();
-    await player.getByLabel('Your rating').selectOption('5');await player.getByRole('button',{name:'Save rating',exact:true}).click();await player.getByRole('status').filter({hasText:'5.0 average from 1 ratings'}).waitFor();
+    await player.getByLabel('Your rating').selectOption('5');await player.getByRole('button',{name:'Save rating',exact:true}).click();await player.getByRole('status').filter({hasText:'5.0 average from 1 rating'}).waitFor();
+    await player.locator('.catalog-detail .catalog-rating').filter({hasText:'5.0 / 5 · 1 rating'}).waitFor();
     await player.setViewportSize({width:375,height:812});assert.equal(await player.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
     if(process.env.KONKR_E2E_SCREENSHOTS)await player.screenshot({path:path.join(process.env.KONKR_E2E_SCREENSHOTS,'community-detail-mobile.png')});
     assert.equal(player.url(),publicURL);
