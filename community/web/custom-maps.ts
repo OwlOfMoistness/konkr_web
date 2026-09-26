@@ -28,6 +28,7 @@ export interface CustomMapsOptions extends Omit<CatalogBridgeOptions, 'loader' |
   supportedDifficulties?: (entry: CatalogEntry) => Difficulty[];
   verifiedResultsEnabled?: boolean;
   renderDetailActions?: (container: HTMLElement, entry: CatalogEntry) => void;
+  renderExtras?: (container: HTMLElement) => { refresh?(): void; destroy?(): void } | void;
 }
 
 /** The composition root mounts this beside the original canvas, on the same page and URL. */
@@ -38,25 +39,33 @@ export async function installCustomMaps(options: CustomMapsOptions) {
   const root = options.root;
   Object.assign(root.style, { position: 'fixed', inset: '0', zIndex: '20' });
   root.hidden = true;
+  let extras: { refresh?(): void; destroy?(): void } | void;
+  const catalogRoot = options.renderExtras ? document.createElement('div') : root;
+  if (options.renderExtras) {
+    const extraRoot = document.createElement('section');
+    root.replaceChildren(extraRoot, catalogRoot); root.style.gridTemplateRows = 'auto minmax(0, 1fr)';
+    catalogRoot.style.height = '100%'; catalogRoot.style.minHeight = '0';
+    extras = options.renderExtras(extraRoot);
+  }
   let catalog: ReturnType<typeof mountCatalog>;
   const error = (failure: Error) => {
     options.onError?.(failure);
     if (root.hidden) app.notifications.warning('Custom Maps', failure.message);
-    let status = root.querySelector<HTMLElement>('[data-community-error]');
-    if (!status) { status = document.createElement('p'); status.dataset.communityError = 'true'; status.setAttribute('role', 'alert'); root.prepend(status); }
+    let status = catalogRoot.querySelector<HTMLElement>('[data-community-error]');
+    if (!status) { status = document.createElement('p'); status.dataset.communityError = 'true'; status.setAttribute('role', 'alert'); catalogRoot.prepend(status); }
     status.textContent = failure.message;
   };
   const show = () => {
-    root.hidden = false; gameRoot.classList.add('hidden');
+    root.hidden = false; if (options.renderExtras) root.style.display = 'grid'; gameRoot.classList.add('hidden');
     app.game.input.enabled = false; app.game.input.keyboard.enabled = false;
-    void catalog.resume();
+    extras?.refresh?.(); void catalog.resume();
   };
   const hide = () => {
-    catalog.suspend(); root.hidden = true; gameRoot.classList.remove('hidden');
+    catalog.suspend(); root.hidden = true; if (options.renderExtras) root.style.display = 'none'; gameRoot.classList.remove('hidden');
     app.game.input.enabled = true; app.game.input.keyboard.enabled = true;
   };
   const bridge = createCatalogBridge({ ...options, loader, onReturn: show, onError: error });
-  catalog = mountCatalog(root, {
+  catalog = mountCatalog(catalogRoot, {
     reader: options.reader, supportedDifficulties: options.supportedDifficulties, verifiedResultsEnabled: options.verifiedResultsEnabled,
     onPlay: async (entry, difficulty) => { await bridge.start(entry, difficulty); hide(); },
     onExit: hide,
@@ -79,6 +88,7 @@ export async function installCustomMaps(options: CustomMapsOptions) {
   window.addEventListener('pagehide', inactive);
   return {
     bridge, catalog, open: show,
-    destroy() { window.removeEventListener('pagehide', inactive); bridge.destroy(); catalog.destroy(); removeMenu(); restoreUrl(); },
+    async resumeSaved(save: CatalogSave) { await bridge.resume(save.context.entry, save.context.difficulty); hide(); },
+    destroy() { window.removeEventListener('pagehide', inactive); bridge.destroy(); catalog.destroy(); extras?.destroy?.(); removeMenu(); restoreUrl(); },
   };
 }
