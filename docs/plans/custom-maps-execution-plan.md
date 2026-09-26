@@ -148,8 +148,8 @@ Initial ready set after approval: **T-toolchain**. T-contracts follows; runtime 
 
 ## Implementation progress
 
-- [ ] T-toolchain
-- [ ] T-contracts
+- [x] T-toolchain — isolated workspace and locked dependencies created.
+- [x] T-contracts — strict semantic-input contracts; typecheck and 5 boundary tests passed.
 - [ ] T-reference-runtime
 - [ ] T-catalog
 - [ ] T-curator-access
