@@ -67,9 +67,9 @@ loopback origin, and a non-production environment. Never expose this Compose
 file through a public proxy, tunnel or different port binding.
 
 Enable submissions and verified statistics only after independent engine parity,
-the integrated worker and accounting tests pass for the exact build. The current
-long Prison trace investigation keeps that gate open; these are future enablement
-commands, not instructions to enable the present build:
+the integrated worker and accounting tests pass for the exact build. The corrected
+long Prison trajectory now passes its scoped simulation review; integrated service
+and release evidence must still be checked. Feature switches remain off by default:
 
 ```sh
 export COMMUNITY_SUBMISSIONS=1
@@ -239,10 +239,14 @@ repeated infrastructure errors, and memory approaching its container limit.
 They should notify the operator and pause new submissions if sustained. They
 must not turn infrastructure failures into invalid-player verdicts. Production
 alert thresholds, capacity, concurrency, heap limits and deadlines require a
-benchmark report for small and long maps in both difficulties. The selected
-legacy Prison branch's earlier 60-second timeout and newly observed longer-trace
-browser/Node state divergence require follow-up. Earlier short-corpus evidence
-in [validation review](validation-review.md) does not close that reopened gate.
+benchmark report for small and long maps in both difficulties. The earlier Prison
+timeout led to a VM performance correction; its later Node/browser divergence
+identified a missing production mutation-batching flag. The corrected long trace
+now matches all 136 browser checkpoints. See the dated source investigation and
+independent checks in [validation review](validation-review.md). The provisional
+local adapter deadline is 120 seconds with a 512 MiB V8 heap ceiling and one worker;
+the queue lease is 180 seconds, leaving time for blob access and persistence. Heap
+limits do not bound total process RSS, and production sizing remains open.
 
 The operator owns uptime, queue incidents, backups and secret rotation. The
 curator lead owns publishing and access reviews. The engine maintainer owns

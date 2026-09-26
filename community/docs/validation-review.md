@@ -1,16 +1,16 @@
 # Independent simulation and recording review
 
-Initially reviewed on 2026-09-26. The short-corpus simulation, strict
-player-command boundary and client recording review passed for the exact matrix
-and commits below, permitting dependent service work. That historical approval
-is superseded by the open long-trace gate described next; it is not a current
-approval for verified statistics or public deployment.
+Initially reviewed on 2026-09-26. The simulation and strict command-boundary gate
+is approved for the corrected configuration and scoped matrix below, following
+the reopened gate and independent correction checks recorded here. The earlier
+recorder review remains separate evidence. This permits dependent local service
+work; it does not approve public deployment or production capacity.
 
 ## Follow-up: long-trace gate reopened, 2026-09-26
 
-A fresh current-browser execution of the 79-decision Prison branch differs from
+A fresh current-browser execution of the 79-decision Prison branch differed from
 the Node execution at turn 4, faction 2, in gameplay bookkeeping including
-`hexHistory` and credit fields. The mismatch is under investigation. The earlier
+`hexHistory` and credit fields. This reopened the gate. The earlier
 short traces remain reproducible evidence, but they do not establish parity for
 this longer trajectory. Keep submissions and verified statistics disabled by
 default. A correction needs repeated current-browser comparisons, the existing
@@ -34,6 +34,52 @@ them in diagnostic evidence rather than suppressing them.
 The production resource envelope also remains open. Docker execution,
 container restore drills and actual Jekyll output inspection remain unverified
 in the current local environment. No release or deployment pass is issued.
+
+## Follow-up: corrected simulation gate approved, 2026-09-26
+
+The independent source investigation found that the adapter omitted the original
+`flags.mergeMutations: true` setting. Pinned production configuration module
+`5964` enables batching, while `StateEngine` module `76223` checks that flag in
+`beginTransaction`. The old adapter applied mutations immediately. During
+`WorldUpdateBuilder.move` (`77022`), connected-region liveness was consequently
+read after a merge instead of before the original commit point. The first
+affected move, native index 83, moves pawn 213 to hex 1913 and should preserve
+dead-hex history for 1814 and 1914. Later diplomacy differences followed from
+that omitted history. Neither the original game nor comparison projection was
+changed to fix this.
+
+Correction `52f814f5107953b537d06dcd5303d43bd4ce5eff` preserves production batching
+and relevant debug defaults, adds a source-backed configuration check, and
+commits [36 four-turn browser state hashes](../tests/fixtures/prison-four-turn-checkpoints.json).
+The independent reviewer reran `npm run build` and the combined
+adapter/boundary/modifier suite: **23 passed, zero skipped**. All 36 compact hashes
+and eleven decisions were also compared directly with the coordinator's saved
+current-browser capture. A separate fresh Node negative control with batching
+disabled reproduces the first mismatch at checkpoint 30, AI faction 2, turn 4.
+
+The coordinator independently reran all 79 decisions from the initial map:
+**136 of 136 checkpoints matched**, ending in victory on turn 12 in 30.5 seconds
+locally. Both final projected states hash to
+`3daa285fcc827f0ef83b9868ea2c2577326f43980aa49b26a34679c5ad89b47f`.
+The reviewer inspected that browser evidence and reproduced its first 36 hashes;
+the full rerun is coordinator evidence, not a second full execution by this
+reviewer. Its two renderer warnings remain visible; no page errors or external
+requests were recorded. `regions[].name` remains the sole comparison exclusion.
+
+The source audit covered the identical 266-module dependency sets loaded by the
+supported Prison and gift imports. Besides batching, the simulation consumes
+production debug controls for AI, history logging, state-change logging and
+integrity checks. No additional gameplay configuration mismatch was found.
+Transitive Halloween/theme, portable-mode unlocking and URL-cheat helpers do not
+run in the supported imported-map simulation path. New configuration access or
+support expansion still requires review.
+
+This closes the identified longer-trace correctness blocker for the reviewed
+matrix. It does not authenticate an old replay's originating engine or grant it
+a server score. Provisional local limits are one worker, a 120-second adapter
+deadline and a 512 MiB V8 heap ceiling; these are not a production sizing claim.
+Worker/accounting, integrated browser flows, packaging and public-release
+decisions retain their own gates. Feature switches remain off by default.
 
 ## Reviewed changes
 
