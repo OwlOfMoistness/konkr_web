@@ -69,6 +69,16 @@ test('uses real prices and consumes treasury across consecutive legitimate purch
   assert.deepEqual(await validateInWorker(input(map(), [one, one]), options), { status: 'invalid', code: 'insufficient-funds', decisionIndex: 1 });
 });
 
+test('a legal nonterminal conquest exhausts the unit before a second conquest', async () => {
+  for (const difficulty of ['normal', 'hard'] as const) {
+    const decisions: PlayerDecision[] = [{ kind: 'move', pawnId: 3, destinationHexId: 304 },
+      { kind: 'move', pawnId: 3, destinationHexId: 303 }];
+    assert.equal((await validateInWorker(input(map(), decisions.slice(0, 1), difficulty), options)).status, 'non-winning');
+    assert.deepEqual(await validateInWorker(input(map(), decisions, difficulty), options),
+      { status: 'invalid', code: 'pawn-not-movable', decisionIndex: 1 });
+  }
+});
+
 test('refuses tap flags, privileged native commands, trailing commands and changed bindings', async () => {
   for (const decision of [
     { kind: 'move', pawnId: 3, destinationHexId: 303, tapUnit: false },
