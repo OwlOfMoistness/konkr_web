@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { createServer } from "node:http";
-import { mkdir, readFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import path from "node:path";
+import { tmpdir } from "node:os";
 import { test } from "node:test";
 import { chromium } from "playwright";
-import { communityRoot, generatedRoot, guardedPatch, insertion, insertionAnchor, localFontReplacements, prepareRuntime } from "../scripts/prepare-runtime.ts";
+import { communityRoot, generatedRoot, guardedPatch, insertion, insertionAnchor, localFontReplacements, prepareRuntime, withPreparationLock } from "../scripts/prepare-runtime.ts";
 import type { ReferenceState } from "../runtime/bootstrap.ts";
 
 const manifest = JSON.parse(await readFile(path.join(communityRoot, "runtime/manifest.json"), "utf8"));
@@ -20,6 +21,27 @@ test("runtime preparation rejects changed bundles and ambiguous patch anchors", 
   for (const source of ["missing", insertionAnchor + insertionAnchor]) {
     assert.throws(() => guardedPatch(source, createHash("sha256").update(source).digest("hex")), /exactly one/);
   }
+});
+
+test("preparation lock releases on failure and never deletes another owner's lock", async () => {
+  const temporary = await mkdtemp(path.join(tmpdir(), "konkr-runtime-lock-"));
+  const lock = path.join(temporary, "lock");
+  try {
+    await assert.rejects(withPreparationLock(lock, async () => { throw new Error("expected prepare failure"); }), /expected prepare failure/);
+    await assert.rejects(stat(lock), { code: "ENOENT" });
+    await mkdir(lock);
+    await assert.rejects(withPreparationLock(lock, async () => "must not run", 30), /busy or stale/);
+    assert.ok((await stat(lock)).isDirectory(), "Timed-out contender must preserve the existing lock");
+  } finally { await rm(temporary, { recursive: true, force: true }); }
+});
+
+test("concurrent preparations reuse verified completed output", async () => {
+  const prepared = await Promise.all([prepareRuntime(), prepareRuntime()]);
+  assert.deepEqual(prepared, [generatedRoot, generatedRoot]);
+  const before = await stat(path.join(generatedRoot, "index.html"));
+  await prepareRuntime();
+  const after = await stat(path.join(generatedRoot, "index.html"));
+  assert.equal(after.mtimeMs, before.mtimeMs, "Unchanged preparation must not disrupt a running reference browser");
 });
 
 test("fixed browser runtime imports maps with original services disabled before boot", { timeout: 180_000 }, async (t) => {

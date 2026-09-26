@@ -31,6 +31,14 @@ player; this is a smoke check, not a determinism or replay-validity proof.
 unlisted assets. Serve that generated directory from a fresh local origin; do
 not reuse the upstream release's HTML or service worker.
 
+Concurrent test/preview processes coordinate through a filesystem preparation
+lock. A fingerprint includes the original input manifest, preparation script,
+bootstrap and dependency lockfile; every generated output is hash-checked before
+reuse. Unchanged preparations therefore leave a running browser's files intact.
+Locks release in `finally`. A busy/crashed lock times out after 15 seconds with
+its path and owner PID available in `owner.json`; it is never automatically
+stolen. Remove a stale lock only after confirming its preparer has stopped.
+
 ## The patch and isolation
 
 One required call is inserted into the generated main bundle after its entry
