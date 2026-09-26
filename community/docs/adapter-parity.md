@@ -190,3 +190,42 @@ Unsupported until reviewed: landing setup, scripted/custom-rule maps, and any
 plugin sequence absent from the injected reviewed support policy. The map parser
 also rejects fixed-difficulty files because the original file importer ignores
 that field while the UI may hide its difficulty switch.
+
+### Happy Present five-turn outcome regression
+
+The user-supplied `happy_present-5t Mein.konkr` is preserved in
+[the fixture evidence](../tests/fixtures/happy-present-five-turn-evidence.json),
+with its original SHA-256. The [focused test](../tests/happy-present-replay.test.ts)
+extracts 42 player decisions, including four turn endings, using the preceding
+step's faction. It reconstructs AI actions rather than executing recorded AI
+moves, and never restores a later snapshot. The pinned engine independently
+reaches player victory on turn 5; the final purchase is required for victory.
+
+This is a **trusted compatibility test, not public validation approval**. The
+replay's initial map explicitly specifies `destroy-haunted-towns` and
+`defeat-all-rivals` victory conditions. The public map schema currently rejects
+`winConditions`, and a separate regression asserts the public adapter returns
+`invalid / malformed-input`. The compatibility test initializes the existing
+platform and then loads the exact first snapshot with those original conditions
+before playing any move. Production code, admission policy and game rules have
+not changed.
+
+Two fresh pinned Chromium runs also reached turn-5 victory, each producing 55
+checkpoints. They did **not** establish full state parity: their first difference
+was checkpoint 10, after player decision 6 (zero-based), in faction 4's diplomacy
+credit toward faction 1. The supplied legacy final snapshot also differs from
+the Node result in this value. This gameplay field was not filtered out; only
+cosmetic region names were excluded from comparison. The cause remains open,
+and matching victory/turn count does not resolve it or authenticate the export's
+unknown originating build.
+
+Both browser captures retained the original renderer warning about missing pawn
+49; there were no page errors or external requests. The strict browser harness
+initially rejected that warning. Diagnostic captures retained it explicitly;
+these are not claims of warning-free strict-harness passes. The evidence records
+both trace hashes, outcomes, warning text and the first differing values.
+
+Reproduce the backend checks with
+`npm test -- tests/happy-present-replay.test.ts`; no Downloads files, browser or
+database are needed. Explicit victory-condition support and the diplomacy
+variation need separate investigation before accepting this map publicly.
