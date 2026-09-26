@@ -165,7 +165,7 @@ Initial ready set after approval: **T-toolchain**. T-contracts follows; runtime 
 - [ ] T-game-launch
 - [ ] T-recording
 - [ ] T-validation-review
-- [ ] T-anonymous-ratings
+- [x] T-anonymous-ratings — opaque browser sessions, editable revision-specific ratings and quotas; 5 database tests passed.
 - [ ] T-run-submission
 - [ ] T-verified-results
 - [ ] T-results-experience
