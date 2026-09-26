@@ -157,7 +157,7 @@ Initial ready set after approval: **T-toolchain**. T-contracts follows; runtime 
 - [x] T-curator-access — protected local curator sessions, roles, CSRF and audit, 5 tests passed.
 - [x] T-map-format — bounded data-only decoder and reference validation; both supplied maps plus malformed/resource-limit cases pass.
 - [x] T-map-import — private immutable uploads, metadata/revision editing and concurrency checks, 6 database tests passed; integrated UI check follows.
-- [ ] T-publishing
+- [x] T-publishing — support/preview/playtest gates and archive retention tested; both full-board previews inspected, 4 tests passed.
 - [ ] T-fixtures
 - [ ] T-adapter-core
 - [ ] T-validation-boundary
