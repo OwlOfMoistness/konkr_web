@@ -20,9 +20,14 @@ to lowercase without a leading `#`. Queries sort stably and paginate with a
 bounded limit/offset; only published supported revisions are public.
 
 Publication and run issuance consume the same injected `SupportedConfigurations`
-policy. Each entry approves an exact engine/difficulty/plugin combination with
-test evidence. No combinations are approved merely because individual plugins
+policy. Each entry approves an exact engine/difficulty/ordered-plugin combination
+with test evidence. Plugin registration order is preserved by the original engine;
+reordered sequences require their own evidence. No combinations are approved merely because individual plugins
 exist in the game. Test policies must never replace the reviewed release policy.
+
+Player views switch within one unchanged URL, including catalog, details, play
+and return. Keep filters and navigation state in memory/session storage without
+changing the URL path, query or fragment. The curator entry point may be separate.
 
 Storage keys are server-owned and revision-specific. HTTP handlers must never
 interpret client strings as filesystem paths. Curator/admin roles protect all

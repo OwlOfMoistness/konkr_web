@@ -71,7 +71,7 @@ export interface ObjectStorage {
   delete(key: string): Promise<void>;
 }
 
-/** Exact tested combinations, rather than a permissive list of individual plugins. */
+/** Exact tested plugin sequences; extension registration order can affect behavior. */
 export interface SupportedConfiguration {
   engineHash: string;
   difficulty: Difficulty;
@@ -200,10 +200,9 @@ export function decodeSubmission(text: string): ReplaySubmission {
 
 export function supports(policy: SupportedConfigurations, engineHash: string, difficulty: Difficulty, plugins: string[]): boolean {
   if (new Set(plugins).size !== plugins.length) return false;
-  const requested = [...plugins].sort();
   return policy.version === 1 && policy.configurations.some(config =>
     config.engineHash === engineHash && config.difficulty === difficulty &&
-    config.plugins.length === requested.length && [...config.plugins].sort().every((name, index) => name === requested[index]));
+    config.plugins.length === plugins.length && config.plugins.every((name, index) => name === plugins[index]));
 }
 
 export function normalizeTags(tags: string[]): string[] {

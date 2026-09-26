@@ -11,6 +11,7 @@ Build a separate community site using a fixed copy of the existing compiled Konk
 Decisions already supplied by the user:
 
 - Reuse the compiled frontend and its map-import/session path; do not recreate gameplay or infer AI from examples.
+- Keep the public player experience on one unchanged URL across the title screen, catalog, map details, gameplay and return; use internal view state rather than path/query/fragment navigation. The curator access point may remain separate.
 - Target an efficient server adapter around the recovered simulation and AI. A browser running the same fixed release is the compatibility reference.
 - Public players are anonymous: no sign-up, login or named-player leaderboard in this version.
 - Score by fewest turns, separately for equivalent map revision, difficulty and engine/rules.
@@ -457,6 +458,7 @@ scope: M
 - [ ] Set selected difficulty explicitly before constructing the map's plugins. Distinguish new import, restart and resume; avoid the importer's unconditional progress reset on resume.
 - [ ] Use revision-aware local identity and origin context so imported IDs cannot overwrite campaign/custom saves or cause a wrong return route.
 - [ ] Leaving or finishing a catalog game returns through the catalog flow with filters/scroll restored; ordinary modes keep their existing navigation. Verify win, defeat, restart and escape/menu paths.
+- [ ] The player URL remains exactly unchanged through catalog navigation, filtering, details, import, play, restart, resume and return. Keep state in memory/session storage; do not add history or hash routes.
 
 **Verification:** Proposed: npm --prefix community test -- tests/game-launch.test.ts. Exercise real browser import and mobile/desktop navigation with both supplied maps; smoke-check Expeditions and Conquest.
 

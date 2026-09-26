@@ -9,6 +9,8 @@
   Gate verified statistics on independently checked adapter parity and strict
   validation. Never trust submitted snapshots, AI actions or claimed victory.
 - Players remain anonymous. Curator authorization is separate from public play.
+- Keep the public player experience on one unchanged URL; catalog, map details,
+  gameplay and return navigation must not change its path, query or fragment.
 - Keep personal profiles, secrets, generated runtime copies and scratch captures
   out of commits. Commit only the files owned by the assigned task.
 - The coordinator owns shared contracts, dependencies and integration. Use

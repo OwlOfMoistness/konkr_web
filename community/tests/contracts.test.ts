@@ -29,9 +29,10 @@ test('rejects malformed, excessive, or ambiguous submissions', () => {
   assert.throws(() => parseDecision(Object.create({ kind: 'end-turn' })), ContractError);
 });
 
-test('support policy requires the exact tested plugin combination and difficulty', () => {
+test('support policy requires the exact tested plugin sequence and difficulty', () => {
   const policy = { version: 1 as const, configurations: [{ engineHash: 'abc', difficulty: 'hard' as const, plugins: ['spawn-gifts', 'buy-gifts'], evidence: 'fixture' }] };
-  assert.equal(supports(policy, 'abc', 'hard', ['buy-gifts', 'spawn-gifts']), true);
+  assert.equal(supports(policy, 'abc', 'hard', ['spawn-gifts', 'buy-gifts']), true);
+  assert.equal(supports(policy, 'abc', 'hard', ['buy-gifts', 'spawn-gifts']), false);
   assert.equal(supports(policy, 'abc', 'normal', ['buy-gifts', 'spawn-gifts']), false);
   assert.equal(supports(policy, 'other', 'hard', ['buy-gifts', 'spawn-gifts']), false);
   assert.equal(supports(policy, 'abc', 'hard', ['spawn-gifts']), false);
