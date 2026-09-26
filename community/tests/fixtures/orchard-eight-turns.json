@@ -1,0 +1,236 @@
+{
+  "version": 1,
+  "sourceFilename": "31 Orchard-8t Mein v2.35.30.konkr",
+  "sourceHash": "74db059ba26ecb3192c310fef9a8517e55a763db3f60dac0e91851c58aa092e2",
+  "filenameClaimsRelease": "2.35.30",
+  "sourceEngineVersion": "Not encoded in replay metadata; the filename claim is not engine authentication.",
+  "provenance": "First snapshot and player-only semantic decisions extracted from the supplied replay using the preceding faction. Recorded AI actions and later snapshots are not simulation inputs.",
+  "input": {
+    "canonicalMap": "konkrmap.v7.eyJtYXAiOnsid2lkdGgiOjIyLCJoZWlnaHQiOjE5LCJsZXZlbElkIjoibC1vcmNoYXJkIiwicGx1Z2lucyI6W10sIm5hbWUiOiJPcmNoYXJkIn0sInZlcnNpb24iOjcsInJlZ2lvbnMiOlt7ImlkIjoyLCJuYW1lIjoiQmFycm93YnJpZGdlIiwiaGV4ZXMiOls4MTAsODExLDkxMCw5MTEsOTEyLDkxMywxMDEwLDEwMTEsMTAxMl19LHsiaWQiOjQsIm5hbWUiOiJTaGVsbHBhdGgiLCJoZXhlcyI6WzcwOCw4MDcsODA4XX0seyJpZCI6NywibmFtZSI6Ikxvd3NoaXAiLCJoZXhlcyI6WzE1MTcsMTUxOCwxNjE1LDE2MTYsMTYxNywxNzE1LDE3MTZdfSx7ImlkIjo5LCJuYW1lIjoiU3VuZGVlcCIsImhleGVzIjpbNzIwLDgxOCw4MTksODIwLDkxOSw5MjAsMTAxOV19LHsiaWQiOjExLCJuYW1lIjoiVXBwZXJwYXRoIiwiaGV4ZXMiOls1MDMsNjAyLDYwMyw3MDIsNzAzXX0seyJpZCI6MTMsIm5hbWUiOiJNaXRocmlsbGFuZCIsImhleGVzIjpbNjA4LDcwOSw1MDgsNTA5LDYwN119LHsiaWQiOjE0LCJuYW1lIjoiTmlnaHRib3VybmUiLCJoZXhlcyI6WzEzMTMsMTMxNCwxNDEzLDEyMTMsMTIxNF19LHsiaWQiOjE1LCJuYW1lIjoiQ3Jvd253ZWFsZCIsImhleGVzIjpbMTQwOCwxNTA3LDE1MDgsMTMwNywxMzA4LDE0MDYsMTQwN119LHsiaWQiOjE2LCJuYW1lIjoiTWVhZG93c2hpZWxkIiwiaGV4ZXMiOls3MDYsNjA2XX0seyJpZCI6MTgsIm5hbWUiOiJTdG9ueW1vdW50IiwiaGV4ZXMiOlsxNTA1LDE1MDYsMTYwNSwxNDA0LDE0MDVdfSx7ImlkIjoxOSwibmFtZSI6IkNhc3RsZWJvdXJuZSIsImhleGVzIjpbNTE3LDYxNiw3MTUsNzE2LDcxN119LHsiaWQiOjIwLCJuYW1lIjoiRXZlcmJ1cmciLCJoZXhlcyI6WzcwNSw3MDcsODA0LDgwNSw4MDZdfSx7ImlkIjoyMSwibmFtZSI6IkZleWdhdGUiLCJoZXhlcyI6WzkwNSw5MDYsOTA3XX0seyJpZCI6MjIsIm5hbWUiOiJOZXdzaGllbGQiLCJoZXhlcyI6WzUxNCw2MTMsNjE0LDYxNSw3MTRdfSx7ImlkIjoyMywibmFtZSI6IkxvdmVzaGF3IiwiaGV4ZXMiOls1MTMsNjEyLDcxMyw4MTJdfSx7ImlkIjoyNSwibmFtZSI6IlBvbmRnYXJkIiwiaGV4ZXMiOls0MTYsNTE1LDUxNiwzMTUsMzE2LDQxNV19LHsiaWQiOjI2LCJuYW1lIjoiTW9vbmJhbmsiLCJoZXhlcyI6WzExMiwxMTMsMTE0LDIxMiwyMTNdfSx7ImlkIjoyOCwibmFtZSI6IkdyYW5pdGVnYXJkIiwiaGV4ZXMiOls1MTIsNjEwLDYxMSw3MTEsNzEyLDUxMV19LHsiaWQiOjMwLCJuYW1lIjoiQmVyeWx3aW5kIiwiaGV4ZXMiOlsxNTEwLDE1MTEsMTUxMiwxNjA5LDE2MTAsMTYxMSwxNjEyXX0seyJpZCI6MzEsIm5hbWUiOiJUb3JjaHBlYWsiLCJoZXhlcyI6WzE1MDksMTYwOF19LHsiaWQiOjMyLCJuYW1lIjoiQmFzYWx0ZGVsIiwiaGV4ZXMiOlsxNDEwXX0seyJpZCI6MzMsIm5hbWUiOiJXeW5ob21lIiwiaGV4ZXMiOls2MDksNzEwLDgwOSw1MTBdfSx7ImlkIjozNiwibmFtZSI6IkhlYXRod29ydGgiLCJoZXhlcyI6WzEwMDUsMTAwNiwxMDA3LDExMDYsMTEwNywxMTA4LDEyMDUsMTIwNiwxMjA3XX0seyJpZCI6MzcsIm5hbWUiOiJTdG9ja3BlYWsiLCJoZXhlcyI6WzEzMDQsMTMwNSwxMzA2XX0seyJpZCI6MzgsIm5hbWUiOiJCbGFja2dhdGUiLCJoZXhlcyI6WzExMDksMTIwOV19LHsiaWQiOjQwLCJuYW1lIjoiR3Jhbml0ZWZvcmtzIiwiaGV4ZXMiOlsxMzE1LDE0MTQsMTQxNSwxNTE0LDE1MTUsMTYxNCwxMjE1XX0seyJpZCI6NDEsIm5hbWUiOiJSZWR3b29kcm9vc3QiLCJoZXhlcyI6WzE0MTIsMTUxMywxNjEzXX0seyJpZCI6NDMsIm5hbWUiOiJUd2lucXVhcnJ5IiwiaGV4ZXMiOlsxMjE2LDEyMTcsMTMxNiwxMzE3LDE0MTYsMTQxNywxNTE2XX0seyJpZCI6NDUsIm5hbWUiOiJEcmVhZGhhcmJvdXIiLCJoZXhlcyI6WzgxMyw4MTQsODE1LDgxNiw5MTQsOTE1LDEwMTMsMTAxNCwxMDE1XX0seyJpZCI6NDcsIm5hbWUiOiJCcmlkZ2VjaXR5IiwiaGV4ZXMiOlsxMTEzLDEyMTJdfSx7ImlkIjo0OCwibmFtZSI6Ikxvd2VyZ2FyZHIiLCJoZXhlcyI6WzExMTRdfSx7ImlkIjo0OSwibmFtZSI6IkNyYWdzb3VuZCIsImhleGVzIjpbMTMxMiwxNDExLDExMTAsMTExMSwxMTEyLDEyMTAsMTIxMSwxMzExXX0seyJpZCI6NTAsIm5hbWUiOiJDaGlsbHdlYWxkIiwiaGV4ZXMiOls5MDgsOTA5LDEwMDgsMTAwOV19LHsiaWQiOjUyLCJuYW1lIjoiSGVtd2luZyIsImhleGVzIjpbODE3LDkxNiw5MTcsOTE4LDEwMTYsMTAxNywxMDE4LDExMThdfSx7ImlkIjo1MywibmFtZSI6IkNsYXlzdGF0aW9uIiwiaGV4ZXMiOlsxMTE1LDExMTYsMTExN119LHsiaWQiOjU1LCJuYW1lIjoiUmF2ZW53aW5nIiwiaGV4ZXMiOlsxMDA0LDExMDQsMTEwNSwxMjAzLDEyMDRdfSx7ImlkIjo1NywibmFtZSI6Ildha2Vob3JzZSIsImhleGVzIjpbNzA0LDgwMyw0MDYsNDA3LDQwOCw1MDQsNDA5LDUwNSw1MDYsNTA3LDYwNCw2MDVdfSx7ImlkIjo2MCwibmFtZSI6IkRhcmtiYW5rIiwiaGV4ZXMiOlsxNDA5LDEyMDgsMTMwOSwxMzEwXX0seyJpZCI6NjEsIm5hbWUiOiJTZWFiYWNrIiwiaGV4ZXMiOls0MTcsMjE0LDIxNSwyMTYsMzE3XX1dLCJmYWN0aW9ucyI6W3siaWQiOjAsIm5hbWUiOiJuYXR1cmUiLCJ0aGVtZUluZGV4IjowLCJjb250cm9sbGVyIjoibm9uZSIsInJlZ2lvbnMiOlszMiwzMywzNywzOCw0MSw0NywxNiwxOSwyMSw1MywyMywzMV19LHsiaWQiOjEsIm5hbWUiOiJQbGF5ZXIgMSIsInRoZW1lSW5kZXgiOjAsImNvbnRyb2xsZXIiOiJsb2NhbC11c2VyIiwicmVnaW9ucyI6WzIsMTMsMTQsMTUsNTIsNTUsMjVdfSx7ImlkIjoyLCJuYW1lIjoiUGxheWVyIDIiLCJ0aGVtZUluZGV4IjoxLCJjb250cm9sbGVyIjoiYWkiLCJyZWdpb25zIjpbNCw0MCw5LDU3LDYxXX0seyJpZCI6MywibmFtZSI6IlBsYXllciAzIiwidGhlbWVJbmRleCI6MiwiY29udHJvbGxlciI6ImFpIiwicmVnaW9ucyI6WzM2LDcsMTEsNDUsNDldfSx7ImlkIjo0LCJuYW1lIjoiUGxheWVyIDQiLCJ0aGVtZUluZGV4IjozLCJjb250cm9sbGVyIjoiYWkiLCJyZWdpb25zIjpbMTgsMjAsMzBdfSx7ImlkIjo1LCJuYW1lIjoiUGxheWVyIDUiLCJ0aGVtZUluZGV4Ijo0LCJjb250cm9sbGVyIjoiYWkiLCJyZWdpb25zIjpbNDMsNDgsNTAsMjIsMjYsMjgsNjBdfSx7ImlkIjo2LCJuYW1lIjoiUGxheWVyIDYiLCJ0aGVtZUluZGV4Ijo1LCJjb250cm9sbGVyIjoiYWkiLCJyZWdpb25zIjpbXX1dLCJwYXducyI6W3siaWQiOjQsInR5cGUiOiJ0b3duIiwiaGV4Ijo5MTF9LHsiaWQiOjUsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjgwOX0seyJpZCI6NiwidHlwZSI6ImZvcmVzdCIsImhleCI6NzEwfSx7ImlkIjo3LCJ0eXBlIjoiZm9yZXN0IiwiaGV4Ijo1MTB9LHsiaWQiOjgsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjYwOX0seyJpZCI6OSwidHlwZSI6ImZvcmVzdCIsImhleCI6NzEzfSx7ImlkIjoxMCwidHlwZSI6ImZvcmVzdCIsImhleCI6NjEyfSx7ImlkIjoxMSwidHlwZSI6ImZvcmVzdCIsImhleCI6NTEzfSx7ImlkIjoxMiwidHlwZSI6ImZvcmVzdCIsImhleCI6ODEyfSx7ImlkIjoxMywidHlwZSI6ImZvcmVzdCIsImhleCI6MTExM30seyJpZCI6MTQsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjEyMTJ9LHsiaWQiOjE1LCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxMTA5fSx7ImlkIjoxOCwidHlwZSI6ImNhc3RsZSIsImhleCI6OTEyfSx7ImlkIjoxOSwidHlwZSI6ImZvcmVzdCIsImhleCI6MTQxMH0seyJpZCI6MjAsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjEyMDl9LHsiaWQiOjIxLCJ0eXBlIjoiZm9yZXN0IiwiaGV4Ijo2MDZ9LHsiaWQiOjIyLCJ0eXBlIjoiZm9yZXN0IiwiaGV4Ijo3MDZ9LHsiaWQiOjIzLCJ0eXBlIjoiZm9yZXN0IiwiaGV4Ijo5MDd9LHsiaWQiOjI1LCJ0eXBlIjoiZm9yZXN0IiwiaGV4Ijo5MDV9LHsiaWQiOjI2LCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxMTE1fSx7ImlkIjoyNywidHlwZSI6ImZvcmVzdCIsImhleCI6MTExNn0seyJpZCI6MjgsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjExMTd9LHsiaWQiOjI5LCJ0eXBlIjoiZm9yZXN0IiwiaGV4Ijo3MTZ9LHsiaWQiOjMwLCJ0eXBlIjoiZm9yZXN0IiwiaGV4Ijo3MTd9LHsiaWQiOjMxLCJ0eXBlIjoiZm9yZXN0IiwiaGV4Ijo2MTZ9LHsiaWQiOjMyLCJ0eXBlIjoiZm9yZXN0IiwiaGV4Ijo1MTd9LHsiaWQiOjMzLCJ0eXBlIjoiZm9yZXN0IiwiaGV4Ijo3MTV9LHsiaWQiOjM0LCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxNDEyfSx7ImlkIjozNSwidHlwZSI6ImZvcmVzdCIsImhleCI6MTUxM30seyJpZCI6MzYsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjE2MTN9LHsiaWQiOjM3LCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxNjA4fSx7ImlkIjozOCwidHlwZSI6ImZvcmVzdCIsImhleCI6MTUwOX0seyJpZCI6MzksInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjEzMDZ9LHsiaWQiOjQxLCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxMzA1fSx7ImlkIjo0MywidHlwZSI6ImZvcmVzdCIsImhleCI6MTMwNH0seyJpZCI6NDQsInR5cGUiOiJ0b3duIiwiaGV4IjoxMTN9LHsiaWQiOjQ1LCJ0eXBlIjoidG93biIsImhleCI6OTIwfSx7ImlkIjo0NiwidHlwZSI6InRvd24iLCJoZXgiOjE2MTZ9LHsiaWQiOjQ3LCJ0eXBlIjoidG93biIsImhleCI6MTUwNX0seyJpZCI6NDgsInR5cGUiOiJ0b3duIiwiaGV4Ijo2MDJ9LHsiaWQiOjQ5LCJ0eXBlIjoiZm9yZXN0IiwiaGV4Ijo5MDZ9LHsiaWQiOjUwLCJ0eXBlIjoiY29pbnMiLCJoZXgiOjExMywiY291bnQiOjV9LHsiaWQiOjUxLCJ0eXBlIjoiY29pbnMiLCJoZXgiOjYwMiwiY291bnQiOjV9LHsiaWQiOjUyLCJ0eXBlIjoiY29pbnMiLCJoZXgiOjkxMSwiY291bnQiOjd9LHsiaWQiOjUzLCJ0eXBlIjoiY29pbnMiLCJoZXgiOjkyMCwiY291bnQiOjV9LHsiaWQiOjU0LCJ0eXBlIjoiY29pbnMiLCJoZXgiOjE1MDUsImNvdW50Ijo1fSx7ImlkIjo1NSwidHlwZSI6ImNvaW5zIiwiaGV4IjoxNjE2LCJjb3VudCI6NX0seyJpZCI6NTYsInR5cGUiOiJ2aWxsYWdlciIsImhleCI6MTAxMX0seyJpZCI6NTcsInR5cGUiOiJ2aWxsYWdlciIsImhleCI6MTUwNn0seyJpZCI6NTgsInR5cGUiOiJ2aWxsYWdlciIsImhleCI6NTAzfSx7ImlkIjo1OSwidHlwZSI6InZpbGxhZ2VyIiwiaGV4Ijo5MTl9LHsiaWQiOjYwLCJ0eXBlIjoidmlsbGFnZXIiLCJoZXgiOjIxM30seyJpZCI6NjEsInR5cGUiOiJ2aWxsYWdlciIsImhleCI6MTYxNX1dLCJjdXJyZW50UGhhc2UiOnsidHlwZSI6ImZhY3Rpb24tdHVybiIsInR1cm5OdW1iZXIiOjEsImZhY3Rpb24iOjEsInRhcHBlZFVuaXRzIjpbXX0sImhleEhpc3RvcnkiOnt9fQ==",
+    "decisions": [
+      {
+        "kind": "move",
+        "pawnId": 56,
+        "destinationHexId": 909
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "move",
+        "pawnId": 56,
+        "destinationHexId": 808
+      },
+      {
+        "kind": "buy",
+        "pawnType": "villager",
+        "destinationHexId": 813,
+        "buyerRegionId": 2
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "move",
+        "pawnId": 64,
+        "destinationHexId": 714
+      },
+      {
+        "kind": "move",
+        "pawnId": 56,
+        "destinationHexId": 614
+      },
+      {
+        "kind": "buy",
+        "pawnType": "villager",
+        "destinationHexId": 415,
+        "buyerRegionId": 2
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "move",
+        "pawnId": 70,
+        "destinationHexId": 315
+      },
+      {
+        "kind": "move",
+        "pawnId": 56,
+        "destinationHexId": 214
+      },
+      {
+        "kind": "move",
+        "pawnId": 64,
+        "destinationHexId": 814
+      },
+      {
+        "kind": "buy",
+        "pawnType": "villager",
+        "destinationHexId": 915,
+        "buyerRegionId": 2
+      },
+      {
+        "kind": "buy",
+        "pawnType": "villager",
+        "destinationHexId": 1018,
+        "buyerRegionId": 2
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "move",
+        "pawnId": 70,
+        "destinationHexId": 214
+      },
+      {
+        "kind": "move",
+        "pawnId": 85,
+        "destinationHexId": 114
+      },
+      {
+        "kind": "buy",
+        "pawnType": "pikeman",
+        "destinationHexId": 113,
+        "buyerRegionId": 2
+      },
+      {
+        "kind": "move",
+        "pawnId": 64,
+        "destinationHexId": 1013
+      },
+      {
+        "kind": "move",
+        "pawnId": 75,
+        "destinationHexId": 1114
+      },
+      {
+        "kind": "move",
+        "pawnId": 76,
+        "destinationHexId": 1414
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "move",
+        "pawnId": 64,
+        "destinationHexId": 1110
+      },
+      {
+        "kind": "move",
+        "pawnId": 75,
+        "destinationHexId": 1210
+      },
+      {
+        "kind": "move",
+        "pawnId": 76,
+        "destinationHexId": 1310
+      },
+      {
+        "kind": "move",
+        "pawnId": 85,
+        "destinationHexId": 1309
+      },
+      {
+        "kind": "move",
+        "pawnId": 86,
+        "destinationHexId": 1018
+      },
+      {
+        "kind": "buy",
+        "pawnType": "villager",
+        "destinationHexId": 1408,
+        "buyerRegionId": 2
+      },
+      {
+        "kind": "buy",
+        "pawnType": "villager",
+        "destinationHexId": 1407,
+        "buyerRegionId": 2
+      },
+      {
+        "kind": "buy",
+        "pawnType": "villager",
+        "destinationHexId": 1406,
+        "buyerRegionId": 2
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "move",
+        "pawnId": 85,
+        "destinationHexId": 1506
+      },
+      {
+        "kind": "move",
+        "pawnId": 86,
+        "destinationHexId": 1505
+      },
+      {
+        "kind": "buy",
+        "pawnType": "pikeman",
+        "destinationHexId": 919,
+        "buyerRegionId": 2
+      },
+      {
+        "kind": "move",
+        "pawnId": 76,
+        "destinationHexId": 1210
+      },
+      {
+        "kind": "move",
+        "pawnId": 109,
+        "destinationHexId": 920
+      },
+      {
+        "kind": "move",
+        "pawnId": 97,
+        "destinationHexId": 1110
+      },
+      {
+        "kind": "move",
+        "pawnId": 110,
+        "destinationHexId": 707
+      },
+      {
+        "kind": "move",
+        "pawnId": 98,
+        "destinationHexId": 806
+      },
+      {
+        "kind": "move",
+        "pawnId": 99,
+        "destinationHexId": 805
+      },
+      {
+        "kind": "buy",
+        "pawnType": "villager",
+        "destinationHexId": 1314,
+        "buyerRegionId": 2
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "accept-surrender"
+      }
+    ],
+    "binding": {
+      "id": "orchard-fixture-run",
+      "mapId": "orchard",
+      "revisionId": "legacy-start",
+      "mapHash": "3e2230be0266581485a28ca9c95818fcd68a267a170f5b8e3053b20f493ff48b",
+      "engineHash": "29377f4e0a30607db86558af7f09cfe546dca5e9993fb87060fdb2eb160cd98a",
+      "adapterVersion": "konkr-node-1",
+      "difficulty": "hard",
+      "plugins": [],
+      "issuedAt": "2026-09-26T00:00:00Z",
+      "expiresAt": "2026-10-26T00:00:00Z"
+    }
+  },
+  "legacyFinalStateHash": "875b992571e6379c2c459a7281dc788d04af3fb45b8275c6c8d512115d663506",
+  "finalStateProjection": "Derived from the supplied final snapshot: only cosmetic region names are removed, and levelId is replaced by the binding-derived runtime identity. All other fields and array order are preserved."
+}

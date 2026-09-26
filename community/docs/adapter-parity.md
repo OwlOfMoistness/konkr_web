@@ -253,3 +253,29 @@ coverage under Normal difficulty, not public publication eligibility, proof of
 the legacy export's originating engine, or fresh browser state-parity coverage.
 A full compatibility review is still required before enabling `capture-towns`
 in the service. Reproduce with `npm test -- tests/occupation-replay.test.ts`.
+
+### Orchard eight-turn regression under the existing service policy
+
+The supplied `31 Orchard-8t Mein v2.35.30.konkr` contains Hard difficulty,
+43 player decisions, seven turn endings and a final acceptance of surrender.
+Its map has no plugins or explicit victory-condition overrides. The
+[regression](../tests/orchard-replay.test.ts) therefore uses the service's existing
+reviewed policy without a test-only allowance. The real isolated worker returns
+`verified / victory / turns: 8`, including the normal surrender-offer check.
+The initial diagnostic took approximately 4.6 seconds.
+
+The independently simulated final gameplay-state hash also matches the supplied
+replay's final snapshot:
+`875b992571e6379c2c459a7281dc788d04af3fb45b8275c6c8d512115d663506`.
+The comparison uses only the existing projection: omit cosmetic region names
+and replace the replay level ID with the server binding's runtime identity.
+No other gameplay fields or array ordering are excluded. Later snapshots and
+recorded AI moves are not simulation inputs. Removing the final surrender
+acceptance produces an unfinished turn-8 result instead of a win.
+
+[The compact fixture](../tests/fixtures/orchard-eight-turns.json) records source
+provenance, the first map state, semantic decisions and the independently derived
+legacy final-state hash. The filename claims release 2.35.30; the replay metadata
+does not authenticate its originating engine. This is a compatibility test,
+not a historical server-issued score. Reproduce with
+`npm test -- tests/orchard-replay.test.ts`.
