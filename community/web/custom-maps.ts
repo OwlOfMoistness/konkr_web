@@ -26,6 +26,8 @@ export interface CustomMapsOptions extends Omit<CatalogBridgeOptions, 'loader' |
   root: HTMLElement;
   onError?: (error: Error) => void;
   supportedDifficulties?: (entry: CatalogEntry) => Difficulty[];
+  verifiedResultsEnabled?: boolean;
+  renderDetailActions?: (container: HTMLElement, entry: CatalogEntry) => void;
 }
 
 /** The composition root mounts this beside the original canvas, on the same page and URL. */
@@ -55,7 +57,7 @@ export async function installCustomMaps(options: CustomMapsOptions) {
   };
   const bridge = createCatalogBridge({ ...options, loader, onReturn: show, onError: error });
   catalog = mountCatalog(root, {
-    reader: options.reader, supportedDifficulties: options.supportedDifficulties,
+    reader: options.reader, supportedDifficulties: options.supportedDifficulties, verifiedResultsEnabled: options.verifiedResultsEnabled,
     onPlay: async (entry, difficulty) => { await bridge.start(entry, difficulty); hide(); },
     onExit: hide,
     renderDetailActions(container, entry) {
@@ -67,6 +69,7 @@ export async function installCustomMaps(options: CustomMapsOptions) {
         resume.addEventListener('click', () => { resume.disabled = true; void bridge.resume(entry, mode).then(hide).catch(error).finally(() => { resume.disabled = false; }); });
         container.append(resume);
       }
+      options.renderDetailActions?.(container, entry);
     },
   });
   catalog.suspend();
