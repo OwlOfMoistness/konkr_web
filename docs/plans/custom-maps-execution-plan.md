@@ -1,6 +1,6 @@
 # Custom Maps community site — execution plan
 
-**Status:** local implementation complete; packaging checks and release proposal in progress
+**Status:** local implementation and release proposal complete; public deployment decisions remain open
 **Execution authorization:** approved by the user on 2026-09-26; local implementation, scoped commits, isolated branches/worktrees and reviewed integration may proceed. Public deployment remains separate.
 **Prepared:** 2026-09-26
 
@@ -175,8 +175,8 @@ Initial ready set after approval: **T-toolchain**. T-contracts follows; runtime 
 - [x] T-results-experience
 - [x] T-object-storage — atomic private blobs with size/key/integrity checks; 2 filesystem tests passed.
 - [x] T-local-assembly
-- [ ] T-operations
-- [ ] T-release-review
+- [x] T-operations — actual Linux container build, preview, verified finish, kill switches, populated backup/restore integrity and restart passed; hosted CI and optional Jekyll output remain unverified.
+- [x] T-release-review — concrete local review proposal and remaining public-release conditions recorded with independent review provenance.
 
 At integration commit `b8a5e742`, the complete local suite passed **123 tests,
 zero failures and zero skips** in 183.1 seconds, using real PostgreSQL, pinned
@@ -185,6 +185,15 @@ curator upload/preview/publication, the fifth button, a server-validated win,
 live rating totals and archive, while checking an unchanged player URL. Separate
 tests cover the full save/rewind/resume and adversarial validation boundaries.
 This is local evidence; the new CI workflow has not run on a remote service.
+
+The [release proposal](../../community/docs/release-review.md) records the final
+packaging evidence: the hardened container rendered a map, validated a real
+finish and preserved its score through a populated database/blob backup and
+restore check. All 11 tables and three blobs matched. The app restart used the
+original disposable data, not the restored pair; old-image rollback and a timed
+disaster-recovery exercise remain unperformed. Task completion here means the
+authorized local deliverables and review are finished, not that the unchecked
+public-release conditions below have been resolved.
 
 ## Task details
 
@@ -722,11 +731,11 @@ scope: M
 
 **Acceptance:**
 
-- [ ] CI runs locked installs, build, relevant compatibility/adversarial/UI tests and guarded runtime preparation; record unavailable checks accurately.
-- [ ] Supply an optional community-owned Jekyll exclusion overlay if a deployment combines the sites; do not edit the existing `_config.yml` unnecessarily. Configure cache/service-worker isolation so release inputs cannot silently drift.
-- [ ] Document backup/restore, migrations, rollback, replay retention, engine retirement, curator access, secret configuration and owner responsibilities.
-- [ ] Configure collection/alerting for the queue, validation/resource and API metrics emitted by T-verified-results and T-local-assembly; set actionable thresholds from benchmarks before choosing hosting size.
-- [ ] Prepare safe launch and rollback steps, including disabling submissions/stats without losing jobs. Do not reuse original credentials or provision paid services.
+- [x] Configure CI for locked installs, build, compatibility/adversarial/UI tests, guarded runtime preparation and a container preview check. Local tests and the exact added preview step passed; hosted CI has not been dispatched.
+- [x] Supply an optional community-owned Jekyll exclusion overlay without editing `_config.yml`; cache/service-worker isolation pins runtime inputs. Actual optional Jekyll output remains unverified because the locked Bundler is unavailable.
+- [x] Document backup/restore, migrations, rollback, replay retention, engine retirement, curator access, secret configuration and owner responsibilities.
+- [x] Provide protected queue, validation/resource and API metrics plus a local diagnostic collector. Persistent production collection, alert destinations and benchmark-derived thresholds remain public-release decisions before choosing hosting size.
+- [x] Prepare safe launch and rollback steps and exercise disabling submissions/stats without losing stored results. No original credentials or paid services were used.
 
 **Verification:** Build and run the packaged service locally; exercise backup/restore and worker restart/rollback using disposable data. Confirm generated static output contains no profiles, secrets or test corpora.
 
@@ -747,10 +756,10 @@ scope: S
 
 **Acceptance:**
 
-- [ ] Confirm feature acceptance, independent validator review, tests, accessibility checks, supported browser/runtime matrix and rollback evidence.
+- [x] Confirm feature acceptance, independent validator review, tests, keyboard/layout checks, the observed browser/runtime matrix and rollback evidence; distinguish untested browsers, screen-reader coverage and old-image rollback in the report.
 - [ ] Resolve permission/distribution of the game and assets, target hosting, operating budget, maintainer access and engine/retention policies before public deployment.
-- [ ] Record remaining risks and actual blockers. Keep any external launch, paid provisioning, remote push/PR publication or upstream contact separately authorized.
-- [ ] Define post-launch checks for real errors, queue delay, cost and user reports, with an owner. Do not create an automation or start monitoring as part of this plan.
+- [x] Record remaining risks and actual blockers. Keep any external launch, paid provisioning, remote push/PR publication or upstream contact separately authorized.
+- [x] Define post-launch checks for real errors, queue delay, cost and user reports by operator, curator-lead and engine-maintainer role. Naming the people and escalation channels remains a deployment decision; no monitoring automation was created.
 
 **Verification:** Review final diffs and CI/local evidence at exact commits; reproduce critical user journeys and the proposed rollback. Deliver a release-readiness report for review.
 
@@ -758,7 +767,7 @@ scope: S
 
 | Risk or decision | Response and owner |
 |---|---|
-| Direct adapter cannot run independently or produces divergent AI | Adapter agent supplies reproducible differences; coordinator brings measured alternatives to the user. Public verified stats remain disabled. |
+| Untested engine/configuration changes introduce divergent AI | The direct adapter passed the reviewed matrix and corrected long trace. Any expansion requires fresh browser evidence and independent review; public feature switches remain off by default. |
 | A successful replay hides an invalid action or snapshot reset | Independent validation review, adversarial fixtures and strict semantic commands are required. |
 | Engine/plugin changes invalidate old recordings | Pin complete inputs, use a tested support matrix and retain compatible validators/evidence for the declared window. |
 | Anonymous ratings/completion counts can be inflated | Browser tokens, quotas and idempotency reduce abuse; product wording must not imply unique people or authenticated credit. |
@@ -780,8 +789,8 @@ scope: S
 - [x] Normal/Hard adapter outcomes match the pinned browser reference; illegal/tampered submissions cannot enter verified statistics.
 - [x] Anonymous ratings, once-per-run completion accounting and revision/difficulty-specific fewest-turn records behave as specified.
 - [x] Network/worker/storage failures preserve retryable data and display honest status.
-- [ ] Original cloud integrations are disabled/replaced; local and packaged tests prove isolation.
-- [ ] Reviewed commits, compatibility evidence, CI checks and an operational/release proposal are available.
+- [x] Original cloud integrations are disabled/replaced; local and packaged browser checks reported no external requests.
+- [x] Reviewed commits, compatibility evidence, CI configuration, passing local checks and an operational/release proposal are available. Hosted CI itself remains unexecuted.
 - [ ] Public release decisions and any required authorization are resolved before deployment.
 
 ## Plan-writing verification
