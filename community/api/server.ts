@@ -29,7 +29,7 @@ export interface ServerOptions {
   flags:CommunityFlags; worker?:CommunityWorker;
 }
 const CSP="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self'; frame-src 'self'; frame-ancestors 'none'; worker-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'";
-const MIME:Record<string,string>={'.js':'text/javascript','.css':'text/css','.html':'text/html','.json':'application/json','.png':'image/png','.webp':'image/webp','.svg':'image/svg+xml','.xml':'application/xml','.wav':'audio/wav','.mp3':'audio/mpeg','.ogg':'audio/ogg','.woff':'font/woff','.woff2':'font/woff2'};
+const MIME:Record<string,string>={'.js':'text/javascript','.css':'text/css','.html':'text/html','.json':'application/json','.png':'image/png','.gif':'image/gif','.webp':'image/webp','.svg':'image/svg+xml','.xml':'application/xml','.wav':'audio/wav','.mp3':'audio/mpeg','.ogg':'audio/ogg','.woff':'font/woff','.woff2':'font/woff2'};
 
 /** Applies only checked-in migrations; marker and DDL commit together. Never rewrites an applied migration. */
 export async function migrate(db:Pool):Promise<void> {
@@ -60,6 +60,11 @@ export async function createCommunityServer(options:ServerOptions) {
   const output=path.join(communityRoot,'.web');await mkdir(output,{recursive:true});
   await build({entryPoints:[path.join(communityRoot,'web/main.ts')],outfile:path.join(output,'community.js'),bundle:true,platform:'browser',format:'iife',target:'es2023'});
   const staticFiles=new Map<string,string>(Object.keys(manifest.files).map(file=>['/'+file,path.join(runtime,file)]));
+  const helpHTML=new Set([...staticFiles.keys()].filter(url=>/^\/assets\/html\/help\/[^/]+\.html$/.test(url)));
+  const helpPage=staticFiles.get('/assets/html/help/index.html');
+  if(!helpPage)throw new Error('Pinned help index page is missing');
+  // The original sidebar opens this exact directory URL; do not enable directory serving.
+  staticFiles.set('/assets/html/help/',helpPage);helpHTML.add('/assets/html/help/');
   staticFiles.set('/bootstrap.js',path.join(runtime,'bootstrap.js'));
   staticFiles.set('/community.js',path.join(output,'community.js'));staticFiles.set('/community.css',path.join(output,'community.css'));
   const adminHTML=await readFile(path.join(communityRoot,'web/index.html'),'utf8');
@@ -132,7 +137,8 @@ export async function createCommunityServer(options:ServerOptions) {
       try { response=await dispatch(request,incoming.socket.remoteAddress??'unknown'); }
       catch(error) { if(!(error instanceof AdminError))console.error(JSON.stringify({event:'api-error',stage:'route'}));response=errorResponse(error); }
       if(response.status>=500)metrics.errors++;
-      response.headers.set('Content-Security-Policy',CSP);response.headers.set('X-Content-Type-Options','nosniff');response.headers.set('Referrer-Policy','no-referrer');response.headers.set('Cache-Control','no-store');
+      const csp=response.ok && helpHTML.has(new URL(request.url).pathname)?CSP.replace("frame-ancestors 'none'","frame-ancestors 'self'"):CSP;
+      response.headers.set('Content-Security-Policy',csp);response.headers.set('X-Content-Type-Options','nosniff');response.headers.set('Referrer-Policy','no-referrer');response.headers.set('Cache-Control','no-store');
       outgoing.writeHead(response.status,Object.fromEntries(response.headers));outgoing.end(method==='HEAD'?undefined:Buffer.from(await response.arrayBuffer()));
     })().catch(()=>{metrics.errors++;if(!outgoing.headersSent)outgoing.writeHead(503,{'Content-Type':'application/json','Cache-Control':'no-store'});outgoing.end('{"error":"Service unavailable. Please retry."}');console.error(JSON.stringify({event:'api-error',stage:'dispatch'}));})
       .finally(()=>{const ms=performance.now()-start;metrics.totalLatencyMs+=ms;metrics.maxLatencyMs=Math.max(metrics.maxLatencyMs,ms);});

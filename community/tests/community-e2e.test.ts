@@ -14,6 +14,36 @@ import { ValidationWorker } from '../worker/validate-job.ts';
 import type { SupportedConfigurations } from '../shared/contracts.ts';
 
 const database=process.env.CATALOG_TEST_DATABASE_URL;
+test('pinned help pages load through HTTP and only help HTML allows same-origin framing',{timeout:30_000},async()=>{
+  // These public static/config routes must not need a database connection.
+  const db=new Pool({connectionString:'postgresql://unused@127.0.0.1:1/unused'});
+  const directory=await mkdtemp(path.join(tmpdir(),'konkr-community-help-'));
+  let app:Awaited<ReturnType<typeof createCommunityServer>>|undefined;
+  try{
+    const reservation=createServer();await new Promise<void>(resolve=>reservation.listen(0,'127.0.0.1',resolve));const address=reservation.address();assert(address&&typeof address!=='string');const port=address.port;await new Promise<void>(resolve=>reservation.close(()=>resolve()));
+    const origin=`http://127.0.0.1:${port}`;
+    app=await createCommunityServer({db,storage:new LocalObjectStorage(directory),origin,csrfSecret:'help-test-csrf-'.repeat(4),identityProvider:developmentIdentityProvider([{id:'local-curator',key:'help-test-curator-'.repeat(4)}]),flags:{customMaps:true,submissions:false,verifiedResults:false}});
+    await new Promise<void>(resolve=>app!.server.listen(port,'127.0.0.1',resolve));
+    const expected=await readFile(new URL('../../_site/releases/2.35.30/assets/html/help/index.html',import.meta.url),'utf8');
+    const help=await fetch(origin+'/assets/html/help/');
+    assert.equal(help.status,200);assert.equal(help.headers.get('content-type'),'text/html');assert.equal(await help.text(),expected);
+    for(const name of ['', 'index.html','how-to-play.html','advanced.html','modes.html']){
+      const response=await fetch(origin+'/assets/html/help/'+name);
+      assert.equal(response.status,200);assert.match(response.headers.get('content-security-policy')!,/frame-ancestors 'self';/);
+      assert.equal(response.headers.get('x-content-type-options'),'nosniff');
+    }
+    const animation=await fetch(origin+'/assets/html/help/img/bandits.gif');
+    assert.equal(animation.status,200);assert.equal(animation.headers.get('content-type'),'image/gif');
+    assert.match(Buffer.from(await animation.arrayBuffer()).subarray(0,6).toString(),/^GIF8[79]a$/);
+    for(const [pathname,status]of [['/',200],['/admin/maps',200],['/api/config',200],['/assets/html/login-buttons.html',200],['/assets/html/help/missing.html',404],['/assets/html/',404],['/unknown',404]] as const){
+      const response=await fetch(origin+pathname);assert.equal(response.status,status);
+      assert.match(response.headers.get('content-security-policy')!,/frame-ancestors 'none';/);
+    }
+    const rejected=await fetch(origin+'/assets/html/help/',{method:'POST'});
+    assert.equal(rejected.status,405);assert.match(rejected.headers.get('content-security-policy')!,/frame-ancestors 'none';/);
+  }finally{await app?.close();await db.end();await rm(directory,{recursive:true,force:true});}
+});
+
 test('complete local curator → original game → verified score → rating → archive flow',{skip:!database,timeout:180_000},async()=>{
   const schema=`e2e_${process.pid}`;const admin=new Pool({connectionString:database});let db:Pool|undefined;
   const directory=await mkdtemp(path.join(tmpdir(),'konkr-community-e2e-'));
