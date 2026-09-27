@@ -123,11 +123,18 @@ native playback does not expand validation support.
 
 ## Browser previews and publication
 
-The selected map and curator editor show a live preview from the pinned game in
-an isolated browser frame at `/community-preview`. Thumbnail rendering uses a
-shared frame and an in-memory cache. Preview frames mask persistent storage,
-disable game input and use the original preview context without starting a play
-session. The player's top-level URL remains unchanged.
+The selected catalogue map uses the original `WorldMap` scene on the main game
+canvas, with input disabled and the native Preview context. Selecting an island
+preloads its revision; Play still follows the original import path to initialize
+the chosen difficulty. The native camera animates directly between the catalogue
+and Play. Returning retains the played board without passing through Title.
+Back, Play, Resume and Normal/Hard are original Phaser controls, with their bitmap
+fonts and accessible HTML input anchors. The player's top-level URL stays unchanged.
+
+The curator editor uses an isolated browser frame at `/community-preview`.
+Thumbnail rendering uses a shared frame and an in-memory cache. These frames
+mask persistent storage and use the same non-playable Preview context. No preview
+starts a play session or runs AI; downloads do not lock catalogue navigation.
 
 Map uploads no longer run a server screenshot job. Publish saves the metadata,
 then the API checks curator authorization, CSRF, expected version, support policy
@@ -143,10 +150,14 @@ After upgrading from stored screenshots, remove only the retired generated cache
 skipped references for separate inspection. New browser previews never write PNGs
 to server storage.
 
-The [live-preview test](../tests/live-preview.test.ts) covers original rendering
-and isolation; [native-playback tests](../tests/native-playback.test.ts) cover the
-playback/validation boundary. Run database tests against a disposable test schema,
-not the development catalogue.
+The [live-preview test](../tests/live-preview.test.ts) covers isolated rendering.
+The [preview-state test](../tests/catalog-preview-state.test.ts) checks main-canvas
+save isolation and compares Normal/Hard AI actions against a direct original
+import. [Game-launch tests](../tests/game-launch.test.ts) check camera animation,
+direct return, resumes and ordinary menus; [native-control tests](../tests/catalog-controls.test.ts)
+check original fonts, geometry and pointer/keyboard behavior. [Native-playback
+tests](../tests/native-playback.test.ts) cover the playback/validation boundary.
+Run database tests against a disposable schema, not the development catalogue.
 
 ## Access protection
 

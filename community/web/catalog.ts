@@ -15,6 +15,8 @@ export interface CatalogUiState {
 type StateStorage = Pick<Storage, 'getItem' | 'setItem'>;
 export interface CatalogMountOptions {
   reader: CatalogReader;
+  /** The selected map is positioned by the main Phaser camera; animate only its surrounding UI. */
+  sharedWorld?: boolean;
   onPlay: (entry: CatalogEntry, difficulty: Difficulty) => void | Promise<void>;
   onExit?: () => void;
   completedDifficulties?: (entry: CatalogEntry) => Difficulty[];
@@ -109,6 +111,9 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
     if (!node || win.matchMedia('(prefers-reduced-motion: reduce)').matches) return Promise.resolve();
     return node.animate(frames, { duration, easing: 'cubic-bezier(.39,.575,.565,1)' }).finished.catch(() => {});
   };
+  const selectedMotion = (frames: Keyframe[], duration = 200) => Promise.all(
+    [...root.querySelectorAll(options.sharedWorld ? '.catalog-detail-title, .catalog-detail-info, .catalog-backbar' : '.catalog-selected')].map(node => motion(node, frames, duration)),
+  );
   root.classList.add('community-catalog', 'konkr-ui');
   root.setAttribute('aria-label', 'Custom maps');
   const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className = '', text = ''): HTMLElementTagNameMap[K] => {
@@ -155,7 +160,7 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
     const selection = ++selectionRequest;
     if (state.detailId === entry.map.id) { loadedEntry = null; void render(false, true); return; }
     const token = generation;
-    void motion(root.querySelector('.catalog-selected'), [{ opacity: 1, transform: 'translateX(0)' }, { opacity: 0, transform: 'translateX(-24px)' }], 100).then(() => {
+    void selectedMotion([{ opacity: 1, transform: 'translateX(0)' }, { opacity: 0, transform: 'translateX(-24px)' }], 100).then(() => {
       if (selection !== selectionRequest || token !== generation || paused || destroyed) return;
       focusedMap = entry.map.id; state.detailId = entry.map.id; loadedEntry = null; save(); return render(false, true);
     });
@@ -334,7 +339,7 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
         if (token !== generation || destroyed) return;
         selected.removeAttribute('aria-busy'); loadedEntry = entry;
         selected.replaceChildren(entry ? detail(entry, token, focusDetail) : statusBox('This map is no longer available. Choose another map from the collection.'));
-        if (focusDetail) void motion(selected, [{ opacity: 0, transform: 'translateX(24px)' }, { opacity: 1, transform: 'translateX(0)' }]);
+        if (focusDetail) void selectedMotion([{ opacity: 0, transform: 'translateX(24px)' }, { opacity: 1, transform: 'translateX(0)' }]);
       } catch {
         if (token !== generation || destroyed) return;
         selected.removeAttribute('aria-busy'); selected.replaceChildren(statusBox('This map could not be loaded. Please try again.', true), button('Retry map', () => { loadedEntry = null; void render(); }));
@@ -348,9 +353,10 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
   void render();
   return {
     getState: () => structuredClone(state),
+    select: (mapId: string) => { state.detailId = mapId; loadedEntry = null; save(); },
     refresh: () => { captureScroll(); loadedEntry = null; return render(); },
-    animateIn: () => Promise.all([motion(root.querySelector('.catalog-browser'), [{ opacity: 0, transform: 'translateX(420px)' }, { opacity: 1, transform: 'translateX(0)' }], 300), motion(root.querySelector('.catalog-selected'), [{ opacity: 0, transform: 'translateX(-60px)' }, { opacity: 1, transform: 'translateX(0)' }], 300)]),
-    animateOut: () => Promise.all([motion(root.querySelector('.catalog-browser'), [{ opacity: 1, transform: 'translateX(0)' }, { opacity: 0, transform: 'translateX(420px)' }], 300), motion(root.querySelector('.catalog-selected'), [{ opacity: 1, transform: 'translateX(0)' }, { opacity: 0, transform: 'translateX(-60px)' }], 300)]),
+    animateIn: () => Promise.all([motion(root.querySelector('.catalog-browser'), [{ opacity: 0, transform: 'translateX(420px)' }, { opacity: 1, transform: 'translateX(0)' }], 300), selectedMotion([{ opacity: 0, transform: 'translateX(-60px)' }, { opacity: 1, transform: 'translateX(0)' }], 300)]),
+    animateOut: () => Promise.all([motion(root.querySelector('.catalog-browser'), [{ opacity: 1, transform: 'translateX(0)' }, { opacity: 0, transform: 'translateX(420px)' }], 300), selectedMotion([{ opacity: 1, transform: 'translateX(0)' }, { opacity: 0, transform: 'translateX(-60px)' }], 300)]),
     suspend: () => { captureScroll(); paused = true; generation++; clearPreviews(); save(); },
     resume: (returnToList = true) => { paused = false; loadedEntry = null; save(); return render(returnToList); },
     destroy: () => { captureScroll(); save(); destroyed = true; generation++; clearPreviews(); root.removeEventListener(RATING_UPDATED, updateRating); root.replaceChildren(); root.classList.remove('community-catalog', 'konkr-ui'); root.removeAttribute('aria-label'); },

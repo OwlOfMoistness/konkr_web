@@ -14,6 +14,15 @@ import { ValidationWorker } from '../worker/validate-job.ts';
 import type { SupportedConfigurations } from '../shared/contracts.ts';
 
 const database=process.env.CATALOG_TEST_DATABASE_URL;
+function viewportLayout() {
+  return {
+    viewport: innerWidth, scrollWidth: document.documentElement.scrollWidth,
+    overflow: [...document.querySelectorAll<HTMLElement>('body *')]
+      .filter(element => element.getClientRects().length && element.getBoundingClientRect().right > innerWidth + .5)
+      .map(element => ({ tag: element.tagName, id: element.id, className: element.className,
+        right: element.getBoundingClientRect().right, width: element.getBoundingClientRect().width, style: element.getAttribute('style') })),
+  };
+}
 test('pinned help pages load through HTTP and help and isolated preview HTML allow same-origin framing',{timeout:30_000},async()=>{
   // These public static/config routes must not need a database connection.
   const db=new Pool({connectionString:'postgresql://unused@127.0.0.1:1/unused'});
@@ -102,12 +111,18 @@ test('complete local curator → original game → verified score → rating →
     await player.getByRole('button',{name:'Custom Maps',exact:true}).click({timeout:30_000});
     await player.getByRole('button',{name:'Integration island',exact:true}).click();
     await player.locator('.catalog-preview-large[data-live-preview-ready="true"]').waitFor({timeout:35_000});
-    await player.locator('iframe[data-community-preview="live"]').waitFor({state:'visible'});
-    await player.frameLocator('iframe[data-community-preview="live"]').locator('#phaser-game canvas').waitFor({state:'visible'});
+    assert.equal(await player.locator('iframe[data-community-preview="live"]').count(),0);
+    await player.locator('#phaser-game canvas').waitFor({state:'visible'});
+    assert.equal(await player.evaluate(()=>window.communityReference.inspect().screen),'CustomMaps');
+    await player.setViewportSize({width:375,height:812});
+    const firstMobileLayout=await player.evaluate(viewportLayout);
+    assert.equal(firstMobileLayout.scrollWidth>firstMobileLayout.viewport,false,JSON.stringify(firstMobileLayout));
+    await player.setViewportSize({width:1280,height:900});
+    await player.waitForFunction(()=>window.communityReference.withEngine(load=>load(55151).app.game.scale.gameSize.width===innerWidth));
     if(process.env.KONKR_E2E_SCREENSHOTS)await player.screenshot({path:path.join(process.env.KONKR_E2E_SCREENSHOTS,'community-catalog-desktop.png')});
     assert.equal(await player.getByRole('radiogroup',{name:'Your rating'}).count(),0,'Rating is offered only after playing');
     await player.getByRole('radio',{name:'Hard',exact:true}).click();await player.getByRole('button',{name:'Play map',exact:true}).click();
-    await player.waitForFunction(()=>window.communityReference.inspect().screen==='Play'&&document.getElementById('catalog-root')!.hidden);
+    await player.waitForFunction(()=>window.communityReference.inspect().screen==='Play'&&document.getElementById('catalog-root')!.hidden&&window.communityReference.withEngine(load=>{const {app}=load(55151);return !app.navigator.transitionInProgress&&app.game.input.enabled&&app.game.input.keyboard.enabled;}));
     const binding=(await db.query('SELECT binding FROM runs')).rows[0].binding;
     assert.equal(binding.difficulty,'hard');assert.equal(binding.revisionId,entry.revision.id);
     await player.evaluate(()=>window.communityReference.play('MovePawn',{pawnId:3,destinationHexId:303,tapUnit:false}));
@@ -117,12 +132,14 @@ test('complete local curator → original game → verified score → rating →
     assert.equal(await player.getByText(/^Saved games and results/).count(),0);
     await player.locator('.catalog-detail').getByRole('img',{name:'Hard completed on this browser',exact:true}).waitFor();
     await player.waitForFunction(async id=>(await (await fetch('/api/maps/'+id)).json()).scores.some((score:any)=>score.difficulty==='hard'&&score.completions===1),entry.map.id,{timeout:30_000});
-    const row=(await db.query('SELECT state,result,counted FROM runs WHERE id=$1',[binding.id])).rows[0];assert.equal(row.state,'complete');assert.equal(row.result.status,'verified');assert.equal(row.result.turns,1);assert.equal(row.counted,true);
+    const row=(await db.query('SELECT state,result,counted FROM runs WHERE id=$1',[binding.id])).rows[0];assert.equal(row.state,'complete',JSON.stringify(row));assert.equal(row.result.status,'verified',JSON.stringify(row));assert.equal(row.result.turns,1);assert.equal(row.counted,true);
     const score=(await (await fetch(origin+'/api/maps/'+entry.map.id)).json()).scores;assert.deepEqual(score,[{difficulty:'hard',engineHash:binding.engineHash,completions:1,bestTurns:1}]);
     await player.getByRole('button',{name:'Integration island',exact:true}).click();
     await player.getByRole('radio',{name:'5 stars',exact:true}).click();await player.getByRole('status').filter({hasText:'5.0 average from 1 rating'}).waitFor();
     await player.locator('.catalog-detail .catalog-rating').filter({hasText:'5.0 / 5 · 1 rating'}).waitFor();
-    await player.setViewportSize({width:375,height:812});assert.equal(await player.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+    await player.setViewportSize({width:375,height:812});
+    const mobileLayout=await player.evaluate(viewportLayout);
+    assert.equal(mobileLayout.scrollWidth>mobileLayout.viewport,false,JSON.stringify(mobileLayout));
     if(process.env.KONKR_E2E_SCREENSHOTS)await player.screenshot({path:path.join(process.env.KONKR_E2E_SCREENSHOTS,'community-detail-mobile.png')});
     assert.equal(player.url(),publicURL);
     const metrics=await curatorContext.request.get(origin+'/api/admin/metrics');assert.equal(metrics.status(),200);assert.ok((await metrics.json()).api.requests>0);

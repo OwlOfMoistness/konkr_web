@@ -5,6 +5,9 @@
   be able to review and reuse this contribution easily.
 - Put addon code, build configuration and reproducible runtime patches here.
   Preserve original release bundles; generate local copies under `.runtime/`.
+- For catalogue controls, reuse original Phaser controls and their bitmap fonts
+  where a matching game control exists. Cropping its texture into a CSS button
+  is not equivalent reuse.
 - Follow the approved execution plan in `../docs/plans/custom-maps-execution-plan.md`.
   Gate verified statistics on independently checked adapter parity and strict
   validation. Never trust submitted snapshots, AI actions or claimed victory.

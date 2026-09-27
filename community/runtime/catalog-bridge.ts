@@ -38,6 +38,8 @@ export interface CatalogBridgeOptions {
   /** Required before importing a fresh game or restart; rejection leaves the prior save intact. */
   onStart: (entry: CatalogEntry, difficulty: Difficulty, reason: 'new' | 'restart') => Promise<RunBinding>;
   onReturn: (context: CatalogRunContext, outcome: string | null) => void | Promise<void>;
+  /** Addon navigation can return directly to its own native screen, without visiting Title. */
+  navigateOnReturn?: (context: CatalogRunContext, outcome: string | null) => Promise<void>;
   onError: (error: Error) => void;
 }
 
@@ -105,7 +107,10 @@ export function createCatalogBridge(options: CatalogBridgeOptions) {
       save(); emit({ type: 'leaving', context, outcome: result });
       active = null; outcome = null;
       if (inject.ui.session.active) inject.ui.session.end({ origin: 'community/catalog-return' });
-      await settle(); await app.navigator.goTo(app.screen.title); await settle();
+      await settle();
+      if (options.navigateOnReturn) await options.navigateOnReturn(context, result);
+      else await app.navigator.goTo(app.screen.title);
+      await settle();
       await options.onReturn(context, result);
     } finally { busy = false; }
   };

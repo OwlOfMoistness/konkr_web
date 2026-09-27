@@ -17,6 +17,7 @@ declare global {
     failStart: boolean;
     startCalls: number;
     bridgeErrors: string[];
+    catalogMotion: { screen: string; x: number; y: number; zoom: number; busy: boolean; input: boolean }[];
   }
 }
 
@@ -81,22 +82,53 @@ test('catalog launch, isolated resume, restart and original mode navigation use 
   const screen = async (name: string) => page.waitForFunction(value => window.communityReference.inspect().screen === value && !window.customMapsTest.bridge.isBusy() && (value !== 'Play' || document.getElementById('catalog')!.hidden) && window.communityReference.withEngine(loader => !loader(55151).app.navigator.transitionInProgress), name);
   const open = async () => { await page.getByRole('button', { name: 'Custom Maps', exact: true }).click(); await page.getByRole('heading', { name: 'Custom Maps', exact: true }).waitFor(); };
   const details = async (title: string) => { await page.getByRole('button', { name: title, exact: true }).click(); await page.getByRole('heading', { name: title, exact: true }).waitFor(); };
+  await open(); await screen('CustomMaps');
+  assert.equal(await page.locator('#phaser-game').evaluate(node => (node as HTMLElement).inert), true, 'Inactive game forms stay outside keyboard and accessibility navigation');
+  assert.equal(await page.evaluate(() => window.communityReference.withEngine(load => load(55151).app.scene.globalUI.sidebarButtons.buttons.some((button: any) => button.visible))), false, 'Do not show disabled native sidebar icons through the catalogue');
+  await page.keyboard.press('Escape'); await screen('Title');
+  assert.equal(await page.locator('#phaser-game').evaluate(node => (node as HTMLElement).inert), false);
+  assert.equal(await page.evaluate(() => window.communityReference.withEngine(load => load(55151).app.scene.globalUI.sidebarButtons.buttons.some((button: any) => button.visible))), true, 'Native menu icons return on ordinary screens');
   await open(); await details(entries[0].map.metadata.title);
+  await screen('CustomMaps');
+  await page.locator('.catalog-preview-large[data-live-preview-ready="true"]').waitFor();
+  if (process.env.KONKR_LAUNCH_SCREENSHOTS) await page.screenshot({ path: path.join(process.env.KONKR_LAUNCH_SCREENSHOTS, 'catalog-desktop.png') });
   await page.getByRole('radio', { name: 'Hard', exact: true }).click();
   await page.evaluate(() => { window.failStart = true; });
   await page.getByRole('button', { name: 'Play map', exact: true }).click();
   await page.getByRole('alert').filter({ hasText: 'could not be started' }).waitFor();
   assert.equal(await page.evaluate(() => window.customMapsTest.bridge.current()), null);
-  assert.equal(await page.evaluate(() => window.communityReference.inspect().screen), 'Title');
+  assert.equal(await page.evaluate(() => window.communityReference.inspect().screen), 'CustomMaps');
   await page.evaluate(() => { window.failStart = false; });
+  await page.evaluate(() => window.communityReference.withEngine(load => {
+    const { app } = load(55151);
+    window.catalogMotion = [];
+    app.game.events.on('poststep', () => {
+      const camera = app.scene.worldMap.cameras.main;
+      if (window.catalogMotion.length < 2048) window.catalogMotion.push({ screen: app.navigator.currentScreen.name, x: camera.scrollX, y: camera.scrollY, zoom: camera.zoom, busy: window.customMapsTest.bridge.isBusy(), input: app.game.input.enabled });
+    });
+  }));
+  const canvas = await page.locator('#phaser-game canvas').elementHandle();
   await page.getByRole('button', { name: 'Play map', exact: true }).click(); await screen('Play');
+  let motion = await page.evaluate(() => window.catalogMotion);
+  assert.ok(motion.every(frame => ['CustomMaps', 'Play'].includes(frame.screen)), 'Launch goes directly from preview to Play');
+  assert.ok(motion.filter(frame => frame.busy).every(frame => !frame.input), 'Input stays locked until run setup and recording are ready');
+  assert.ok(new Set(motion.map(frame => frame.x.toFixed(1) + ':' + frame.zoom.toFixed(3))).size > 3, 'Native camera animates from preview into Play');
+  assert.equal(await canvas!.evaluate(node => node === document.querySelector('#phaser-game canvas')), true, 'Preview and Play retain the same canvas');
   let state = await page.evaluate(() => window.communityReference.inspect());
   assert.equal(state.difficulty, 'hard'); assert.equal(state.state.map.width, 24); assert.match(state.state.map.levelId, /^cl-community-[0-9a-f]{32}$/);
   const binding = await page.evaluate(() => window.customMapsTest.bridge.current()!.binding.id);
   await page.evaluate(() => { window.communityReference.act('SetSpectatingPlayBackSpeed', 3); window.communityReference.act('EndTurn', { force: true }); });
   await page.waitForFunction(() => { const { state } = window.communityReference.inspect(); return state.currentPhase.turnNumber === 2 && state.currentPhase.faction === 1; }, undefined, { timeout: 30_000 });
+  await page.evaluate(() => { window.catalogMotion.length = 0; });
   await page.evaluate(() => window.communityReference.act('ExitLevel'));
   await page.getByRole('heading', { name: 'Custom Maps', exact: true }).waitFor();
+  await screen('CustomMaps');
+  motion = await page.evaluate(() => window.catalogMotion);
+  assert.ok(motion.every(frame => ['CustomMaps', 'Play'].includes(frame.screen)), 'Return never visits the title screen');
+  assert.ok(new Set(motion.map(frame => frame.x.toFixed(1) + ':' + frame.zoom.toFixed(3))).size > 3, 'Native camera animates back to the selected preview');
+  assert.equal((await page.evaluate(() => window.communityReference.inspect())).state.currentPhase.turnNumber, 2, 'Return keeps the played board visible');
+  assert.equal(await canvas!.evaluate(node => node === document.querySelector('#phaser-game canvas')), true);
+  if (process.env.KONKR_LAUNCH_SCREENSHOTS) await page.screenshot({ path: path.join(process.env.KONKR_LAUNCH_SCREENSHOTS, 'catalog-return.png') });
   await details(entries[0].map.metadata.title);
   await page.getByRole('button', { name: 'Resume Hard game', exact: true }).click(); await screen('Play');
   state = await page.evaluate(() => window.communityReference.inspect());
@@ -123,7 +155,7 @@ test('catalog launch, isolated resume, restart and original mode navigation use 
   assert.equal(await page.evaluate(() => window.startCalls), 0, 'Reload/resume must retain its old binding');
   await page.evaluate(() => window.communityReference.act('ExitLevel'));
   await page.getByRole('heading', { name: 'Custom Maps', exact: true }).waitFor();
-  await page.getByRole('button', { name: 'Back', exact: true }).click();
+  await page.getByRole('button', { name: 'Back', exact: true }).click(); await screen('Title');
   for (const [event, expected] of [['GoToExpeditions', 'Overworld'], ['GoToRandomMapSelect', 'RandomMapSelect']]) {
     await page.evaluate(name => window.communityReference.act(name), event); await screen(expected);
     assert.equal(page.url(), initialURL);

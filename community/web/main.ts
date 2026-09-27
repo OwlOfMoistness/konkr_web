@@ -84,7 +84,7 @@ async function boot():Promise<void>{
     onError:failure,onStart:results.onStart,
     supportedDifficulties:(entry:CatalogEntry)=>(['normal','hard'] as Difficulty[]).filter(mode=>supportsPlayback(config.policy,entry.revision.engineHash,mode,entry.revision.plugins,config.nativePlayback)),
     verifiedResultsEnabled:config.flags.verifiedResults,
-    async loadMap(entry){const response=await fetch(`/api/maps/${encodeURIComponent(entry.map.id)}/file?revision=${encodeURIComponent(entry.revision.id)}`);if(!response.ok)throw new Error('This map is no longer available. Refresh the catalogue to retry.');return response.text();},
+    loadMap:entry=>loadMap(`/api/maps/${encodeURIComponent(entry.map.id)}/file?revision=${encodeURIComponent(entry.revision.id)}`,entry.revision.contentHash),
     renderPostPlay:ratingControls(visitor),
     renderPreview:(container,entry,thumbnail)=>previews.mount(container,{key:entry.revision.id+':'+entry.revision.contentHash,title:entry.map.metadata.title,thumbnail,loadMap:()=>loadMap(`/api/maps/${encodeURIComponent(entry.map.id)}/file?revision=${encodeURIComponent(entry.revision.id)}`,entry.revision.contentHash)}),
   });
