@@ -81,19 +81,19 @@ describe('anonymous ratings', { skip: !url }, () => {
 
 
 declare global { interface Window {
-  ratingRaceTest: { deliverVote: () => void; deliverCsrf?: () => void; posted?: { revisionId: string; rating: number } };
+  ratingRaceTest: { deliverVote: () => void; deliverCsrf?: () => void; posted?: { revisionId: string; rating: number }; votes?: { revisionId: string; rating: number }[] };
 } }
 
-test('saving a rating updates the catalog aggregate in place while preserving later edits across delayed requests', async () => {
+test('post-play stars update the aggregate and serialize later choices without a stale vote overwriting them', async () => {
   const bundle = await build({ stdin: { contents: `
     import {ratingControls} from './web/ratings.ts';
     import {mountCatalog} from './web/catalog.ts';
-    const probe=window.ratingRaceTest={}; let sessionCalls=0;
+    const probe=window.ratingRaceTest={votes:[]}; let sessionCalls=0;
     window.fetch=async (_url,init)=>{
-      if(init?.method==='PUT') { probe.posted=JSON.parse(init.body); return Response.json({revisionId:'r1',rating:{average:probe.posted.rating,count:1}}); }
+      if(init?.method==='PUT') { probe.posted=JSON.parse(init.body); probe.votes.push(probe.posted); return Response.json({revisionId:'r1',rating:{average:probe.posted.rating,count:1}}); }
       return new Promise(resolve=>{probe.deliverVote=()=>resolve(Response.json({revisionId:'r1',mine:1}));});
     };
-    const visitor={csrfToken(){return ++sessionCalls===1?Promise.resolve('test-csrf'):new Promise(resolve=>{probe.deliverCsrf=()=>resolve('test-csrf');});}};
+    const visitor={csrfToken(){return ++sessionCalls!==2?Promise.resolve('test-csrf'):new Promise(resolve=>{probe.deliverCsrf=()=>resolve('test-csrf');});}};
     const entry={map:{id:'map',metadata:{title:'Rating island',creator:'Community',description:'',tags:[]}},revision:{id:'r1',revision:1,width:6,height:6},rating:{average:null,count:0},scores:[{difficulty:'normal',engineHash:'fixture',completions:1,bestTurns:1}],previewUrl:null};
     mountCatalog(document.querySelector('main'),{reader:{async list(){return {entries:[entry],total:1};},async get(){return entry;}},storage:null,onPlay(){},verifiedResultsEnabled:true,renderDetailActions:ratingControls(visitor)});
   `, loader: 'ts', resolveDir: fileURLToPath(new URL('..', import.meta.url)) }, bundle: true, write: false, format: 'iife', platform: 'browser' });
@@ -102,25 +102,51 @@ test('saving a rating updates the catalog aggregate in place while preserving la
     const page = await browser.newPage();
     await page.setContent('<main></main>'); await page.addScriptTag({ content: bundle.outputFiles[0].text });
     await page.getByRole('button', { name: 'Rating island', exact: true }).click();
-    await page.getByText('No ratings yet', { exact: true }).waitFor();
-    const originalSelect = await page.getByLabel('Your rating').elementHandle();
+    await page.getByText('No ratings yet', { exact: true }).first().waitFor();
+    const originalStars = await page.getByRole('radiogroup', { name: 'Your rating' }).elementHandle();
     await page.waitForFunction(() => !!window.ratingRaceTest.deliverVote);
-    await page.getByLabel('Your rating').selectOption('5');
+    await page.getByRole('radio', { name: '5 stars', exact: true }).click();
     await page.evaluate(async () => { window.ratingRaceTest.deliverVote(); await new Promise(resolve => setTimeout(resolve, 0)); });
-    assert.equal(await page.getByLabel('Your rating').inputValue(), '5', 'A stale existing vote must not overwrite the current edit');
-    await page.getByRole('button', { name: 'Save rating' }).click();
+    assert.equal(await page.getByRole('radio', { name: '5 stars' }).getAttribute('aria-checked'), 'true', 'A stale existing vote must not overwrite the current choice');
     await page.waitForFunction(() => !!window.ratingRaceTest.deliverCsrf);
-    await page.getByLabel('Your rating').selectOption('2');
+    await page.getByRole('radio', { name: '2 stars', exact: true }).click();
     await page.evaluate(() => window.ratingRaceTest.deliverCsrf!());
-    await page.getByRole('status').filter({ hasText: 'Saved.' }).waitFor();
-    assert.deepEqual(await page.evaluate(() => window.ratingRaceTest.posted), { revisionId: 'r1', rating: 5 });
-    assert.equal(await page.getByLabel('Your rating').inputValue(), '2', 'The later edit remains available for a separate save');
-    assert.equal(await originalSelect!.evaluate(node => node.isConnected), true, 'The control is updated without being rebuilt');
-    await page.getByText('5.0 / 5 · 1 rating', { exact: true }).waitFor();
-    await page.getByText('Saved. 5.0 average from 1 rating.', { exact: true }).waitFor();
+    await page.getByRole('status').filter({ hasText: 'Saved. 2.0 average from 1 rating.' }).waitFor();
+    assert.deepEqual(await page.evaluate(() => window.ratingRaceTest.votes), [{ revisionId: 'r1', rating: 5 }, { revisionId: 'r1', rating: 2 }]);
+    assert.equal(await page.getByRole('radio', { name: '2 stars' }).getAttribute('aria-checked'), 'true');
+    assert.equal(await originalStars!.evaluate(node => node.isConnected), true, 'The controls are updated without being rebuilt');
+    await page.locator('.catalog-detail .catalog-rating').filter({ hasText: '2.0 / 5 · 1 rating' }).waitFor();
     await page.getByText('Normal: 1 finish · best 1 turn', { exact: true }).waitFor();
-    await page.getByRole('button', { name: '← All maps', exact: true }).click();
-    await page.getByText('5.0 / 5 · 1 rating', { exact: true }).waitFor();
-    await page.getByText('1 verified finish', { exact: true }).waitFor();
+    await page.getByRole('radio', { name: '2 stars' }).press('ArrowRight');
+    await page.getByRole('status').filter({ hasText: 'Saved. 3.0 average from 1 rating.' }).waitFor();
+    assert.equal(await page.getByRole('radio', { name: '3 stars' }).getAttribute('aria-checked'), 'true');
   } finally { await browser.close(); }
+});
+
+test('a later post-play widget waits for the previous vote before saving its newer choice', async () => {
+  const bundle = await build({ stdin: { contents: `
+    import {ratingControls} from './web/ratings.ts';
+    const probe=window.ratingRaceTest={votes:[]};
+    window.fetch=async (_url,init)=>{
+      if(init?.method!=='PUT')return Response.json({revisionId:'r1',mine:null});
+      const vote=JSON.parse(init.body);probe.votes.push(vote);
+      if(probe.votes.length===1)await new Promise(resolve=>{probe.deliverVote=resolve;});
+      return Response.json({revisionId:'r1',rating:{average:vote.rating,count:1}});
+    };
+    const render=ratingControls({async csrfToken(){return 'test-csrf';}});
+    const entry={map:{id:'map',metadata:{title:'Same island'}},revision:{id:'r1'},rating:{average:null,count:0}};
+    const mount=()=>{const root=document.createElement('section');document.querySelector('main').replaceChildren(root);render(root,entry);};
+    document.querySelector('#return').onclick=mount;mount();
+  `, loader: 'ts', resolveDir: fileURLToPath(new URL('..', import.meta.url)) }, bundle: true, write: false, format: 'iife', platform: 'browser' });
+  const browser=await chromium.launch();
+  try {
+    const page=await browser.newPage();await page.setContent('<button id="return">Return from another play</button><main></main>');await page.addScriptTag({content:bundle.outputFiles[0].text});
+    await page.getByRole('radio',{name:'5 stars'}).click();await page.waitForFunction(()=>!!window.ratingRaceTest.deliverVote);
+    await page.getByRole('button',{name:'Return from another play'}).click();await page.getByRole('radio',{name:'2 stars'}).click();
+    assert.deepEqual(await page.evaluate(()=>window.ratingRaceTest.votes),[{revisionId:'r1',rating:5}]);
+    await page.evaluate(()=>window.ratingRaceTest.deliverVote());
+    await page.getByRole('status').filter({hasText:'Saved. 2.0 average'}).waitFor();
+    assert.deepEqual(await page.evaluate(()=>window.ratingRaceTest.votes),[{revisionId:'r1',rating:5},{revisionId:'r1',rating:2}]);
+    assert.equal(await page.getByRole('radio',{name:'2 stars'}).getAttribute('aria-checked'),'true');
+  }finally{await browser.close();}
 });

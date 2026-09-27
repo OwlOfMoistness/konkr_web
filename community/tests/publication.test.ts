@@ -37,28 +37,35 @@ describe('publication gates and retained history', { skip: !url }, () => {
     maps = new MapsAdmin(db,storage,auth,'engine'); service = new PublicationService(maps,policy,{async render() { if(rendererFails) throw new Error('render failed'); return png; }});
   });
   after(async () => { await db?.end(); if(admin) {await admin.query(`DROP SCHEMA ${schema} CASCADE`);await admin.end();} });
-  it('requires supported configuration, successful preview and explicit playtest acknowledgment',async () => {
-    const map = await upload(); const publish = {expectedVersion:map.version,state:'published',playtested:true};
+  it('publishes supported previewed maps directly without claiming manual playtesting',async () => {
+    const map = await upload(); const publish = {expectedVersion:map.version,state:'published'};
     assert.equal((await service.route(req(map.id,'publication',publish)))!.status,409);
     rendererFails = true; assert.equal((await service.route(req(map.id,'preview',{expectedVersion:map.version})))!.status,503);
     assert.equal((await maps.detail(map.id)).revisions[0].preview_key,null);
     rendererFails = false; assert.equal((await service.route(req(map.id,'preview',{expectedVersion:map.version})))!.status,200);
-    assert.equal((await service.route(req(map.id,'publication',{...publish,playtested:false})))!.status,409);
-    assert.equal((await service.route(req(map.id,'publication',publish)))!.status,200);
+    assert.equal((await service.route(req(map.id,'publication',{...publish,playtested:true})))!.status,400);
+    const published = (await service.route(req(map.id,'publication',publish)))!;
+    assert.equal(published.status,200); assert.equal((await published.json()).map.state,'published');
+    assert.equal((await service.route(req(map.id,'publication',publish)))!.status,409);
     assert.equal((await new PostgresCatalogReader(db,policy).list({})).total,1);
     assert.equal((await service.route(req(map.id,'preview')))!.headers.get('content-type'),'image/png');
     assert.equal(await (await service.route(req(map.id,'file')))!.text(),encode(sample));
     const current = (await maps.detail(map.id)).map;
-    assert.equal((await service.route(req(map.id,'publication',{expectedVersion:current.version,state:'archived',playtested:false})))!.status,200);
+    assert.equal((await service.route(req(map.id,'publication',{expectedVersion:current.version,state:'archived'})))!.status,200);
     assert.equal((await new PostgresCatalogReader(db,policy).list({})).total,0);
     assert.ok(objects.has((await maps.detail(map.id)).revisions[0].object_key));
-    assert.equal((await db.query("SELECT count(*) FROM curator_audit WHERE action='publish'")).rows[0].count,'1');
+    const audit = (await db.query("SELECT details FROM curator_audit WHERE action='publish'")).rows;
+    assert.equal(audit.length,1); assert.equal(Object.hasOwn(audit[0].details,'playtested'),false);
   });
   it('fails closed with empty support policy and refuses stale versions',async () => {
     const map = await upload({...sample,map:{...sample.map,name:'unsupported'}});
     const closed = new PublicationService(maps,{version:1,configurations:[]},{async render(){throw new Error('must not render');}});
     assert.equal((await closed.route(req(map.id,'preview',{expectedVersion:map.version})))!.status,422);
     assert.equal((await service.route(req(map.id,'preview',{expectedVersion:'0'})))!.status,409);
+    assert.equal((await closed.route(req(map.id,'publication',{expectedVersion:map.version,state:'published'})))!.status,422);
+    assert.equal((await service.route(req(map.id,'publication',{expectedVersion:'0',state:'published'})))!.status,409);
+    const missingCsrf = req(map.id,'publication',{expectedVersion:map.version,state:'published'}); missingCsrf.headers.delete('X-CSRF-Token');
+    assert.equal((await service.route(missingCsrf))!.status,403);
     const stranger = new Request(origin+`/api/admin/maps/${map.id}/file`); assert.equal((await service.route(stranger))!.status,401);
   });
   it('refuses damaged stored content before runtime import',async () => {

@@ -1,0 +1,38 @@
+/* Colors and raised pill geometry from the original Conquest menu. */
+:root {
+  --konkr-ocean: #327da0;
+  --konkr-panel: #b1ddf2;
+  --konkr-text: #254554;
+  --konkr-muted: #295d77;
+  --konkr-face: #c5e4f2;
+  --konkr-hover: #dbebf2;
+  --konkr-shadow: #89bdd6;
+  --konkr-green: #7fcf72;
+  --konkr-green-shadow: #449e36;
+  --konkr-danger: #e8aba1;
+  --konkr-danger-shadow: #ac6258;
+}
+.konkr-ui { box-sizing: border-box; color: var(--konkr-text); font: 16px/1.4 Georgia, 'Times New Roman', serif; }
+.konkr-ui *, .konkr-ui *::before, .konkr-ui *::after { box-sizing: border-box; }
+.konkr-ui h1, .konkr-ui h2, .konkr-ui h3 { font-weight: normal; line-height: 1.15; }
+.konkr-ui button, .konkr-ui .konkr-button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 42px; max-width: 100%; padding: 8px 22px;
+  border: 0; border-radius: 24px; box-shadow: 0 4px 0 var(--konkr-shadow);
+  background: var(--konkr-face); color: var(--konkr-text);
+  font: inherit; text-align: center; text-decoration: none; cursor: pointer;
+}
+.konkr-ui button:hover, .konkr-ui .konkr-button:hover { background: var(--konkr-hover); }
+.konkr-ui button:active, .konkr-ui .konkr-button:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--konkr-shadow); }
+.konkr-ui button:disabled { cursor: default; opacity: .6; transform: none; }
+.konkr-ui .konkr-primary { background: var(--konkr-green); box-shadow: 0 4px 0 var(--konkr-green-shadow); }
+.konkr-ui .konkr-primary:hover { background: #bde6b6; }
+.konkr-ui .konkr-danger { background: var(--konkr-danger); box-shadow: 0 4px 0 var(--konkr-danger-shadow); }
+.konkr-ui .konkr-danger:hover { background: #f2c7bf; }
+.konkr-ui input, .konkr-ui textarea, .konkr-ui select { min-width: 0; max-width: 100%; min-height: 42px; padding: 8px 12px; border: 1px solid var(--konkr-shadow); border-radius: 5px; background: var(--konkr-hover); color: var(--konkr-text); font: 15px/1.4 Arial, sans-serif; }
+.konkr-ui input[type=checkbox] { min-height: 20px; width: 20px; }
+.konkr-ui a { color: var(--konkr-text); text-underline-offset: 3px; }
+.konkr-ui :focus-visible { outline: 3px solid #fff3aa; outline-offset: 3px; }
+.konkr-ui [role=status]:empty, .konkr-ui [role=alert]:empty { display: none; }
+.konkr-ui [role=alert] { color: #732c24; }
+.konkr-star { display: inline-block; width: 22px; height: 21px; background: url('/assets/atlas.png') -531px -791px / 1024px 1125px no-repeat; }

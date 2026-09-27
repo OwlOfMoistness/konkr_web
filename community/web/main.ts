@@ -1,3 +1,4 @@
+import './theme.css';
 import './catalog.css';
 import './admin.css';
 import './results.css';
@@ -31,11 +32,23 @@ async function boot():Promise<void>{
     document.body.classList.add('admin-page');document.getElementById('status')!.hidden=true;
     const root=document.getElementById('admin-root')!;root.hidden=false;
     mountAdmin(root,(client,session)=>{
-      const header=document.createElement('header');const heading=document.createElement('h1');heading.textContent='Community map curation';
-      const signOut=document.createElement('button');signOut.textContent='Sign out';signOut.onclick=()=>{void client.signOut().catch(failure);};header.append(heading,signOut);
-      const editor=document.createElement('section');const access=document.createElement('section');root.replaceChildren(header,editor,access);
-      mountMapEditor(editor,client,{renderPublication:publicationControls(client)});
-      if(session.identity.role==='admin')mountCuratorAccess(access,client);
+      const nav=document.createElement('nav');nav.className='admin-navigation';nav.setAttribute('aria-label','Curator navigation');
+      const home=document.createElement('a');home.href='/';home.className='konkr-button';home.textContent='← Game';
+      const maps=document.createElement('button');maps.textContent='Curated maps';maps.setAttribute('aria-pressed','true');
+      const signOut=document.createElement('button');signOut.textContent='Sign out';signOut.onclick=()=>{void client.signOut().then(()=>mapEditor.destroy()).catch(failure);};
+      nav.append(home,maps,signOut);
+      const heading=document.createElement('h1');heading.className='admin-title';heading.textContent='Map workshop';
+      const editor=document.createElement('section');editor.className='admin-panel';
+      const access=document.createElement('section');access.className='admin-panel admin-access';access.hidden=true;
+      root.replaceChildren(nav,heading,editor,access);
+      const mapEditor=mountMapEditor(editor,client,{renderPublication:publicationControls(client)});
+      let accessButton:HTMLButtonElement|undefined;
+      maps.onclick=()=>{editor.hidden=false;access.hidden=true;maps.setAttribute('aria-pressed','true');accessButton?.setAttribute('aria-pressed','false');void mapEditor.showList().catch(failure);};
+      if(session.identity.role==='admin'){
+        accessButton=document.createElement('button');accessButton.textContent='Access settings';accessButton.setAttribute('aria-pressed','false');nav.append(accessButton);
+        let mounted=false;
+        accessButton.onclick=()=>{editor.hidden=true;access.hidden=false;maps.setAttribute('aria-pressed','false');accessButton!.setAttribute('aria-pressed','true');if(!mounted){mountCuratorAccess(access,client);mounted=true;}};
+      }
     });return;
   }
   const config=await json<Config>('/api/config');
@@ -52,7 +65,7 @@ async function boot():Promise<void>{
     supportedDifficulties:(entry:CatalogEntry)=>(['normal','hard'] as Difficulty[]).filter(mode=>supports(config.policy,entry.revision.engineHash,mode,entry.revision.plugins)),
     verifiedResultsEnabled:config.flags.verifiedResults,
     async loadMap(entry){const response=await fetch(`/api/maps/${encodeURIComponent(entry.map.id)}/file?revision=${encodeURIComponent(entry.revision.id)}`);if(!response.ok)throw new Error('This map is no longer available. Refresh the catalogue to retry.');return response.text();},
-    renderDetailActions:ratingControls(visitor),
+    renderPostPlay:ratingControls(visitor),
     renderExtras:container=>mountResults(container,{controller:results,store,reader,resumeSaved:save=>custom!.resumeSaved(save)}),
   });
   if(config.flags.submissions)attachRunRecorder({loader,bridge:custom.bridge,onError:failure,onVictory:results.enqueue});

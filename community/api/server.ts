@@ -58,7 +58,7 @@ export async function createCommunityServer(options:ServerOptions) {
   const manifest=JSON.parse(await readFile(path.join(communityRoot,'runtime/manifest.json'),'utf8'));
   const policy=JSON.parse(await readFile(path.join(communityRoot,'shared/supported-configurations.json'),'utf8')) as SupportedConfigurations;
   const output=path.join(communityRoot,'.web');await mkdir(output,{recursive:true});
-  await build({entryPoints:[path.join(communityRoot,'web/main.ts')],outfile:path.join(output,'community.js'),bundle:true,platform:'browser',format:'iife',target:'es2023'});
+  await build({entryPoints:[path.join(communityRoot,'web/main.ts')],outfile:path.join(output,'community.js'),bundle:true,platform:'browser',format:'iife',target:'es2023',external:['/assets/*']});
   const staticFiles=new Map<string,string>(Object.keys(manifest.files).map(file=>['/'+file,path.join(runtime,file)]));
   const helpHTML=new Set([...staticFiles.keys()].filter(url=>/^\/assets\/html\/help\/[^/]+\.html$/.test(url)));
   const helpPage=staticFiles.get('/assets/html/help/index.html');

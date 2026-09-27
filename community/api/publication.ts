@@ -48,13 +48,12 @@ export class PublicationService {
         });
         return adminResponse(await this.maps.detail(id));
       }
-      requireFields(data, ['expectedVersion', 'state', 'playtested']);
-      if (!['published','archived'].includes(data.state as string) || typeof data.playtested !== 'boolean') throw new AdminError(400, 'Invalid publication request');
+      requireFields(data, ['expectedVersion', 'state']);
+      if (!['published','archived'].includes(data.state as string)) throw new AdminError(400, 'Invalid publication request');
       await inTransaction(this.maps.db, async client => {
         const current = await lockMap(client, id, data.expectedVersion);
         if (current.current_revision_id !== revision.id) throw new AdminError(409, 'Map revision changed');
         if (data.state === 'published') {
-          if (!data.playtested) throw new AdminError(409, 'Confirm that this revision has been playtested');
           if (!this.modes(revision).length) throw new AdminError(422, 'This engine and plugin combination is not supported');
           const preview = revision.preview_key ? await this.maps.storage.get(revision.preview_key) : null;
           if (!preview || !validPng(preview.bytes)) throw new AdminError(409, 'Generate a valid preview before publishing');
@@ -62,7 +61,7 @@ export class PublicationService {
           if (!object || parseMap(Buffer.from(object.bytes).toString('utf8')).contentHash !== revision.content_hash) throw new AdminError(503, 'Stored map unavailable or damaged');
         }
         await client.query("UPDATE maps SET state=$2,published_at=CASE WHEN $2='published' THEN now() ELSE published_at END,updated_at=now() WHERE id=$1", [id, data.state]);
-        await audit(client, actor, data.state === 'published' ? 'publish' : 'archive', id, { revisionId: revision.id, playtested: data.playtested });
+        await audit(client, actor, data.state === 'published' ? 'publish' : 'archive', id, { revisionId: revision.id });
       });
       return adminResponse(await this.maps.detail(id));
     } catch (error) { return errorResponse(error); }

@@ -21,7 +21,7 @@ export interface CatalogMountOptions {
   /** This flag must remain off until the validator's independent review passes. */
   verifiedResultsEnabled?: boolean;
   supportedDifficulties?: (entry: CatalogEntry) => Difficulty[];
-  /** Integration point for anonymous rating controls. Text and event handling belong to that slice. */
+  /** Optional map actions, such as resuming a saved game. */
   renderDetailActions?: (container: HTMLElement, entry: CatalogEntry) => void;
 }
 
@@ -99,45 +99,56 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
   let focusedMap: string | null = null;
   let loadedEntry: CatalogEntry | null = null;
   let restoringScroll = false;
-  root.classList.add('community-catalog');
+  root.classList.add('community-catalog', 'konkr-ui');
   root.setAttribute('aria-label', 'Custom maps');
   const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className = '', text = ''): HTMLElementTagNameMap[K] => {
     const node = doc.createElement(tag); node.className = className; node.textContent = text; return node;
   };
-  const save = () => { try { storage?.setItem(storageKey, JSON.stringify(state)); } catch { /* Storage may be full or disabled; retain in-memory state. */ } };
+  const save = () => { try { storage?.setItem(storageKey, JSON.stringify(state)); } catch { /* Retain in-memory state when storage is unavailable. */ } };
   const button = (text: string, action: () => void, className = '') => {
     const node = el('button', `catalog-button ${className}`, text); node.type = 'button'; node.addEventListener('click', action); return node;
   };
-  const captureScroll = () => { if (!state.detailId && !paused && !restoringScroll) { state.scrollTop = root.scrollTop; save(); } };
-  root.addEventListener('scroll', captureScroll, { passive: true });
+  const captureScroll = () => {
+    const browser = root.querySelector<HTMLElement>('.catalog-browser-scroll');
+    if (browser && !paused && !restoringScroll) { state.scrollTop = browser.scrollTop; save(); }
+  };
   const updateRating = (event: Event) => {
     const entry = (event as CustomEvent<CatalogEntry>).detail;
+    for (const card of root.querySelectorAll<HTMLElement>('.catalog-card')) {
+      if (card.dataset.entryId === entry.map.id && card.dataset.revisionId === entry.revision.id) card.querySelector('.catalog-rating')!.textContent = shortRating(entry.rating);
+    }
     if (!loadedEntry || entry.map.id !== loadedEntry.map.id || entry.revision.id !== loadedEntry.revision.id) return;
     loadedEntry.rating = entry.rating;
     const aggregate = root.querySelector('.catalog-detail .catalog-rating');
     if (aggregate) aggregate.textContent = ratingText(entry.rating);
   };
   root.addEventListener(RATING_UPDATED, updateRating);
-  const setQuery = (patch: Partial<CatalogUiState>) => { state = { ...state, ...patch, detailId: null, offset: 0, scrollTop: 0 }; save(); void render(); };
+  const shortRating = (rating: CatalogEntry['rating']) => rating.count && rating.average !== null ? `★ ${rating.average.toFixed(1)} · ${rating.count} ${rating.count === 1 ? 'rating' : 'ratings'}` : 'Unrated';
+  const setQuery = (patch: Partial<CatalogUiState>) => { state = { ...state, ...patch, detailId: null, offset: 0, scrollTop: 0 }; loadedEntry = null; save(); void render(); };
   const restoreScroll = (focusMap = false) => {
+    const token = generation;
     win.requestAnimationFrame(() => {
-      if (destroyed || state.detailId) return;
-      root.scrollTop = state.scrollTop;
+      if (destroyed || paused || token !== generation) return;
+      const browser = root.querySelector<HTMLElement>('.catalog-browser-scroll');
+      if (browser) browser.scrollTop = state.scrollTop;
       restoringScroll = false;
       if (focusMap && focusedMap) [...root.querySelectorAll<HTMLButtonElement>('button[data-map-id]')].find(node => node.dataset.mapId === focusedMap)?.focus({ preventScroll: true });
     });
   };
-  const showList = () => { state.detailId = null; loadedEntry = null; save(); void render(true); };
+  const showList = () => {
+    const selected = [...root.querySelectorAll<HTMLButtonElement>('button[data-map-id]')].find(node => node.dataset.mapId === state.detailId);
+    selected?.focus({ preventScroll: true });
+    if (win.innerWidth < 900) root.querySelector('.catalog-browser')?.scrollIntoView({ block: 'start' });
+  };
   const openDetail = (entry: CatalogEntry) => {
-    // List scores may be filtered to one difficulty. Fetch complete details and recheck publication.
-    captureScroll(); focusedMap = entry.map.id; state.detailId = entry.map.id; loadedEntry = null; save(); void render();
+    captureScroll(); focusedMap = entry.map.id; state.detailId = entry.map.id; loadedEntry = null; save(); void render(false, true);
   };
   const field = (label: string, control: HTMLElement) => { const wrap = el('label', 'catalog-field'); control.setAttribute('aria-label', label); wrap.append(el('span', '', label), control); return wrap; };
   const preview = (entry: CatalogEntry, large = false) => {
     const frame = el('div', `catalog-preview${large ? ' catalog-preview-large' : ''}`);
     if (entry.previewUrl) {
       let safe = false;
-      try { const url = new URL(entry.previewUrl, win.location.href); safe = ['https:', 'http:'].includes(url.protocol); } catch { /* Show placeholder for malformed URLs. */ }
+      try { const url = new URL(entry.previewUrl, win.location.href); safe = ['https:', 'http:'].includes(url.protocol); } catch { /* Display a placeholder for malformed URLs. */ }
       if (safe) {
         const image = el('img'); image.src = entry.previewUrl; image.alt = `${entry.map.metadata.title} map preview`; image.loading = large ? 'eager' : 'lazy';
         image.addEventListener('error', () => { frame.replaceChildren(el('span', '', 'Preview unavailable')); }, { once: true }); frame.append(image);
@@ -155,7 +166,7 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
   };
   const stats = (entry: CatalogEntry, detail = false) => {
     const wrap = el('div', 'catalog-stats');
-    wrap.append(el('span', 'catalog-rating', ratingText(entry.rating)));
+    wrap.append(el('span', 'catalog-rating', detail ? ratingText(entry.rating) : shortRating(entry.rating)));
     if (options.verifiedResultsEnabled) {
       if (detail) {
         for (const difficulty of ['normal', 'hard'] as const) {
@@ -167,27 +178,16 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
         const completions = entry.scores.reduce((total, score) => total + score.completions, 0);
         wrap.append(el('span', '', `${completions} verified ${completions === 1 ? 'finish' : 'finishes'}`));
       }
-    } else if (detail) wrap.append(el('span', '', 'Finish records are not available yet.'));
+    }
     return wrap;
-  };
-  const shell = (detail: boolean) => {
-    const content = el('div', 'catalog-shell');
-    const header = el('header', 'catalog-header');
-    const intro = el('div'); intro.append(el('p', 'catalog-eyebrow', 'COMMUNITY COLLECTION'), el('h1', '', 'Custom Maps'));
-    header.append(intro);
-    if (detail) header.append(button('← All maps', showList, 'catalog-back'));
-    else if (options.onExit) header.append(button('← Main menu', () => { captureScroll(); options.onExit!(); }, 'catalog-back'));
-    content.append(header); root.replaceChildren(content); return content;
   };
   const statusBox = (message: string, error = false) => { const status = el('p', `catalog-message${error ? ' catalog-error' : ''}`, message); status.setAttribute('role', error ? 'alert' : 'status'); return status; };
   const controls = () => {
     const form = el('form', 'catalog-controls'); form.setAttribute('aria-label', 'Find a map');
-    const search = el('input'); search.type = 'search'; search.name = 'search'; search.placeholder = 'Find a map by name'; search.value = state.search; search.maxLength = 120;
-    const tagInput = el('input'); tagInput.name = 'tags'; tagInput.placeholder = 'e.g. #zombie, #xmas'; tagInput.value = state.tags.map(tag => `#${tag}`).join(', ');
-    const tagHint = el('span', 'catalog-hint', 'Match all tags; separate with commas.');
-    const tagField = field('Tags', tagInput); tagField.append(tagHint);
-    const searchSubmit = el('button', 'catalog-button catalog-primary', 'Search'); searchSubmit.type = 'submit';
-    form.append(field('Map name', search), tagField, searchSubmit);
+    const search = el('input'); search.type = 'search'; search.name = 'search'; search.placeholder = 'Find an island'; search.value = state.search; search.maxLength = 120;
+    const tagInput = el('input'); tagInput.name = 'tags'; tagInput.placeholder = '#zombie, #xmas'; tagInput.value = state.tags.map(tag => `#${tag}`).join(', ');
+    const searchSubmit = el('button', 'catalog-button', 'Search'); searchSubmit.type = 'submit';
+    form.append(field('Map name', search), field('Tags', tagInput), searchSubmit);
     form.addEventListener('submit', event => {
       event.preventDefault();
       const selected = tagInput.value.split(/[\s,]+/).filter(Boolean).map(tag => tag.replace(/^#/, '').toLowerCase());
@@ -200,7 +200,7 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
     for (const [value, label] of [['newest', 'Newest'], ['name', 'Name A–Z'], ['rating', 'Highest rating'], ['completions', 'Most finished']]) { const option = el('option', '', label); option.value = value; sort.append(option); }
     sort.value = state.sort; sort.addEventListener('change', () => setQuery({ sort: sort.value as CatalogSort }));
     const difficulty = el('select');
-    for (const [value, label] of [['all', 'All difficulties'], ['normal', 'Normal'], ['hard', 'Hard']]) { const option = el('option', '', label); option.value = value; difficulty.append(option); }
+    for (const [value, label] of [['all', 'All'], ['normal', 'Normal'], ['hard', 'Hard']]) { const option = el('option', '', label); option.value = value; difficulty.append(option); }
     difficulty.value = state.difficulty; difficulty.addEventListener('change', () => setQuery({ difficulty: difficulty.value as CatalogUiState['difficulty'] }));
     const views = el('div', 'catalog-view-controls'); views.setAttribute('role', 'group'); views.setAttribute('aria-label', 'Map layout');
     for (const view of ['grid', 'list'] as const) {
@@ -208,78 +208,121 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
       toggle.setAttribute('aria-pressed', String(state.view === view)); views.append(toggle);
     }
     toolbar.append(field('Sort by', sort), field('Difficulty', difficulty), views);
-    if (state.tags.length || state.search || state.difficulty !== 'all') toolbar.append(button('Clear filters', () => setQuery({ search: '', tags: [], difficulty: 'all' })));
+    if (state.tags.length || state.search || state.difficulty !== 'all') toolbar.append(button('Clear filters', () => setQuery({ search: '', tags: [], difficulty: 'all' }), 'catalog-clear'));
     const wrapper = el('div', 'catalog-filters'); wrapper.append(form, toolbar); return wrapper;
   };
-  async function render(focusMap = false): Promise<void> {
+  const detail = (entry: CatalogEntry, token: number, focus = false) => {
+    const article = el('article', 'catalog-detail');
+    const heading = el('h2', '', entry.map.metadata.title); heading.tabIndex = -1;
+    const title = el('div', 'catalog-detail-title'); title.append(heading, el('p', 'catalog-creator', `Created by ${entry.map.metadata.creator || 'Unknown creator'}`));
+    article.append(title, preview(entry, true));
+    const info = el('div', 'catalog-detail-info');
+    if (entry.map.metadata.description) info.append(el('p', 'catalog-description', entry.map.metadata.description));
+    info.append(tags(entry), stats(entry, true));
+    const select = el('select');
+    const modes = options.supportedDifficulties?.(entry) ?? ['normal', 'hard'];
+    for (const mode of modes) { const option = el('option', '', mode === 'normal' ? 'Normal' : 'Hard'); option.value = mode; select.append(option); }
+    select.value = modes.includes(state.difficulty as Difficulty) ? state.difficulty : modes[0] ?? '';
+    const playError = statusBox(''); playError.hidden = true;
+    const play = button('Play map', () => {
+      const difficulty = select.value as Difficulty;
+      captureScroll(); play.disabled = true; play.textContent = 'Starting…'; playError.hidden = true;
+      void (async () => {
+        // Check current publication/revision again immediately before starting.
+        const current = await options.reader.get(entry.map.id);
+        if (token !== generation || paused || destroyed) return;
+        if (!current) throw new Error('This map is no longer available. Choose another island.');
+        if (current.revision.id !== entry.revision.id) { throw new Error('This map has changed. Select it again before playing.'); }
+        const supported = options.supportedDifficulties?.(current) ?? ['normal', 'hard'];
+        if (!supported.includes(difficulty)) throw new Error('This difficulty is no longer available. Select the map again.');
+        await options.onPlay(current, difficulty);
+      })().catch(error => {
+        if (token !== generation || destroyed) return;
+        playError.textContent = 'The map could not be started. ' + (error instanceof Error ? error.message : 'Please try again.');
+        playError.hidden = false; playError.setAttribute('role', 'alert');
+      }).finally(() => { play.disabled = modes.length === 0; play.textContent = 'Play map'; });
+    }, 'catalog-primary');
+    play.disabled = modes.length === 0;
+    const playControls = el('div', 'catalog-play-controls'); playControls.append(field('Play difficulty', select), play);
+    info.append(playControls, playError);
+    if (options.renderDetailActions) { const actions = el('div', 'catalog-detail-actions'); options.renderDetailActions(actions, entry); info.append(actions); }
+    article.append(info);
+    if (focus) win.requestAnimationFrame(() => {
+      if (token !== generation || paused || destroyed) return;
+      if (win.innerWidth < 900) root.scrollTop = 0;
+      heading.focus({ preventScroll: true });
+    });
+    return article;
+  };
+  async function render(focusMap = false, focusDetail = false): Promise<void> {
     if (destroyed || paused) return;
     const token = ++generation;
     restoringScroll = true;
-    const detailId = state.detailId;
-    const content = shell(!!detailId);
-    if (!detailId) content.append(controls());
-    const loading = statusBox(detailId ? 'Loading map…' : 'Loading maps…'); content.append(loading); content.setAttribute('aria-busy', 'true');
+    const content = el('div', 'catalog-shell');
+    const stage = el('section', 'catalog-stage'); stage.setAttribute('aria-label', 'Selected map');
+    const header = el('header', 'catalog-header');
+    if (options.onExit) header.append(button('← Main menu', () => { captureScroll(); options.onExit!(); }, 'catalog-back'));
+    header.append(button('← All maps', showList, 'catalog-browse'));
+    const selected = el('div', 'catalog-selected'); selected.append(statusBox('Choose an island to explore.'));
+    stage.append(header, selected);
+    const sidebar = el('aside', 'catalog-browser'); sidebar.setAttribute('aria-label', 'Browse maps');
+    const browserHeader = el('header', 'catalog-browser-header'); browserHeader.append(el('h1', '', 'Custom Maps'), el('p', '', 'Islands made by the community'));
+    const browser = el('div', 'catalog-browser-scroll'); browser.addEventListener('scroll', captureScroll, { passive: true });
+    const loading = statusBox('Loading maps…'); browser.append(loading); browser.setAttribute('aria-busy', 'true');
+    sidebar.append(browserHeader, controls(), browser); content.append(stage, sidebar); root.replaceChildren(content);
     try {
-      if (detailId) {
-        const entry = loadedEntry?.map.id === detailId ? loadedEntry : await options.reader.get(detailId);
-        if (token !== generation || destroyed) return;
-        content.removeAttribute('aria-busy'); loading.remove(); root.scrollTop = 0;
-        if (!entry) { content.append(statusBox('This map is no longer available. Choose another map from the collection.')); return; }
-        loadedEntry = entry;
-        const article = el('article', 'catalog-detail'); article.append(preview(entry, true));
-        const info = el('div', 'catalog-detail-info');
-        const heading = el('h2', '', entry.map.metadata.title); heading.tabIndex = -1;
-        info.append(heading, el('p', 'catalog-creator', `Created by ${entry.map.metadata.creator || 'Unknown creator'}`), el('p', 'catalog-description', entry.map.metadata.description || 'No description has been added.'), tags(entry), stats(entry, true));
-        info.append(el('p', 'catalog-hint', `${entry.revision.width} × ${entry.revision.height} · Revision ${entry.revision.revision}`));
-        const select = el('select');
-        const modes = options.supportedDifficulties?.(entry) ?? ['normal', 'hard'];
-        for (const mode of modes) { const option = el('option', '', mode === 'normal' ? 'Normal' : 'Hard'); option.value = mode; select.append(option); }
-        select.value = modes.includes(state.difficulty as Difficulty) ? state.difficulty : modes[0] ?? '';
-        const playError = statusBox(''); playError.hidden = true;
-        const play = button('Play map', () => {
-          play.disabled = true; play.textContent = 'Starting…'; playError.hidden = true;
-          Promise.resolve().then(() => options.onPlay(entry, select.value as Difficulty)).catch(() => { playError.textContent = 'The map could not be started. Please try again.'; playError.hidden = false; playError.setAttribute('role', 'alert'); }).finally(() => { play.disabled = false; play.textContent = 'Play map'; });
-        }, 'catalog-primary');
-        play.disabled = modes.length === 0;
-        info.append(field('Play difficulty', select), play, playError);
-        if (options.renderDetailActions) { const actions = el('div', 'catalog-detail-actions'); options.renderDetailActions(actions, entry); info.append(actions); }
-        article.append(info); content.append(article); heading.focus({ preventScroll: true });
-      } else {
-        const page = await options.reader.list({ search: state.search, tags: state.tags, sort: state.sort, difficulty: state.difficulty === 'all' ? undefined : state.difficulty, limit: PAGE_SIZE, offset: state.offset });
-        if (token !== generation || destroyed) return;
-        content.removeAttribute('aria-busy'); loading.remove();
-        if (!page.entries.length && state.offset > 0 && page.total > 0) { state.offset = Math.floor((page.total - 1) / PAGE_SIZE) * PAGE_SIZE; save(); return render(); }
-        content.append(statusBox(`${page.total} ${page.total === 1 ? 'map' : 'maps'}${state.search || state.tags.length ? ' matching your filters' : ' in the collection'}`));
-        if (!page.entries.length) content.append(el('div', 'catalog-empty', state.search || state.tags.length || state.difficulty !== 'all' ? 'No maps match these filters. Try another name or remove a tag.' : 'The collection is waiting for its first published map. Check back soon.'));
-        const collection = el('ul', `catalog-entries catalog-${state.view}`);
-        for (const entry of page.entries) {
-          const item = el('li', 'catalog-card'); if (state.view === 'grid') item.append(preview(entry));
-          const details = el('div', 'catalog-card-content');
-          const open = button(entry.map.metadata.title, () => openDetail(entry), 'catalog-map-title'); open.dataset.mapId = entry.map.id;
-          const heading = el('h2'); heading.append(open);
-          details.append(heading, el('p', 'catalog-creator', `By ${entry.map.metadata.creator || 'Unknown creator'}`), tags(entry), stats(entry)); item.append(details); collection.append(item);
+      const page = await options.reader.list({ search: state.search, tags: state.tags, sort: state.sort, difficulty: state.difficulty === 'all' ? undefined : state.difficulty, limit: PAGE_SIZE, offset: state.offset });
+      if (token !== generation || destroyed) return;
+      browser.removeAttribute('aria-busy'); loading.remove();
+      if (!page.entries.length && state.offset > 0 && page.total > 0) { state.offset = Math.floor((page.total - 1) / PAGE_SIZE) * PAGE_SIZE; save(); return render(); }
+      browser.append(statusBox(`${page.total} ${page.total === 1 ? 'map' : 'maps'}${state.search || state.tags.length ? ' matching your filters' : ' in the collection'}`));
+      if (!page.entries.length) browser.append(el('div', 'catalog-empty', state.search || state.tags.length || state.difficulty !== 'all' ? 'No maps match these filters. Try another name or remove a tag.' : 'The collection is waiting for its first published map. Check back soon.'));
+      if (!state.detailId && page.entries.length) { state.detailId = page.entries[0].map.id; save(); }
+      const collection = el('ul', `catalog-entries catalog-${state.view}`);
+      for (const entry of page.entries) {
+        const item = el('li', 'catalog-card'); item.dataset.entryId = entry.map.id; item.dataset.revisionId = entry.revision.id;
+        item.classList.toggle('catalog-card-selected', entry.map.id === state.detailId);
+        const open = button(entry.map.metadata.title, () => openDetail(entry), 'catalog-map-title'); open.dataset.mapId = entry.map.id; open.setAttribute('aria-pressed', String(entry.map.id === state.detailId));
+        if (state.view === 'grid') {
+          const image = preview(entry); image.setAttribute('aria-hidden', 'true');
+          const choose = button('', () => openDetail(entry), 'catalog-preview-button'); choose.setAttribute('aria-label', `Preview ${entry.map.metadata.title}`); choose.tabIndex = -1; choose.append(image); item.append(choose);
         }
-        content.append(collection);
-        if (page.total > PAGE_SIZE) {
-          const pagination = el('nav', 'catalog-pagination'); pagination.setAttribute('aria-label', 'Map pages');
-          const move = (offset: number) => { state.offset = offset; state.scrollTop = 0; save(); void render(); };
-          const previous = button('← Previous', () => move(Math.max(0, state.offset - PAGE_SIZE))); previous.disabled = state.offset === 0;
-          const next = button('Next →', () => move(state.offset + PAGE_SIZE)); next.disabled = state.offset + PAGE_SIZE >= page.total;
-          pagination.append(previous, el('span', '', `Page ${Math.floor(state.offset / PAGE_SIZE) + 1} of ${Math.ceil(page.total / PAGE_SIZE)}`), next); content.append(pagination);
-        }
-        restoreScroll(focusMap);
+        const details = el('div', 'catalog-card-content');
+        const heading = el('div', 'catalog-card-title'); heading.append(open);
+        details.append(heading, el('p', 'catalog-creator', `By ${entry.map.metadata.creator || 'Unknown creator'}`), stats(entry)); item.append(details); collection.append(item);
+      }
+      browser.append(collection);
+      if (page.total > PAGE_SIZE) {
+        const pagination = el('nav', 'catalog-pagination'); pagination.setAttribute('aria-label', 'Map pages');
+        const move = (offset: number) => { state.offset = offset; state.scrollTop = 0; state.detailId = null; loadedEntry = null; save(); void render(); };
+        const previous = button('← Previous', () => move(Math.max(0, state.offset - PAGE_SIZE))); previous.disabled = state.offset === 0;
+        const next = button('Next →', () => move(state.offset + PAGE_SIZE)); next.disabled = state.offset + PAGE_SIZE >= page.total;
+        pagination.append(previous, el('span', '', `Page ${Math.floor(state.offset / PAGE_SIZE) + 1} of ${Math.ceil(page.total / PAGE_SIZE)}`), next); browser.append(pagination);
+      }
+      restoreScroll(focusMap);
+      if (!state.detailId) return;
+      selected.replaceChildren(statusBox('Loading map…')); selected.setAttribute('aria-busy', 'true');
+      try {
+        const entry = loadedEntry?.map.id === state.detailId ? loadedEntry : await options.reader.get(state.detailId);
+        if (token !== generation || destroyed) return;
+        selected.removeAttribute('aria-busy'); loadedEntry = entry;
+        selected.replaceChildren(entry ? detail(entry, token, focusDetail) : statusBox('This map is no longer available. Choose another map from the collection.'));
+      } catch {
+        if (token !== generation || destroyed) return;
+        selected.removeAttribute('aria-busy'); selected.replaceChildren(statusBox('This map could not be loaded. Please try again.', true), button('Retry map', () => { loadedEntry = null; void render(); }));
       }
     } catch {
       if (token !== generation || destroyed) return;
-      content.removeAttribute('aria-busy'); loading.remove(); content.append(statusBox('The map library could not be loaded. Check your connection and try again.', true), button('Try again', () => { void render(); }));
+      browser.removeAttribute('aria-busy'); loading.remove(); browser.append(statusBox('The map library could not be loaded. Check your connection and try again.', true), button('Try again', () => { void render(); }));
+      restoringScroll = false;
     }
   }
   void render();
   return {
     getState: () => structuredClone(state),
-    refresh: () => { loadedEntry = null; return render(); },
+    refresh: () => { captureScroll(); loadedEntry = null; return render(); },
     suspend: () => { captureScroll(); paused = true; generation++; save(); },
-    resume: (returnToList = true) => { paused = false; if (returnToList) { state.detailId = null; loadedEntry = null; } save(); return render(returnToList); },
-    destroy: () => { captureScroll(); save(); destroyed = true; generation++; root.removeEventListener('scroll', captureScroll); root.removeEventListener(RATING_UPDATED, updateRating); root.replaceChildren(); root.classList.remove('community-catalog'); root.removeAttribute('aria-label'); },
+    resume: (returnToList = true) => { paused = false; loadedEntry = null; save(); return render(returnToList); },
+    destroy: () => { captureScroll(); save(); destroyed = true; generation++; root.removeEventListener(RATING_UPDATED, updateRating); root.replaceChildren(); root.classList.remove('community-catalog', 'konkr-ui'); root.removeAttribute('aria-label'); },
   };
 }

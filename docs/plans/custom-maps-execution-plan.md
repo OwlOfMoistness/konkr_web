@@ -80,7 +80,7 @@ These defaults are explicit proposals, not additional user decisions:
 - **Versions:** metadata edits retain the challenge; gameplay edits create an immutable revision. Keep old results readable and in-flight runs pinned. Engine updates do not silently combine incompatible scores.
 - **Saves:** local browser save/resume with complete recorded history; no cross-device sync. Keep the original undo/rewind behavior and validate the final canonical branch.
 - **Removal:** archive/unpublish rather than destroying historical data. Prevent new starts while continuing to adjudicate eligible previously issued runs.
-- **Curation:** private, authenticated curator/admin access is separate from anonymous public play. Draft → validated preview/playtest → published → archived.
+- **Curation:** private, authenticated curator/admin access is separate from anonymous public play. Draft → automatic validated preview → published → archived. Publishing is an explicit curator action; no separate playtest acknowledgment is required.
 - **Publication support:** only tested plugin combinations can be published as supported challenges. Gift rules are required for the supplied sample; zombie tags do not imply support until that ruleset passes parity.
 - **Availability:** new catalog runs require a server binding before their first decision; if issuance fails, show retry. Already-issued games can continue offline and submit later. Preserve pending submissions and display honest catalog/verification errors.
 
@@ -161,7 +161,7 @@ Initial ready set after approval: **T-toolchain**. T-contracts follows; runtime 
 - [x] T-curator-access — protected local curator sessions, roles, CSRF and audit, 5 tests passed.
 - [x] T-map-format — bounded data-only decoder and reference validation; both supplied maps plus malformed/resource-limit cases pass.
 - [x] T-map-import — private immutable uploads, metadata/revision editing and concurrency checks, 7 tests passed, including real-browser upload/edit/preview/publish/archive and 320px layout.
-- [x] T-publishing — support/preview/playtest gates and archive retention tested; both full-board previews inspected, 4 tests passed.
+- [x] T-publishing — support/preview gates and archive retention tested; both full-board previews inspected, 4 tests passed.
 - [x] T-fixtures — 14 original-browser cases / 68 checkpoints, repeated capture and fresh reproduction, 18 tests passed; legacy exports explicitly unverified.
 - [x] T-adapter-core
 - [x] T-validation-boundary
@@ -377,12 +377,12 @@ branch_suffix: publishing
 scope: M
 ```
 
-**Description:** Generate and cache revision-specific thumbnails with the fixed renderer, then provide the curator's playtest/publish/archive workflow.
+**Description:** Generate and cache revision-specific thumbnails with the fixed renderer, then provide the curator’s publish/archive workflow. Generate previews automatically on upload or when a missing preview is opened, keeping the original renderer isolated from player progress.
 
 **Acceptance:**
 
 - [x] Preview generation uses the exact stored revision in an isolated runtime and respects resource limits. Broken imports/previews cannot be marked ready.
-- [x] Publishing requires valid supported content, successful preview generation and a curator's playtest acknowledgment; importing alone does not establish solvability. Test the injected support-policy contract with fixtures here; T-local-assembly supplies the independently reviewed executable policy before real publication.
+- [x] Publishing requires valid supported content and successful preview generation; importing alone does not establish solvability. Per the revised curator workflow, Publish is the only acknowledgment; do not record or infer that a curator playtested the map. Test the injected support-policy contract with fixtures here; T-local-assembly supplies the independently reviewed executable policy before real publication.
 - [x] Archiving removes discovery/new starts while preserving historical records and the ability to adjudicate already-issued runs against their pinned revision.
 - [x] Both list and thumbnail views use the same metadata and cached preview assets; record audit events for publication changes.
 

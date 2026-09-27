@@ -132,6 +132,7 @@ describe('catalog browser experience', () => {
       const item = entry(`map-${String(index).padStart(2, '0')}`, `Island ${String(index).padStart(2, '0')}`);
       item.map.metadata.tags = [index % 2 ? 'zombie' : 'xmas']; return item;
     });
+    records[0].previewUrl = '/fixture-preview.svg';
     records[1].map.metadata.description = '<img src=x onerror="window.injected=true">';
     const route = createCatalogRoute(new InMemoryCatalogReader(records, policy));
     const source = `import { mountCatalog, createHttpCatalogReader } from ${JSON.stringify(fileURLToPath(new URL('../web/catalog.ts', import.meta.url)))};
@@ -140,9 +141,10 @@ describe('catalog browser experience', () => {
       window.catalog = mountCatalog(root, {reader:createHttpCatalogReader(), onPlay:async()=>{window.catalog.suspend();root.hidden=true;back.hidden=false;}});
       back.onclick=()=>{root.hidden=false;back.hidden=true;window.catalog.resume();};`;
     const bundle = await build({ stdin: { contents: source, resolveDir: fileURLToPath(new URL('..', import.meta.url)), loader: 'ts' }, bundle: true, write: false, format: 'iife', platform: 'browser' });
-    const css = await readFile(new URL('../web/catalog.css', import.meta.url), 'utf8');
+    const css = await readFile(new URL('../web/theme.css', import.meta.url), 'utf8') + await readFile(new URL('../web/catalog.css', import.meta.url), 'utf8');
     const server = createServer((req, res) => {
       void (async () => {
+        if (req.url === '/fixture-preview.svg') { res.writeHead(200, { 'Content-Type': 'image/svg+xml' }); res.end('<svg xmlns="http://www.w3.org/2000/svg" width="900" height="675"><path d="M450 80L720 235V440L450 595L180 440V235Z" fill="#7fcf72"/></svg>'); return; }
         if (req.url?.startsWith('/api/')) {
           const response = await route(new Request(`http://localhost${req.url}`));
           res.writeHead(response?.status ?? 404, { 'Content-Type': 'application/json' }); res.end(response ? await response.text() : '{}'); return;
@@ -160,12 +162,35 @@ describe('catalog browser experience', () => {
       const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
       await page.goto(url);
       await page.getByRole('status').filter({ hasText: '55 maps' }).waitFor();
+      await page.locator('.catalog-detail h2').filter({ hasText: 'Island 00' }).waitFor();
+      assert.equal(await page.locator('[data-map-id="map-00"]').getAttribute('aria-pressed'), 'true');
       for (const width of [320, 768, 1024, 1440]) {
         await page.setViewportSize({ width, height: 900 });
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false, `No page overflow at ${width}`);
         assert.equal(await page.locator('#catalog').evaluate(node => node.scrollWidth > node.clientWidth), false, `No catalog overflow at ${width}`);
+        const layout = await page.evaluate(() => ({ stage: document.querySelector('.catalog-stage')!.getBoundingClientRect().toJSON(), browser: document.querySelector('.catalog-browser')!.getBoundingClientRect().toJSON() }));
+        if (width >= 900) {
+          assert.equal(layout.browser.width, 400); assert(layout.stage.right <= layout.browser.left);
+          const play = await page.getByRole('button', { name: 'Play map', exact: true }).boundingBox(); assert(play && play.y + play.height <= 900, 'Play stays visible beside the preview');
+        }
+        else assert(layout.stage.bottom <= layout.browser.top, 'Mobile preview is above map browser');
         if (process.env.CATALOG_SCREENSHOTS && [320, 1440].includes(width)) await page.screenshot({ path: `${process.env.CATALOG_SCREENSHOTS}/catalog-${width}.png` });
       }
+      // A post-play rating footer reduces available height on landscape screens.
+      await page.locator('#catalog').evaluate(node => { (node as HTMLElement).style.height = 'calc(100dvh - 180px)'; });
+      for (const viewport of [{ width: 900, height: 400 }, { width: 1280, height: 500 }]) {
+        await page.setViewportSize(viewport);
+        const available = await page.locator('#catalog').evaluate(node => node.clientHeight);
+        assert.equal(available, viewport.height - 180);
+        assert(await page.locator('.catalog-browser-scroll').evaluate(node => node.clientHeight) >= 160, `Map list remains usable at ${viewport.width}×${viewport.height}`);
+        await page.getByRole('button', { name: 'Island 02', exact: true }).click();
+        await page.getByRole('heading', { name: 'Island 02', exact: true }).waitFor();
+        assert.equal(await page.locator('[data-map-id="map-02"]').getAttribute('aria-pressed'), 'true');
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+        await page.getByLabel('Map name', { exact: true }).fill('');
+      }
+      await page.locator('#catalog').evaluate(node => { (node as HTMLElement).style.height = ''; });
+      await page.setViewportSize({ width: 1440, height: 900 });
       await page.getByLabel('Map name', { exact: true }).fill('Island');
       await page.getByLabel('Tags', { exact: true }).fill('#zombie');
       await page.getByLabel('Tags', { exact: true }).press('Enter');
@@ -175,30 +200,55 @@ describe('catalog browser experience', () => {
       await page.locator('.catalog-list').waitFor();
       const chosen = page.getByRole('button', { name: 'Island 25', exact: true });
       await chosen.scrollIntoViewIfNeeded();
-      const scroll = await page.locator('#catalog').evaluate(node => node.scrollTop);
+      const scroll = await page.locator('.catalog-browser-scroll').evaluate(node => node.scrollTop);
       assert(scroll > 0);
       await chosen.focus();
       await chosen.press('Enter');
       await page.getByRole('heading', { name: 'Island 25', exact: true }).waitFor();
+      assert.equal(await page.getByRole('complementary', { name: 'Browse maps' }).isVisible(), true, 'Selection keeps the browser on screen');
+      assert.equal(await chosen.getAttribute('aria-pressed'), 'true');
+      await page.evaluate(item => document.querySelector('#catalog')!.dispatchEvent(new CustomEvent('community:rating-updated', { detail: item })), { ...records[1], rating: { average: 5, count: 1 } });
+      assert.equal(await page.locator('[data-entry-id="map-01"] .catalog-rating').textContent(), '★ 5.0 · 1 rating', 'A post-play rating updates its card while another map is selected');
+      assert.equal(await page.locator('.catalog-detail .catalog-rating').textContent(), 'No ratings yet', 'The other selected map keeps its own aggregate');
+      await page.evaluate(item => document.querySelector('#catalog')!.dispatchEvent(new CustomEvent('community:rating-updated', { detail: item })), { ...records[1], revision: { ...records[1].revision, id: 'older-revision' }, rating: { average: 1, count: 1 } });
+      assert.equal(await page.locator('[data-entry-id="map-01"] .catalog-rating').textContent(), '★ 5.0 · 1 rating', 'Old-revision ratings cannot overwrite current cards');
+      await page.waitForFunction(expected => Math.abs(document.querySelector('.catalog-browser-scroll')!.scrollTop - expected) < 2, scroll);
       assert.equal(page.url(), url);
       await page.getByRole('button', { name: '← All maps', exact: true }).click();
       await page.locator('.catalog-list').waitFor();
-      await page.waitForFunction(expected => Math.abs(document.querySelector('#catalog')!.scrollTop - expected) < 2, scroll);
+      await page.waitForFunction(expected => Math.abs(document.querySelector('.catalog-browser-scroll')!.scrollTop - expected) < 2, scroll);
       assert.equal(await page.getByLabel('Tags', { exact: true }).inputValue(), '#zombie');
       assert.equal(await page.getByRole('button', { name: 'List', exact: true }).getAttribute('aria-pressed'), 'true');
       await chosen.click();
+      await page.getByRole('heading', { name: 'Island 25', exact: true }).waitFor();
+      await page.route('**/api/maps/map-25', route => route.fulfill({ status: 404, body: '{}' }));
+      await page.getByRole('button', { name: 'Play map', exact: true }).click();
+      await page.getByRole('alert').filter({ hasText: 'no longer available' }).waitFor();
+      assert.equal(await page.getByRole('button', { name: 'Return to maps', exact: true }).isVisible(), false, 'A withdrawn selection cannot launch');
+      await page.unroute('**/api/maps/map-25');
+      await page.route('**/api/maps/map-25', route => route.fulfill({ json: { ...records[25], revision: { ...records[25].revision, id: 'changed-revision' } } }));
+      await page.getByRole('button', { name: 'Play map', exact: true }).click();
+      await page.getByRole('alert').filter({ hasText: 'has changed' }).waitFor();
+      assert.equal(await page.getByRole('button', { name: 'Return to maps', exact: true }).isVisible(), false, 'A replaced revision requires a fresh selection');
+      await page.unroute('**/api/maps/map-25');
       await page.getByRole('button', { name: 'Play map', exact: true }).click();
       await page.getByRole('button', { name: 'Return to maps', exact: true }).click();
       await page.locator('.catalog-list').waitFor();
       assert.equal(page.url(), url);
       await page.reload();
       await page.locator('.catalog-list').waitFor();
+      await page.getByRole('heading', { name: 'Island 25', exact: true }).waitFor();
       assert.equal(await page.getByLabel('Tags', { exact: true }).inputValue(), '#zombie');
       await page.getByRole('button', { name: 'Next →', exact: true }).click();
       await page.getByText('Page 2 of 2', { exact: true }).waitFor();
       assert.equal(page.url(), url);
       await page.getByRole('button', { name: 'Clear filters', exact: true }).click();
+      await page.setViewportSize({ width: 320, height: 900 });
+      await page.getByRole('button', { name: '← All maps', exact: true }).click();
+      assert(await page.locator('#catalog').evaluate(node => node.scrollTop) > 0, 'Browse moves to the mobile map list');
       await page.getByRole('button', { name: 'Island 01', exact: true }).click();
+      await page.getByRole('heading', { name: 'Island 01', exact: true }).waitFor();
+      await page.waitForFunction(() => document.querySelector('#catalog')!.scrollTop === 0);
       await page.getByText('<img src=x onerror="window.injected=true">', { exact: true }).waitFor();
       assert.equal(await page.evaluate(() => (window as unknown as { injected?: boolean }).injected), undefined);
       await page.getByRole('button', { name: '← All maps', exact: true }).click();

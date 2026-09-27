@@ -28,6 +28,7 @@ export interface CustomMapsOptions extends Omit<CatalogBridgeOptions, 'loader' |
   supportedDifficulties?: (entry: CatalogEntry) => Difficulty[];
   verifiedResultsEnabled?: boolean;
   renderDetailActions?: (container: HTMLElement, entry: CatalogEntry) => void;
+  renderPostPlay?: (container: HTMLElement, entry: CatalogEntry) => void;
   renderExtras?: (container: HTMLElement) => { refresh?(): void; destroy?(): void } | void;
 }
 
@@ -37,16 +38,25 @@ export async function installCustomMaps(options: CustomMapsOptions) {
   const { app } = loader(55151);
   const gameRoot = document.getElementById('phaser-game')!;
   const root = options.root;
+  root.classList.add('community-catalog-shell', 'konkr-ui');
   Object.assign(root.style, { position: 'fixed', inset: '0', zIndex: '20' });
   root.hidden = true;
   let extras: { refresh?(): void; destroy?(): void } | void;
-  const catalogRoot = options.renderExtras ? document.createElement('div') : root;
-  if (options.renderExtras) {
+  const hasFooter = !!(options.renderExtras || options.renderPostPlay);
+  const catalogRoot = hasFooter ? document.createElement('div') : root;
+  const postPlay = document.createElement('section'); postPlay.className = 'community-postplay'; postPlay.hidden = true;
+  if (hasFooter) {
+    const footer = document.createElement('div'); footer.className = 'community-catalog-footer';
     const extraRoot = document.createElement('section');
-    root.replaceChildren(extraRoot, catalogRoot); root.style.gridTemplateRows = 'auto minmax(0, 1fr)';
+    footer.append(postPlay, extraRoot);
+    root.replaceChildren(catalogRoot, footer); root.style.gridTemplateRows = 'minmax(0, 1fr) auto';
     catalogRoot.style.height = '100%'; catalogRoot.style.minHeight = '0';
-    extras = options.renderExtras(extraRoot);
+    extras = options.renderExtras?.(extraRoot);
   }
+  const forwardRating = (event: Event) => {
+    if (postPlay.contains(event.target as Node)) catalogRoot.dispatchEvent(new CustomEvent('community:rating-updated', { detail: (event as CustomEvent).detail }));
+  };
+  root.addEventListener('community:rating-updated', forwardRating);
   let catalog: ReturnType<typeof mountCatalog>;
   const error = (failure: Error) => {
     options.onError?.(failure);
@@ -56,15 +66,24 @@ export async function installCustomMaps(options: CustomMapsOptions) {
     status.textContent = failure.message;
   };
   const show = () => {
-    root.hidden = false; if (options.renderExtras) root.style.display = 'grid'; gameRoot.classList.add('hidden');
+    root.hidden = false; if (hasFooter) root.style.display = 'grid'; gameRoot.classList.add('hidden');
     app.game.input.enabled = false; app.game.input.keyboard.enabled = false;
     extras?.refresh?.(); void catalog.resume();
   };
   const hide = () => {
-    catalog.suspend(); root.hidden = true; if (options.renderExtras) root.style.display = 'none'; gameRoot.classList.remove('hidden');
+    catalog.suspend(); root.hidden = true; if (hasFooter) root.style.display = 'none'; gameRoot.classList.remove('hidden');
     app.game.input.enabled = true; app.game.input.keyboard.enabled = true;
   };
-  const bridge = createCatalogBridge({ ...options, loader, onReturn: show, onError: error });
+  const bridge = createCatalogBridge({ ...options, loader, onReturn(context) {
+    if (options.renderPostPlay) {
+      postPlay.replaceChildren(); postPlay.hidden = false;
+      const rating = document.createElement('div'); postPlay.append(rating);
+      options.renderPostPlay(rating, context.entry);
+      const dismiss = document.createElement('button'); dismiss.type = 'button'; dismiss.textContent = 'Not now';
+      dismiss.onclick = () => { postPlay.hidden = true; }; postPlay.append(dismiss);
+    }
+    show();
+  }, onError: error });
   catalog = mountCatalog(catalogRoot, {
     reader: options.reader, supportedDifficulties: options.supportedDifficulties, verifiedResultsEnabled: options.verifiedResultsEnabled,
     onPlay: async (entry, difficulty) => { await bridge.start(entry, difficulty); hide(); },
@@ -89,6 +108,6 @@ export async function installCustomMaps(options: CustomMapsOptions) {
   return {
     bridge, catalog, open: show,
     async resumeSaved(save: CatalogSave) { await bridge.resume(save.context.entry, save.context.difficulty); hide(); },
-    destroy() { window.removeEventListener('pagehide', inactive); bridge.destroy(); catalog.destroy(); extras?.destroy?.(); removeMenu(); restoreUrl(); },
+    destroy() { window.removeEventListener('pagehide', inactive); root.removeEventListener('community:rating-updated', forwardRating); bridge.destroy(); catalog.destroy(); extras?.destroy?.(); removeMenu(); restoreUrl(); },
   };
 }

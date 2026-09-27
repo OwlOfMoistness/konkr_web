@@ -3,14 +3,16 @@ export interface AdminClient { request(path: string, init?: RequestInit): Promis
 
 /** Credentials remain in memory. Public players never pass through this screen. */
 export function mountAdmin(root: HTMLElement, onReady: (client: AdminClient, session: AdminSession) => void): void {
-  root.replaceChildren(); root.className = 'community-admin';
+  root.replaceChildren(); root.className = 'community-admin konkr-ui';
+  const back = document.createElement('a'); back.href = '/'; back.className = 'konkr-button'; back.textContent = '← Game';
+  const panel = document.createElement('section'); panel.className = 'admin-login';
   const heading = document.createElement('h1'); heading.textContent = 'Map curator access';
   const form = document.createElement('form');
   const label = document.createElement('label'); label.textContent = 'Curator access key';
   const input = document.createElement('input'); input.type = 'password'; input.required = true; input.autocomplete = 'current-password'; label.append(input);
   const button = document.createElement('button'); button.textContent = 'Sign in';
   const status = document.createElement('p'); status.setAttribute('role', 'status');
-  form.append(label, button); root.append(heading, form, status);
+  form.append(label, button); panel.append(heading, form, status); root.append(back, panel);
   form.onsubmit = event => {
     event.preventDefault(); button.disabled = true;
     void (async () => {
