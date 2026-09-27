@@ -1,4 +1,4 @@
-/* Colors and raised pill geometry from the original Conquest menu. */
+/* Original palettes and atlas artwork; native-controls.ts extracts checksum-pinned frames. */
 :root {
   --konkr-ocean: #327da0;
   --konkr-panel: #b1ddf2;
@@ -15,20 +15,30 @@
 .konkr-ui { box-sizing: border-box; color: var(--konkr-text); font: 16px/1.4 Georgia, 'Times New Roman', serif; }
 .konkr-ui *, .konkr-ui *::before, .konkr-ui *::after { box-sizing: border-box; }
 .konkr-ui h1, .konkr-ui h2, .konkr-ui h3 { font-weight: normal; line-height: 1.15; }
-.konkr-ui button, .konkr-ui .konkr-button {
+/* DialogButton: original 48×48 texture, 16px nine-slice (module 35725).
+   BoxButton keeps the same frame on hover and swaps only while pressed. */
+.konkr-ui button:not(.konkr-plain):not(.konkr-difficulty-option):not(.rating-star):not(.catalog-map-title):not(.catalog-preview-button),
+.konkr-ui .konkr-button, .konkr-native-button:not(.konkr-plain) {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  min-height: 42px; max-width: 100%; padding: 8px 22px;
-  border: 0; border-radius: 24px; box-shadow: 0 4px 0 var(--konkr-shadow);
-  background: var(--konkr-face); color: var(--konkr-text);
+  min-height: 46px; max-width: 100%; padding: 2px 14px;
+  border: 8px solid transparent; border-radius: 0; box-shadow: none;
+  border-image-source: var(--native-face, var(--konkr-native-button)); border-image-slice: 16 fill; border-image-width: 16px; border-image-repeat: stretch;
+  background: transparent; color: #583922;
   font: inherit; text-align: center; text-decoration: none; cursor: pointer;
+  transform: none;
 }
-.konkr-ui button:hover, .konkr-ui .konkr-button:hover { background: var(--konkr-hover); }
-.konkr-ui button:active, .konkr-ui .konkr-button:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--konkr-shadow); }
-.konkr-ui button:disabled { cursor: default; opacity: .6; transform: none; }
-.konkr-ui .konkr-primary { background: var(--konkr-green); box-shadow: 0 4px 0 var(--konkr-green-shadow); }
-.konkr-ui .konkr-primary:hover { background: #bde6b6; }
-.konkr-ui .konkr-danger { background: var(--konkr-danger); box-shadow: 0 4px 0 var(--konkr-danger-shadow); }
-.konkr-ui .konkr-danger:hover { background: #f2c7bf; }
+.konkr-ui button:not(.konkr-plain):not(.konkr-difficulty-option):not(.rating-star):not(.catalog-map-title):not(.catalog-preview-button):hover,
+.konkr-ui .konkr-button:hover, .konkr-native-button:not(.konkr-plain):hover { background: transparent; }
+.konkr-ui button:not(.konkr-plain):not(.konkr-difficulty-option):not(.rating-star):not(.catalog-map-title):not(.catalog-preview-button):active:not(:disabled),
+.konkr-ui .konkr-button:active:not(:disabled), .konkr-native-button:not(.konkr-plain):active:not(:disabled) {
+  border-image-source: var(--native-down, var(--konkr-native-button-down)); box-shadow: none; transform: none;
+  padding: 4px 12px 0 16px;
+}
+.konkr-ui button:disabled, .konkr-native-button:disabled { cursor: default; opacity: .6; transform: none; }
+.konkr-ui .konkr-primary, .konkr-native-button.konkr-primary { --native-face: var(--konkr-native-button-green); --native-down: var(--konkr-native-button-green-down); }
+.konkr-ui .konkr-danger, .konkr-native-button.konkr-danger { --native-face: var(--konkr-native-button-red); --native-down: var(--konkr-native-button-red-down); }
+.konkr-ui .konkr-plain { border: 0; border-image: none; border-radius: 0; background: transparent; box-shadow: none; }
+.konkr-back::before { content: ''; display: inline-block; width: 16px; height: 18px; background: var(--konkr-native-back) center / contain no-repeat; }
 .konkr-ui input, .konkr-ui textarea, .konkr-ui select { min-width: 0; max-width: 100%; min-height: 42px; padding: 8px 12px; border: 1px solid var(--konkr-shadow); border-radius: 5px; background: var(--konkr-hover); color: var(--konkr-text); font: 15px/1.4 Arial, sans-serif; }
 .konkr-ui input[type=checkbox] { min-height: 20px; width: 20px; }
 .konkr-ui a { color: var(--konkr-text); text-underline-offset: 3px; }
@@ -36,3 +46,17 @@
 .konkr-ui [role=status]:empty, .konkr-ui [role=alert]:empty { display: none; }
 .konkr-ui [role=alert] { color: #732c24; }
 .konkr-star { display: inline-block; width: 22px; height: 21px; background: url('/assets/atlas.png') -531px -791px / 1024px 1125px no-repeat; }
+
+.konkr-trophy { flex: 0 0 auto; display: inline-block; width: 27px; height: 38px; background-position: center; background-repeat: no-repeat; background-size: contain; }
+.konkr-trophy-normal { background-image: var(--konkr-native-trophy-normal); }
+.konkr-trophy-hard { background-image: var(--konkr-native-trophy-hard); }
+/* Toggle uses the original flat-box frame plus its original vector selection rectangle. */
+.konkr-difficulty { --difficulty-count: 2; --difficulty-index: 0; position: relative; display: inline-grid; grid-template-columns: repeat(var(--difficulty-count), minmax(0, 1fr)); width: 200px; max-width: 100%; height: 40px; padding: 4px; isolation: isolate; }
+.konkr-difficulty::before { content: ''; position: absolute; inset: 0; border: 10px solid transparent; border-image: var(--konkr-native-toggle) 10 fill / 10px stretch; pointer-events: none; }
+.konkr-difficulty-highlight { position: absolute; z-index: -1; left: 4px; top: 4px; width: calc((100% - 8px) / var(--difficulty-count)); height: calc(100% - 8px); border-radius: 6px; background: #00a000; transform: translateX(calc(var(--difficulty-index) * 100%)); transition: transform 200ms cubic-bezier(.39, .575, .565, 1); }
+.konkr-difficulty[data-difficulty=hard] .konkr-difficulty-highlight { background: #c83737; }
+.konkr-ui .konkr-difficulty-option, .konkr-difficulty-option { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; min-height: 0; height: 32px; padding: 0 4px; border: 0; border-image: none; border-radius: 6px; box-shadow: none; background: transparent; color: #583922; font: 13px/1 Arial, sans-serif; cursor: pointer; }
+.konkr-ui .konkr-difficulty-option:hover, .konkr-ui .konkr-difficulty-option:active, .konkr-difficulty-option:hover, .konkr-difficulty-option:active { background: transparent; box-shadow: none; transform: none; }
+.konkr-difficulty-option[aria-checked=true] { color: #f2f2f2; }
+.konkr-difficulty-option .konkr-trophy { width: 13.5px; height: 19px; }
+@media (prefers-reduced-motion: reduce) { .konkr-difficulty-highlight { transition: none; } }

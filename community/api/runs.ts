@@ -1,6 +1,8 @@
 import { createHash, randomUUID } from 'node:crypto';
 import type { Pool } from 'pg';
 import { LIMITS, parseSubmission, supports } from '../shared/contracts.ts';
+import { supportsPlayback } from '../shared/native-playback.ts';
+import type { NativePlaybackPolicy } from '../shared/native-playback.ts';
 import type { Difficulty, ObjectStorage, PublicRunStatus, RunBinding, SupportedConfigurations } from '../shared/contracts.ts';
 import { AdminError, adminResponse, errorResponse, readJson, requireFields } from './admin-auth.ts';
 import { inTransaction } from './maps-admin.ts';
@@ -11,6 +13,7 @@ export interface RunOptions {
   adapterVersion: string;
   submissionsEnabled: boolean;
   queueLimit?: number;
+  nativePlayback?: NativePlaybackPolicy;
 }
 export interface RunView { binding: RunBinding; result: PublicRunStatus | null }
 export const RUN_LIFETIME_DAYS = 30;
@@ -46,7 +49,7 @@ export class Runs {
         if ([...url.searchParams.keys()].some(key=>key!=='revision') || url.searchParams.getAll('revision').length!==1) throw new AdminError(400,'An exact revision is required');
         const row=(await this.db.query(`SELECT r.* FROM maps m JOIN map_revisions r ON r.id=m.current_revision_id
           WHERE m.id=$1 AND m.state='published' AND r.id=$2`,[fileMatch[1],url.searchParams.get('revision')])).rows[0];
-        if (!row || !(['normal','hard'] as const).some(d=>supports(this.policy,row.engine_hash,d,row.plugins))) throw new AdminError(404,'Map not found');
+        if (!row || !(['normal','hard'] as const).some(d=>supportsPlayback(this.policy,row.engine_hash,d,row.plugins,this.options.submissionsEnabled ? undefined : this.options.nativePlayback))) throw new AdminError(404,'Map not found');
         return await this.mapFile(row.object_key,row.content_hash);
       }
       if (url.search) throw new AdminError(400,'Unexpected query parameter');
@@ -62,7 +65,7 @@ export class Runs {
             WHERE m.id=$1 AND m.state='published' FOR SHARE OF m`,[data.mapId])).rows[0];
           if (!row) throw new AdminError(404,'Published map not found');
           if (row.id!==data.revisionId) throw new AdminError(409,'The map has a new revision. Refresh before starting.');
-          if (row.engine_hash!==this.options.engineHash || !supports(this.policy,row.engine_hash,data.difficulty as Difficulty,row.plugins)) throw new AdminError(422,'This map configuration is not supported');
+          if (row.engine_hash!==this.options.engineHash || !supportsPlayback(this.policy,row.engine_hash,data.difficulty as Difficulty,row.plugins,this.options.submissionsEnabled ? undefined : this.options.nativePlayback)) throw new AdminError(422,'This map configuration is not supported');
           await consumeVisitorQuota(client,visitor.tokenHash,'run-start',30,3600);
           const times=(await client.query(`SELECT now() AS issued,now()+interval '30 days' AS expires`)).rows[0];
           const binding:RunBinding={id:randomUUID(),mapId:data.mapId as string,revisionId:row.id,mapHash:row.content_hash,

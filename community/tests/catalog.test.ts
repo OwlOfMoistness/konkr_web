@@ -132,19 +132,17 @@ describe('catalog browser experience', () => {
       const item = entry(`map-${String(index).padStart(2, '0')}`, `Island ${String(index).padStart(2, '0')}`);
       item.map.metadata.tags = [index % 2 ? 'zombie' : 'xmas']; return item;
     });
-    records[0].previewUrl = '/fixture-preview.svg';
     records[1].map.metadata.description = '<img src=x onerror="window.injected=true">';
     const route = createCatalogRoute(new InMemoryCatalogReader(records, policy));
     const source = `import { mountCatalog, createHttpCatalogReader } from ${JSON.stringify(fileURLToPath(new URL('../web/catalog.ts', import.meta.url)))};
       const root = document.querySelector('#catalog');
       const back = document.querySelector('#return');
-      window.catalog = mountCatalog(root, {reader:createHttpCatalogReader(), onPlay:async()=>{window.catalog.suspend();root.hidden=true;back.hidden=false;}});
+      window.catalog = mountCatalog(root, {reader:createHttpCatalogReader(), renderPreview:(container)=>{const canvas=document.createElement('canvas');canvas.width=900;canvas.height=675;container.replaceChildren(canvas);return {ready:Promise.resolve(),destroy:()=>canvas.remove()};}, onPlay:async()=>{window.catalog.suspend();root.hidden=true;back.hidden=false;}});
       back.onclick=()=>{root.hidden=false;back.hidden=true;window.catalog.resume();};`;
     const bundle = await build({ stdin: { contents: source, resolveDir: fileURLToPath(new URL('..', import.meta.url)), loader: 'ts' }, bundle: true, write: false, format: 'iife', platform: 'browser' });
     const css = await readFile(new URL('../web/theme.css', import.meta.url), 'utf8') + await readFile(new URL('../web/catalog.css', import.meta.url), 'utf8');
     const server = createServer((req, res) => {
       void (async () => {
-        if (req.url === '/fixture-preview.svg') { res.writeHead(200, { 'Content-Type': 'image/svg+xml' }); res.end('<svg xmlns="http://www.w3.org/2000/svg" width="900" height="675"><path d="M450 80L720 235V440L450 595L180 440V235Z" fill="#7fcf72"/></svg>'); return; }
         if (req.url?.startsWith('/api/')) {
           const response = await route(new Request(`http://localhost${req.url}`));
           res.writeHead(response?.status ?? 404, { 'Content-Type': 'application/json' }); res.end(response ? await response.text() : '{}'); return;
@@ -176,6 +174,13 @@ describe('catalog browser experience', () => {
         else assert(layout.stage.bottom <= layout.browser.top, 'Mobile preview is above map browser');
         if (process.env.CATALOG_SCREENSHOTS && [320, 1440].includes(width)) await page.screenshot({ path: `${process.env.CATALOG_SCREENSHOTS}/catalog-${width}.png` });
       }
+      // A later selection during the outgoing animation must supersede the first.
+      await page.evaluate(() => {
+        (document.querySelector('[data-map-id="map-01"]') as HTMLButtonElement).click();
+        (document.querySelector('[data-map-id="map-02"]') as HTMLButtonElement).click();
+      });
+      await page.getByRole('heading', { name: 'Island 02', exact: true }).waitFor();
+      assert.equal(await page.locator('[data-map-id="map-02"]').getAttribute('aria-pressed'), 'true');
       // A post-play rating footer reduces available height on landscape screens.
       await page.locator('#catalog').evaluate(node => { (node as HTMLElement).style.height = 'calc(100dvh - 180px)'; });
       for (const viewport of [{ width: 900, height: 400 }, { width: 1280, height: 500 }]) {
@@ -214,7 +219,7 @@ describe('catalog browser experience', () => {
       assert.equal(await page.locator('[data-entry-id="map-01"] .catalog-rating').textContent(), '★ 5.0 · 1 rating', 'Old-revision ratings cannot overwrite current cards');
       await page.waitForFunction(expected => Math.abs(document.querySelector('.catalog-browser-scroll')!.scrollTop - expected) < 2, scroll);
       assert.equal(page.url(), url);
-      await page.getByRole('button', { name: '← All maps', exact: true }).click();
+      assert.equal(await page.getByRole('button', { name: '← All maps', exact: true }).isVisible(), false);
       await page.locator('.catalog-list').waitFor();
       await page.waitForFunction(expected => Math.abs(document.querySelector('.catalog-browser-scroll')!.scrollTop - expected) < 2, scroll);
       assert.equal(await page.getByLabel('Tags', { exact: true }).inputValue(), '#zombie');

@@ -17,7 +17,7 @@ const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQ
 
 describe('publication gates and retained history', { skip: !url }, () => {
   let admin: Pool; let db: Pool; let maps: MapsAdmin; let service: PublicationService; let headers: Record<string,string>;
-  let rendererFails = false; const schema = `publication_${process.pid}`;
+  const schema = `publication_${process.pid}`;
   const objects = new Map<string,{bytes:Uint8Array;contentType:string}>();
   const storage: ObjectStorage = { async put(key,bytes,contentType) { objects.set(key,{bytes,contentType}); }, async get(key) { return objects.get(key) ?? null; }, async delete(key) { objects.delete(key); } };
   const policy: SupportedConfigurations = { version:1,configurations:[{engineHash:'engine',difficulty:'hard',plugins:[],evidence:'test-only'}] };
@@ -34,22 +34,21 @@ describe('publication gates and retained history', { skip: !url }, () => {
     const key = 'publication-editor-'.repeat(3); const auth = new CuratorAuth(db,developmentIdentityProvider([{id:'editor',key}]),origin);
     const login = (await auth.route(new Request(origin+'/api/admin/session',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({credential:key})})))!;
     headers = {Cookie:login.headers.get('set-cookie')!.split(';')[0],'X-CSRF-Token':(await login.json()).csrfToken};
-    maps = new MapsAdmin(db,storage,auth,'engine'); service = new PublicationService(maps,policy,{async render() { if(rendererFails) throw new Error('render failed'); return png; }});
+    maps = new MapsAdmin(db,storage,auth,'engine'); service = new PublicationService(maps,policy);
   });
   after(async () => { await db?.end(); if(admin) {await admin.query(`DROP SCHEMA ${schema} CASCADE`);await admin.end();} });
-  it('publishes supported previewed maps directly without claiming manual playtesting',async () => {
+  it('publishes supported maps without server screenshots or manual playtest claims',async () => {
     const map = await upload(); const publish = {expectedVersion:map.version,state:'published'};
-    assert.equal((await service.route(req(map.id,'publication',publish)))!.status,409);
-    rendererFails = true; assert.equal((await service.route(req(map.id,'preview',{expectedVersion:map.version})))!.status,503);
+    assert.equal((await service.route(req(map.id,'preview',{expectedVersion:map.version})))!.status,410);
+    assert.equal((await service.route(req(map.id,'preview')))!.status,410);
     assert.equal((await maps.detail(map.id)).revisions[0].preview_key,null);
-    rendererFails = false; assert.equal((await service.route(req(map.id,'preview',{expectedVersion:map.version})))!.status,200);
     assert.equal((await service.route(req(map.id,'publication',{...publish,playtested:true})))!.status,400);
     const published = (await service.route(req(map.id,'publication',publish)))!;
     assert.equal(published.status,200); assert.equal((await published.json()).map.state,'published');
     assert.equal((await service.route(req(map.id,'publication',publish)))!.status,409);
     assert.equal((await new PostgresCatalogReader(db,policy).list({})).total,1);
-    assert.equal((await service.route(req(map.id,'preview')))!.headers.get('content-type'),'image/png');
     assert.equal(await (await service.route(req(map.id,'file')))!.text(),encode(sample));
+    assert.equal([...objects.keys()].some(key=>key.startsWith('previews/')),false);
     const current = (await maps.detail(map.id)).map;
     assert.equal((await service.route(req(map.id,'publication',{expectedVersion:current.version,state:'archived'})))!.status,200);
     assert.equal((await new PostgresCatalogReader(db,policy).list({})).total,0);
@@ -59,19 +58,17 @@ describe('publication gates and retained history', { skip: !url }, () => {
   });
   it('fails closed with empty support policy and refuses stale versions',async () => {
     const map = await upload({...sample,map:{...sample.map,name:'unsupported'}});
-    const closed = new PublicationService(maps,{version:1,configurations:[]},{async render(){throw new Error('must not render');}});
-    assert.equal((await closed.route(req(map.id,'preview',{expectedVersion:map.version})))!.status,422);
-    assert.equal((await service.route(req(map.id,'preview',{expectedVersion:'0'})))!.status,409);
+    const closed = new PublicationService(maps,{version:1,configurations:[]});
     assert.equal((await closed.route(req(map.id,'publication',{expectedVersion:map.version,state:'published'})))!.status,422);
     assert.equal((await service.route(req(map.id,'publication',{expectedVersion:'0',state:'published'})))!.status,409);
     const missingCsrf = req(map.id,'publication',{expectedVersion:map.version,state:'published'}); missingCsrf.headers.delete('X-CSRF-Token');
     assert.equal((await service.route(missingCsrf))!.status,403);
     const stranger = new Request(origin+`/api/admin/maps/${map.id}/file`); assert.equal((await service.route(stranger))!.status,401);
   });
-  it('refuses damaged stored content before runtime import',async () => {
+  it('refuses damaged stored content before publication',async () => {
     const map = await upload({...sample,map:{...sample.map,name:'damaged'}}); const revision = (await maps.detail(map.id)).revisions[0];
     await storage.put(revision.object_key,Buffer.from(encode({...sample,map:{...sample.map,name:'tampered'}})),'application/vnd.konkr.map');
-    assert.equal((await service.route(req(map.id,'preview',{expectedVersion:map.version})))!.status,503);
+    assert.equal((await service.route(req(map.id,'publication',{expectedVersion:map.version,state:'published'})))!.status,503);
   });
 });
 

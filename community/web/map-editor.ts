@@ -6,6 +6,7 @@ export interface PublicationEditor {
   active(): boolean;
   update(detail: any): void;
   onUpdate(listener: () => void): void;
+  onDispose(listener: () => void): void;
   perform<T>(work: () => Promise<T>): Promise<T>;
   saveMetadata(): Promise<void>;
 }
@@ -13,8 +14,9 @@ export interface MapEditorOptions { renderPublication?: (root: HTMLElement, edit
 
 export function mountMapEditor(root: HTMLElement, client: AdminClient, options: MapEditorOptions = {}): { showList(): Promise<void>; destroy(): void } {
   let offset = 0; let generation = 0; let batchRunning = false;
-  // The original preview renderer accepts one job at a time. This also orders
-  // metadata/publication changes so each action uses the latest map version.
+  const disposers = new Set<() => void>();
+  const leaveView = () => { generation++; for (const dispose of disposers) dispose(); disposers.clear(); };
+  // Order mutations so publication always uses the latest metadata version.
   let pending: Promise<unknown> = Promise.resolve();
   const serial = <T>(work: () => Promise<T>): Promise<T> => {
     const next = pending.then(work); pending = next.catch(() => {}); return next;
@@ -47,7 +49,7 @@ export function mountMapEditor(root: HTMLElement, client: AdminClient, options: 
   }
   async function detail(id: string) {
     if (batchRunning) return;
-    const token = ++generation; const active = () => current(token);
+    leaveView(); const token = generation; const active = () => current(token);
     const data = await loadView(`/api/admin/maps/${encodeURIComponent(id)}`, token);
     if (!active() || !data) return;
     let latest = data; const listeners = new Set<() => void>();
@@ -92,7 +94,7 @@ export function mountMapEditor(root: HTMLElement, client: AdminClient, options: 
     };
     const publication = element('section', '', 'admin-preview-panel'); layout.append(form, publication); root.append(layout);
     options.renderPublication?.(publication, {
-      detail: () => latest, active, update, onUpdate: listener => { listeners.add(listener); },
+      detail: () => latest, active, update, onUpdate: listener => { listeners.add(listener); }, onDispose: listener => { disposers.add(listener); },
       perform: work => serial(async () => { if (!active()) throw new Error('Editor closed'); return work(); }),
       saveMetadata,
     });
@@ -114,7 +116,7 @@ export function mountMapEditor(root: HTMLElement, client: AdminClient, options: 
 
   async function list() {
     if (batchRunning) return;
-    const token = ++generation; const active = () => current(token);
+    leaveView(); const token = generation; const active = () => current(token);
     const data = await loadView(`/api/admin/maps?offset=${offset}`, token); if (!active() || !data) return;
     const status = element('p'); status.setAttribute('role', 'status');
     const label = element('label', 'Add .konkr maps', 'admin-upload');
@@ -141,7 +143,7 @@ export function mountMapEditor(root: HTMLElement, client: AdminClient, options: 
       void (async () => {
         for (const [index, file] of files.entries()) {
           if (!active()) break;
-          if (batchRunning) status.textContent = `Preparing map ${index + 1} of ${files.length}. Editing is available when uploads finish.`;
+          if (batchRunning) status.textContent = `Uploading map ${index + 1} of ${files.length}. Editing is available when uploads finish.`;
           const item = element('li'); const progress = element('span', `${file.name}: uploading…`); item.append(progress); results.append(item);
           let uploaded: any;
           try {
@@ -150,12 +152,10 @@ export function mountMapEditor(root: HTMLElement, client: AdminClient, options: 
               uploaded = await client.request('/api/admin/maps', { method: 'POST', body: JSON.stringify({ encoded: await readMap(file) }) });
               if (!active()) return;
               if (files.length === 1) { await detail(uploaded.map.id); return; }
-              progress.textContent = `${file.name}: preparing preview…`;
-              await client.request(`/api/admin/maps/${uploaded.map.id}/preview`, { method: 'POST', body: JSON.stringify({ expectedVersion: uploaded.map.version }) });
             });
             if (active()) progress.textContent = `${file.name}: draft ready.${uploaded?.warnings?.length ? ' ' + uploaded.warnings.join(' ') : ''}`;
           } catch (error) {
-            if (active()) progress.textContent = `${file.name}: ${uploaded ? 'Draft saved; preview unavailable. ' : ''}${message(error)}`;
+            if (active()) progress.textContent = `${file.name}: ${message(error)}`;
           }
           if (active() && uploaded) item.append(button('Edit map', () => detail(uploaded.map.id), status, active));
         }
@@ -170,5 +170,5 @@ export function mountMapEditor(root: HTMLElement, client: AdminClient, options: 
     };
   }
   void list().catch(error => { if (root.isConnected) { const status = element('p', message(error)); status.setAttribute('role', 'status'); root.replaceChildren(status); } });
-  return { showList: list, destroy() { generation++; } };
+  return { showList: list, destroy: leaveView };
 }

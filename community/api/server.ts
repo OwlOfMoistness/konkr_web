@@ -15,7 +15,7 @@ import { CuratorAuth, developmentIdentityProvider, adminResponse, errorResponse,
 import type { CuratorIdentityProvider } from './admin-auth.ts';
 import { MapsAdmin } from './maps-admin.ts';
 import { PublicationService } from './publication.ts';
-import { BrowserPreviewRenderer } from '../runtime/preview.ts';
+import { NATIVE_MAP_PLUGINS } from '../shared/native-playback.ts';
 import { Visitors } from './visitors.ts';
 import { Ratings } from './ratings.ts';
 import { Runs, digest } from './runs.ts';
@@ -59,6 +59,7 @@ export async function createCommunityServer(options:ServerOptions) {
   const policy=JSON.parse(await readFile(path.join(communityRoot,'shared/supported-configurations.json'),'utf8')) as SupportedConfigurations;
   const output=path.join(communityRoot,'.web');await mkdir(output,{recursive:true});
   await build({entryPoints:[path.join(communityRoot,'web/main.ts')],outfile:path.join(output,'community.js'),bundle:true,platform:'browser',format:'iife',target:'es2023',external:['/assets/*']});
+  await build({entryPoints:[path.join(communityRoot,'runtime/live-preview.ts')],outfile:path.join(output,'live-preview-runtime.js'),bundle:true,platform:'browser',format:'iife',target:'es2023'});
   const staticFiles=new Map<string,string>(Object.keys(manifest.files).map(file=>['/'+file,path.join(runtime,file)]));
   const helpHTML=new Set([...staticFiles.keys()].filter(url=>/^\/assets\/html\/help\/[^/]+\.html$/.test(url)));
   const helpPage=staticFiles.get('/assets/html/help/index.html');
@@ -67,15 +68,18 @@ export async function createCommunityServer(options:ServerOptions) {
   staticFiles.set('/assets/html/help/',helpPage);helpHTML.add('/assets/html/help/');
   staticFiles.set('/bootstrap.js',path.join(runtime,'bootstrap.js'));
   staticFiles.set('/community.js',path.join(output,'community.js'));staticFiles.set('/community.css',path.join(output,'community.css'));
+  staticFiles.set('/live-preview-runtime.js',path.join(output,'live-preview-runtime.js'));
   const adminHTML=await readFile(path.join(communityRoot,'web/index.html'),'utf8');
   const playerHTML=adminHTML.replace('<!-- COMMUNITY_RUNTIME -->',`<script defer src="/bootstrap.js"></script><script defer src="/${manifest.vendor}"></script><script defer src="/${manifest.main}"></script>`);
+  const previewHTML=adminHTML.replace('<head>','<head><base href="/">').replace('<script defer src="/community.js"></script>','').replace('<!-- COMMUNITY_RUNTIME -->',`<script defer src="/bootstrap.js"></script><script defer src="/live-preview-runtime.js"></script><script defer src="/${manifest.vendor}"></script><script defer src="/${manifest.main}"></script>`);
   const auth=new CuratorAuth(options.db,options.identityProvider,origin);
   const visitors=new Visitors(options.db,origin,options.csrfSecret);
   const maps=new MapsAdmin(options.db,options.storage,auth,PINNED_RELEASE.mainHash);
-  const publication=new PublicationService(maps,policy,new BrowserPreviewRenderer(runtime,30_000));
-  const ratings=new Ratings(options.db,visitors,policy);
-  const runs=new Runs(options.db,options.storage,visitors,policy,{engineHash:PINNED_RELEASE.mainHash,adapterVersion:ADAPTER_VERSION,submissionsEnabled:options.flags.submissions});
-  const catalog=new PostgresCatalogReader(options.db,policy,{verifiedResultsEnabled:options.flags.verifiedResults,previewUrl:key=>'/api/previews/'+encodeURIComponent(key)});
+  const nativePlayback=!options.flags.submissions&&!options.flags.verifiedResults?{engineHash:PINNED_RELEASE.mainHash,plugins:NATIVE_MAP_PLUGINS}:undefined;
+  const publication=new PublicationService(maps,policy,nativePlayback);
+  const ratings=new Ratings(options.db,visitors,policy,nativePlayback);
+  const runs=new Runs(options.db,options.storage,visitors,policy,{engineHash:PINNED_RELEASE.mainHash,adapterVersion:ADAPTER_VERSION,submissionsEnabled:options.flags.submissions,nativePlayback});
+  const catalog=new PostgresCatalogReader(options.db,policy,{verifiedResultsEnabled:options.flags.verifiedResults,nativePlayback,previewUrl:()=>null});
   const catalogRoute=createCatalogRoute(catalog);
   const limits=new Map<string,{expires:number;used:number}>();
   const metrics={requests:0,errors:0,totalLatencyMs:0,maxLatencyMs:0,limited:0};
@@ -108,19 +112,16 @@ export async function createCommunityServer(options:ServerOptions) {
     if(url.pathname==='/api/visitor' && !admit(ip,'visitor',60,3600) || url.pathname==='/api/admin/session' && request.method==='POST' && !admit(ip,'login',10,900)){
       metrics.limited++;return adminResponse({error:'Too many requests. Please try again later.'},429,{'Retry-After':'900'});
     }
-    if(url.pathname==='/api/config' && request.method==='GET')return adminResponse({flags:options.flags,engineHash:PINNED_RELEASE.mainHash,policy,runtime:{vendor:manifest.vendor,main:manifest.main}});
+    if(url.pathname==='/api/config' && request.method==='GET')return adminResponse({flags:options.flags,engineHash:PINNED_RELEASE.mainHash,policy,nativePlayback,runtime:{vendor:manifest.vendor,main:manifest.main}});
     if(url.pathname.startsWith('/api/previews/') && request.method==='GET'){
-      let key:string;try{key=decodeURIComponent(url.pathname.slice('/api/previews/'.length));}catch{return new Response(null,{status:400});}
-      const row=(await options.db.query("SELECT m.id FROM maps m JOIN map_revisions r ON r.id=m.current_revision_id WHERE m.state='published' AND r.preview_key=$1 LIMIT 1",[key])).rows[0];
-      if(!row || !(await catalog.get(row.id)))return new Response(null,{status:404});
-      const file=await options.storage.get(key);if(!file)return new Response(null,{status:503});
-      return new Response(Buffer.from(file.bytes),{headers:{'Content-Type':'image/png','Cache-Control':'no-store'}});
+      return new Response(null,{status:410});
     }
     for(const route of [auth.route.bind(auth),maps.route.bind(maps),publication.route.bind(publication),visitors.route.bind(visitors),ratings.route.bind(ratings),runs.route.bind(runs),catalogRoute]){
       const response=await route(request);if(response)return response;
     }
     if(request.method!=='GET' && request.method!=='HEAD')return new Response(null,{status:405});
     if(url.pathname==='/' || url.pathname==='/admin/maps')return new Response(url.pathname==='/'?playerHTML:adminHTML,{headers:{'Content-Type':'text/html; charset=utf-8'}});
+    if(url.pathname==='/community-preview')return new Response(previewHTML,{headers:{'Content-Type':'text/html; charset=utf-8'}});
     const filename=staticFiles.get(url.pathname);if(!filename)return new Response(null,{status:404});
     return new Response(await readFile(filename),{headers:{'Content-Type':MIME[path.extname(filename)]??'application/octet-stream'}});
   };
@@ -137,7 +138,9 @@ export async function createCommunityServer(options:ServerOptions) {
       try { response=await dispatch(request,incoming.socket.remoteAddress??'unknown'); }
       catch(error) { if(!(error instanceof AdminError))console.error(JSON.stringify({event:'api-error',stage:'route'}));response=errorResponse(error); }
       if(response.status>=500)metrics.errors++;
-      const csp=response.ok && helpHTML.has(new URL(request.url).pathname)?CSP.replace("frame-ancestors 'none'","frame-ancestors 'self'"):CSP;
+      const pathname=new URL(request.url).pathname;
+      let csp=response.ok && (helpHTML.has(pathname)||pathname==='/community-preview')?CSP.replace("frame-ancestors 'none'","frame-ancestors 'self'"):CSP;
+      if(pathname==='/community-preview')csp=csp.replace("connect-src 'self'",`connect-src ${origin}/assets/`).replace("frame-src 'self'","frame-src 'none'").replace("form-action 'self'","form-action 'none'");
       response.headers.set('Content-Security-Policy',csp);response.headers.set('X-Content-Type-Options','nosniff');response.headers.set('Referrer-Policy','no-referrer');response.headers.set('Cache-Control','no-store');
       outgoing.writeHead(response.status,Object.fromEntries(response.headers));outgoing.end(method==='HEAD'?undefined:Buffer.from(await response.arrayBuffer()));
     })().catch(()=>{metrics.errors++;if(!outgoing.headersSent)outgoing.writeHead(503,{'Content-Type':'application/json','Cache-Control':'no-store'});outgoing.end('{"error":"Service unavailable. Please retry."}');console.error(JSON.stringify({event:'api-error',stage:'dispatch'}));})

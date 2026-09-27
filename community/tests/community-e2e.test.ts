@@ -14,7 +14,7 @@ import { ValidationWorker } from '../worker/validate-job.ts';
 import type { SupportedConfigurations } from '../shared/contracts.ts';
 
 const database=process.env.CATALOG_TEST_DATABASE_URL;
-test('pinned help pages load through HTTP and only help HTML allows same-origin framing',{timeout:30_000},async()=>{
+test('pinned help pages load through HTTP and help and isolated preview HTML allow same-origin framing',{timeout:30_000},async()=>{
   // These public static/config routes must not need a database connection.
   const db=new Pool({connectionString:'postgresql://unused@127.0.0.1:1/unused'});
   const directory=await mkdtemp(path.join(tmpdir(),'konkr-community-help-'));
@@ -39,6 +39,10 @@ test('pinned help pages load through HTTP and only help HTML allows same-origin 
       const response=await fetch(origin+pathname);assert.equal(response.status,status);
       assert.match(response.headers.get('content-security-policy')!,/frame-ancestors 'none';/);
     }
+    const preview=await fetch(origin+'/community-preview');assert.equal(preview.status,200);
+    assert.match(preview.headers.get('content-security-policy')!,/frame-ancestors 'self';/);
+    assert.ok(preview.headers.get('content-security-policy')!.includes(`connect-src ${origin}/assets/;`));
+    assert.equal((await fetch(origin+'/api/previews/retired.png')).status,410);
     const rejected=await fetch(origin+'/assets/html/help/',{method:'POST'});
     assert.equal(rejected.status,405);assert.match(rejected.headers.get('content-security-policy')!,/frame-ancestors 'none';/);
   }finally{await app?.close();await db.end();await rm(directory,{recursive:true,force:true});}
@@ -80,20 +84,29 @@ test('complete local curator → original game → verified score → rating →
     await curator.getByLabel('Add .konkr maps').setInputFiles({name:'island.konkr',mimeType:'application/octet-stream',buffer:Buffer.from(fixture.encodedMap)});
     await curator.getByLabel('Title',{exact:true}).fill('Integration island');await curator.getByLabel('Creator',{exact:true}).fill('Community test');await curator.getByLabel('Tags (comma separated)').fill('#island');
     await curator.getByRole('button',{name:'Save metadata',exact:true}).click();await curator.getByRole('heading',{name:'Integration island',exact:true}).waitFor();
-    await curator.getByRole('img',{name:'Map preview: Integration island'}).waitFor({timeout:35_000});
+    await curator.locator('.admin-preview-frame[data-live-preview-ready="true"]').waitFor({timeout:35_000});
+    await curator.locator('iframe[data-community-preview="live"]').waitFor({state:'visible'});
+    await curator.frameLocator('iframe[data-community-preview="live"]').locator('#phaser-game canvas').waitFor({state:'visible'});
     assert.equal(await curator.getByRole('checkbox',{name:/I have playtested/}).count(),0);await curator.getByRole('button',{name:'Publish',exact:true}).click();await curator.locator('.admin-map-state').filter({hasText:'Published'}).waitFor();
     if(process.env.KONKR_E2E_SCREENSHOTS)await curator.screenshot({path:path.join(process.env.KONKR_E2E_SCREENSHOTS,'community-workshop-desktop.png')});
-    await curator.setViewportSize({width:320,height:740});assert.equal(await curator.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+    await curator.setViewportSize({width:320,height:740});
+    await curator.locator('.admin-preview-frame').scrollIntoViewIfNeeded();
+    assert.ok((await curator.locator('.admin-preview-frame').boundingBox())!.height>=180);
+    await curator.locator('iframe[data-community-preview="live"]').waitFor({state:'visible'});
+    assert.equal(await curator.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
     if(process.env.KONKR_E2E_SCREENSHOTS)await curator.screenshot({path:path.join(process.env.KONKR_E2E_SCREENSHOTS,'community-workshop-mobile.png'),fullPage:true});
     await curator.setViewportSize({width:1100,height:950});
-    const entry=(await (await fetch(origin+'/api/maps')).json()).entries[0];assert.ok(entry.previewUrl);assert.equal((await fetch(origin+entry.previewUrl)).status,200);
+    const entry=(await (await fetch(origin+'/api/maps')).json()).entries[0];assert.equal(entry.previewUrl,null);assert.equal((await db.query('SELECT count(*) FROM map_revisions WHERE preview_key IS NOT NULL')).rows[0].count,'0');
     const player=await playerContext.newPage();player.on('pageerror',error=>errors.push(error.message));
     await player.goto(origin+'/?view=community#unchanged');const publicURL=player.url();
     await player.getByRole('button',{name:'Custom Maps',exact:true}).click({timeout:30_000});
     await player.getByRole('button',{name:'Integration island',exact:true}).click();
+    await player.locator('.catalog-preview-large[data-live-preview-ready="true"]').waitFor({timeout:35_000});
+    await player.locator('iframe[data-community-preview="live"]').waitFor({state:'visible'});
+    await player.frameLocator('iframe[data-community-preview="live"]').locator('#phaser-game canvas').waitFor({state:'visible'});
     if(process.env.KONKR_E2E_SCREENSHOTS)await player.screenshot({path:path.join(process.env.KONKR_E2E_SCREENSHOTS,'community-catalog-desktop.png')});
     assert.equal(await player.getByRole('radiogroup',{name:'Your rating'}).count(),0,'Rating is offered only after playing');
-    await player.getByLabel('Play difficulty').selectOption('hard');await player.getByRole('button',{name:'Play map',exact:true}).click();
+    await player.getByRole('radio',{name:'Hard',exact:true}).click();await player.getByRole('button',{name:'Play map',exact:true}).click();
     await player.waitForFunction(()=>window.communityReference.inspect().screen==='Play'&&document.getElementById('catalog-root')!.hidden);
     const binding=(await db.query('SELECT binding FROM runs')).rows[0].binding;
     assert.equal(binding.difficulty,'hard');assert.equal(binding.revisionId,entry.revision.id);
@@ -101,8 +114,9 @@ test('complete local curator → original game → verified score → rating →
     await player.waitForFunction(()=>window.communityReference.inspect().screen==='Victory'&&window.communityReference.withEngine(load=>!load(55151).app.navigator.transitionInProgress));
     await player.evaluate(()=>window.communityReference.act('Escape'));
     await player.getByRole('heading',{name:'Custom Maps',exact:true}).waitFor();
-    await player.getByText(/^Saved games and results/).click();
-    await player.getByText(/Verified.*1 turn/i).first().waitFor({timeout:30_000});
+    assert.equal(await player.getByText(/^Saved games and results/).count(),0);
+    await player.locator('.catalog-detail').getByRole('img',{name:'Hard completed on this browser',exact:true}).waitFor();
+    await player.waitForFunction(async id=>(await (await fetch('/api/maps/'+id)).json()).scores.some((score:any)=>score.difficulty==='hard'&&score.completions===1),entry.map.id,{timeout:30_000});
     const row=(await db.query('SELECT state,result,counted FROM runs WHERE id=$1',[binding.id])).rows[0];assert.equal(row.state,'complete');assert.equal(row.result.status,'verified');assert.equal(row.result.turns,1);assert.equal(row.counted,true);
     const score=(await (await fetch(origin+'/api/maps/'+entry.map.id)).json()).scores;assert.deepEqual(score,[{difficulty:'hard',engineHash:binding.engineHash,completions:1,bestTurns:1}]);
     await player.getByRole('button',{name:'Integration island',exact:true}).click();
@@ -113,7 +127,7 @@ test('complete local curator → original game → verified score → rating →
     assert.equal(player.url(),publicURL);
     const metrics=await curatorContext.request.get(origin+'/api/admin/metrics');assert.equal(metrics.status(),200);assert.ok((await metrics.json()).api.requests>0);
     await curator.getByRole('button',{name:'Archive',exact:true}).click();await curator.locator('.admin-map-state').filter({hasText:'Archived'}).waitFor();
-    assert.equal((await fetch(origin+'/api/maps/'+entry.map.id)).status,404);assert.equal((await fetch(origin+entry.previewUrl)).status,404);
+    assert.equal((await fetch(origin+'/api/maps/'+entry.map.id)).status,404);assert.equal(entry.previewUrl,null);
     assert.equal((await db.query('SELECT completions FROM map_score_buckets')).rows[0].completions,'1');
     let limited=0;for(let index=0;index<121;index++){const response=await fetch(origin+'/api/runs',{method:'POST'});if(response.status===429)limited++;else assert.equal(response.status,401);}
     assert.ok(limited>0,'Malformed unauthenticated writes are bounded before body parsing');

@@ -39,7 +39,7 @@ export function ratingControls(visitor:VisitorClient,onChanged:()=>void=()=>{}) 
       void operation.finally(()=>{if(writes.get(key)===operation)writes.delete(key);});
     };
     for(let value=1;value<=5;value++){
-      const button=document.createElement('button');button.type='button';button.className='community-rating-star';button.setAttribute('role','radio');button.setAttribute('aria-label',`${value} ${value===1?'star':'stars'}`);
+      const button=document.createElement('button');button.type='button';button.className='community-rating-star konkr-plain';button.setAttribute('role','radio');button.setAttribute('aria-label',`${value} ${value===1?'star':'stars'}`);
       const icon=document.createElement('span');icon.className='konkr-star';icon.setAttribute('aria-hidden','true');button.append(icon);
       button.onclick=()=>choose(value);
       button.onkeydown=event=>{

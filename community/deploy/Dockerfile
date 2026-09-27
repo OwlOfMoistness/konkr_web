@@ -7,7 +7,7 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
 WORKDIR /app/community
 COPY community/package.json community/package-lock.json ./
 # Keep development dependencies: native TS execution needs types at build time,
-# and server startup/preview rendering currently import esbuild and Playwright.
+# server startup imports esbuild, and local reference checks use Playwright.
 RUN npm ci --ignore-scripts && npx --no-install playwright install --with-deps chromium \
     && chmod -R a+rX /opt/playwright
 
@@ -43,6 +43,7 @@ COPY --from=checked /app/community/web/ ./web/
 COPY --from=checked /app/community/worker/ ./worker/
 COPY --from=checked /app/community/db/ ./db/
 COPY --from=checked /app/community/scripts/prepare-runtime.ts ./scripts/prepare-runtime.ts
+COPY --from=checked /app/community/scripts/retire-preview-cache.ts ./scripts/retire-preview-cache.ts
 COPY --from=checked /app/_site/releases/2.35.30/ /app/_site/releases/2.35.30/
 RUN mkdir -p .runtime .web .data && chown node:node .runtime .web .data
 USER node

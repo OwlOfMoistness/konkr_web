@@ -1,13 +1,14 @@
 import type { Pool } from 'pg';
-import { supports } from '../shared/contracts.ts';
+import { supportsPlayback } from '../shared/native-playback.ts';
+import type { NativePlaybackPolicy } from '../shared/native-playback.ts';
 import type { SupportedConfigurations } from '../shared/contracts.ts';
 import { AdminError, adminResponse, errorResponse, readJson, requireFields } from './admin-auth.ts';
 import { inTransaction } from './maps-admin.ts';
 import { Visitors, consumeVisitorQuota } from './visitors.ts';
 
 export class Ratings {
-  private db:Pool;private visitors:Visitors;private policy:SupportedConfigurations;
-  constructor(db:Pool,visitors:Visitors,policy:SupportedConfigurations){this.db=db;this.visitors=visitors;this.policy=policy;}
+  private db:Pool;private visitors:Visitors;private policy:SupportedConfigurations;private nativePlayback?:NativePlaybackPolicy;
+  constructor(db:Pool,visitors:Visitors,policy:SupportedConfigurations,nativePlayback?:NativePlaybackPolicy){this.db=db;this.visitors=visitors;this.policy=policy;this.nativePlayback=nativePlayback;}
   async route(request:Request):Promise<Response|null>{
     const match=/^\/api\/maps\/([A-Za-z0-9_-]{1,128})\/ratings$/.exec(new URL(request.url).pathname);if(!match)return null;
     try{
@@ -18,7 +19,7 @@ export class Ratings {
       const result=await inTransaction(this.db,async client=>{
         const row=(await client.query(`SELECT r.id,r.engine_hash,r.plugins FROM maps m JOIN map_revisions r ON r.id=m.current_revision_id
           WHERE m.id=$1 AND m.state='published' FOR SHARE OF m`,[match[1]])).rows[0];
-        if(!row||!(['normal','hard'] as const).some(mode=>supports(this.policy,row.engine_hash,mode,row.plugins)))throw new AdminError(404,'Map unavailable');
+        if(!row||!(['normal','hard'] as const).some(mode=>supportsPlayback(this.policy,row.engine_hash,mode,row.plugins,this.nativePlayback)))throw new AdminError(404,'Map unavailable');
         if(data){
           if(data.revisionId!==row.id)throw new AdminError(409,'Map revision changed. Reload before rating.');
           await consumeVisitorQuota(client,visitor.tokenHash,'rating',20,3600);

@@ -90,34 +90,47 @@ describe('private draft uploads and revision changes', { skip: !url }, () => {
       assert.equal(actual.map.title, expected.map.name);
     }
   });
-  it('automatically previews single and batch uploads, preserves edits and publishes without stale navigation', {timeout:60_000}, async () => {
+  it('uploads batches without screenshots and keeps browser previews independent of publication', {timeout:60_000}, async () => {
     let auth: CuratorAuth; let browserMaps: MapsAdmin; let publication: PublicationService;
     const policy = {version:1 as const,configurations:[{engineHash:'pinned-engine',difficulty:'hard' as const,plugins:[],evidence:'test-only'}]};
     const source = `import {mountAdmin} from './web/admin.ts'; import {mountMapEditor} from './web/map-editor.ts'; import {publicationControls} from './web/publication.ts';
       const root=document.querySelector('main');mountAdmin(root,(client)=>{
         const back=document.createElement('button');back.textContent='Curated maps';const editor=document.createElement('section');root.replaceChildren(back,editor);
-        const maps=mountMapEditor(editor,client,{renderPublication:publicationControls(client)});back.onclick=()=>void maps.showList();
+        const maps=mountMapEditor(editor,client,{renderPublication:publicationControls(client,{mountPreview(frame,detail){
+          let disposed=false;
+          const ready=fetch('/api/admin/maps/'+detail.map.id+'/file').then(async response=>{
+            if(!response.ok)throw new Error('Client preview unavailable');const encoded=await response.text();
+            if(!encoded.startsWith('konkrmap.v7.'))throw new Error('Invalid map');
+            if(!disposed){frame.textContent='Live map preview';frame.setAttribute('role','img');frame.setAttribute('aria-label','Map preview: '+detail.map.title);}
+          });return {ready,destroy(){disposed=true;frame.removeAttribute('role');frame.removeAttribute('aria-label');}};
+        }})});back.onclick=()=>void maps.showList();
       });`;
     const bundle = await build({stdin:{contents:source,resolveDir:fileURLToPath(new URL('..',import.meta.url)),loader:'ts'},bundle:true,write:false,format:'iife',platform:'browser'});
     const css = (await Promise.all(['theme','admin'].map(name=>readFile(new URL(`../web/${name}.css`,import.meta.url),'utf8')))).join('\n');
+    let previewGate: Promise<void> | undefined; let releasePreview: (() => void) | undefined;
+    let uploadGate: Promise<void> | undefined; let releaseUpload: (() => void) | undefined;
+    let screenshotRequests=0; const failedPreviewTitles=new Set(['client-preview-fail']);
     const server = createServer((incoming,outgoing)=>{void(async()=>{
       if(!incoming.url?.startsWith('/api/')){outgoing.writeHead(200,{'Content-Type':'text/html'});outgoing.end(`<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#193847}${css}</style><main></main><script>${bundle.outputFiles[0].text}</script>`);return;}
       const chunks:Buffer[]=[];for await(const chunk of incoming)chunks.push(Buffer.from(chunk));
       const request = new Request(`http://${incoming.headers.host}${incoming.url}`,{method:incoming.method,headers:incoming.headers as Record<string,string>,body:['GET','HEAD'].includes(incoming.method!)?undefined:Buffer.concat(chunks)});
+      if(incoming.url.endsWith('/preview'))screenshotRequests++;
+      if(incoming.url.endsWith('/file')&&incoming.method==='GET'){
+        const map=await browserMaps.detail(incoming.url.split('/')[4]);
+        if(failedPreviewTitles.has(map.map.title)){outgoing.writeHead(503,{'Content-Type':'application/json'});outgoing.end(JSON.stringify({error:'Client preview unavailable'}));return;}
+        await previewGate;
+      }
+      if(incoming.url==='/api/admin/maps'&&incoming.method==='POST'){
+        const body=JSON.parse(Buffer.concat(chunks).toString());
+        if(typeof body.encoded==='string'&&body.encoded.startsWith('konkrmap.v7.')&&(decodeKonkrData(body.encoded) as any).map.levelId==='batch-hold')await uploadGate;
+      }
       const response=await auth.route(request)??await browserMaps.route(request)??await publication.route(request);
       outgoing.writeHead(response?.status??404,response?Object.fromEntries(response.headers):{});outgoing.end(response?Buffer.from(await response.arrayBuffer()):'');
     })().catch(()=>outgoing.writeHead(500).end());});
     await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));const address=server.address();assert(address&&typeof address!=='string');const base=`http://127.0.0.1:${address.port}`;
     const key='browser-test-curator-'.repeat(3);auth=new CuratorAuth(db,developmentIdentityProvider([{id:'curator',key}]),base);
     browserMaps=new MapsAdmin(db,storage,auth,'pinned-engine');
-    const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLttAAAAABJRU5ErkJggg==','base64');
-    let previewGate: Promise<void> | undefined; let previewGateId: string | undefined; let releasePreview: (() => void) | undefined;
-    const failedPreviews = new Set(['batch-preview-fail']); let previewsActive = 0; let maximumPreviews = 0;
-    publication=new PublicationService(browserMaps,policy,{async render(encoded){
-      previewsActive++; maximumPreviews = Math.max(maximumPreviews, previewsActive);
-      try { const id=(decodeKonkrData(encoded) as any).map.levelId; if(!previewGateId||previewGateId===id) await previewGate; if(failedPreviews.has(id)) throw new Error('test renderer failure'); return png; }
-      finally { previewsActive--; }
-    }});
+    publication=new PublicationService(browserMaps,policy);
     const browser=await chromium.launch({headless:true});
     try{
       const page=await browser.newPage({viewport:{width:1024,height:900}});const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
@@ -131,13 +144,13 @@ describe('private draft uploads and revision changes', { skip: !url }, () => {
       await page.getByLabel('Title',{exact:true}).fill('Curator browser map');await page.getByLabel('Creator',{exact:true}).fill('Example creator');
       await page.getByLabel('Tags (comma separated)').fill('#Xmas, island');
       assert.equal(await page.getByRole('checkbox').count(),0);
-      assert.equal(await page.getByRole('button',{name:'Publish',exact:true}).isDisabled(),true);
-      releasePreview!(); previewGate = undefined;
-      await page.getByRole('img',{name:'Map preview: Browser draft'}).waitFor();
-      assert.equal(await page.getByLabel('Title',{exact:true}).inputValue(),'Curator browser map');
+      assert.equal(await page.getByRole('button',{name:'Publish',exact:true}).isEnabled(),true);
       // Publish saves the current fields first and uses the resulting version.
       await page.getByRole('button',{name:'Publish',exact:true}).click();await page.locator('.admin-map-state').getByText('Published',{exact:true}).waitFor();
       await page.getByRole('heading',{name:'Curator browser map',exact:true}).waitFor();
+      releasePreview!(); previewGate=undefined;
+      await page.getByRole('img',{name:'Map preview: Browser draft'}).waitFor();
+      assert.equal(await page.getByLabel('Title',{exact:true}).inputValue(),'Curator browser map');
       const publicEntry=(await new PostgresCatalogReader(db,policy).list({search:'Curator browser map'})).entries[0];assert.ok(publicEntry);assert.deepEqual(publicEntry.map.metadata.tags,['xmas','island']);
       assert.equal(publicEntry.map.metadata.creator,'Example creator');
       await page.getByRole('button',{name:'← Curated maps',exact:true}).click();
@@ -152,38 +165,39 @@ describe('private draft uploads and revision changes', { skip: !url }, () => {
       await page.getByLabel('Add .konkr maps').setInputFiles(fixture('leave-during-preview'));
       await page.getByRole('heading',{name:'leave-during-preview',exact:true}).waitFor();
       await page.getByRole('button',{name:'← Curated maps',exact:true}).click();
-      const completedPreview=page.waitForResponse(response=>response.url().endsWith('/preview')&&response.request().method()==='POST');
+      const completedPreview=page.waitForResponse(response=>response.url().endsWith('/file')&&response.request().method()==='GET');
       releasePreview!(); previewGate=undefined; await completedPreview;
       await page.getByRole('heading',{name:'Curated maps',exact:true}).waitFor();
       assert.equal(await page.getByLabel('Title',{exact:true}).count(),0);
       // Each batch item gets a result and a later file still succeeds after errors.
-      previewGateId='batch-preview-fail'; previewGate=new Promise<void>(resolve=>{releasePreview=resolve;});
+      uploadGate=new Promise<void>(resolve=>{releaseUpload=resolve;});
       await page.getByLabel('Add .konkr maps').setInputFiles([
         fixture('batch-first'),{name:'invalid.konkr',mimeType:'application/octet-stream',buffer:Buffer.from('invalid')},
-        fixture('batch-first'),fixture('batch-preview-fail'),fixture('batch-last'),
+        fixture('batch-first'),fixture('batch-hold'),fixture('batch-last'),
       ]);
       const results=page.getByRole('list',{name:'Upload results'});
-      await results.getByText('batch-preview-fail.konkr: preparing preview…',{exact:true}).waitFor();
+      await results.getByText('batch-hold.konkr: uploading…',{exact:true}).waitFor();
       assert.equal(await results.getByRole('button',{name:'Edit map',exact:true}).first().isDisabled(),true);
       assert.equal(await page.getByRole('button',{name:'Curator browser map',exact:true}).isDisabled(),true);
       await page.getByRole('button',{name:'Curated maps',exact:true}).click();
-      releasePreview!(); previewGate=undefined; previewGateId=undefined;
+      releaseUpload!(); uploadGate=undefined;
       await page.getByRole('status').filter({hasText:'Uploads finished.'}).waitFor();
       assert.equal(await results.getByRole('button',{name:'Edit map',exact:true}).first().isEnabled(),true);
       assert.equal(await results.locator('li').count(),5);
       assert.match(await results.innerText(),/batch-first.konkr: draft ready/);
       assert.match(await results.innerText(),/exact file already belongs/);
-      assert.match(await results.innerText(),/batch-preview-fail.konkr: Draft saved; preview unavailable/);
+      assert.match(await results.innerText(),/batch-hold.konkr: draft ready/);
       assert.match(await results.innerText(),/batch-last.konkr: draft ready/);
-      assert.equal(maximumPreviews,1);
       assert.equal((await new PostgresCatalogReader(db,policy).list({search:'batch-'})).total,0);
-      await page.getByRole('button',{name:'batch-preview-fail',exact:true}).click();
+      await page.getByLabel('Add .konkr maps').setInputFiles(fixture('client-preview-fail'));
       await page.getByRole('button',{name:'Retry preview',exact:true}).waitFor();
-      failedPreviews.clear(); await page.getByRole('button',{name:'Retry preview',exact:true}).click();
-      await page.getByRole('img',{name:'Map preview: batch-preview-fail'}).waitFor();
+      assert.equal(await page.getByRole('button',{name:'Publish',exact:true}).isEnabled(),true);
+      await page.getByRole('button',{name:'Publish',exact:true}).click();await page.locator('.admin-map-state').getByText('Published',{exact:true}).waitFor();
+      failedPreviewTitles.clear(); await page.getByRole('button',{name:'Retry preview',exact:true}).click();
+      await page.getByRole('img',{name:'Map preview: client-preview-fail'}).waitFor();
       await page.getByLabel('Creator',{exact:true}).fill('Saved separately');await page.getByRole('button',{name:'Save metadata',exact:true}).click();
       await page.getByRole('status').filter({hasText:'Map details saved.'}).waitFor();
-      await page.getByRole('button',{name:'Publish',exact:true}).click();await page.locator('.admin-map-state').getByText('Published',{exact:true}).waitFor();
+      assert.equal(screenshotRequests,0);
       await page.setViewportSize({width:320,height:800});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
       assert.deepEqual(errors,[]);
     }finally{await browser.close();server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}

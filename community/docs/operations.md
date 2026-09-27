@@ -13,14 +13,15 @@ Use the repository root as the Docker build context. The
 Playwright 1.63.0, type checks the addon, and verifies/prepares release 2.35.30.
 Its final stage contains the addon runtime and the manifest-pinned original
 bundles/assets. It excludes test corpora, profiles, docs, environment files and
-the original website configuration. Development dependencies remain because
-server startup and previews import esbuild and Playwright. `npm run build` is a
-type check; the server creates its browser bundle at startup.
+the original website configuration. Development dependencies remain: server
+startup uses esbuild, and Playwright is retained for the reference/preview test
+harness. Player and curator previews run in their browser. `npm run build` is a
+type check; the server creates its browser bundles at startup.
 
 The original bundles remain unchanged. Generated `.runtime/` and `.web/` files
 are disposable. Only PostgreSQL and the private `.data/` object volume are durable.
 Do not serve a repository directory or an object-storage root through a static
-web server. The API serves only its explicit public asset and preview allowlists.
+web server. The API serves only its explicit public asset and route allowlists.
 No original service credentials or deployment settings are used.
 
 The container uses a non-root user, a read-only root filesystem, writable
@@ -61,6 +62,11 @@ With submissions disabled, custom games still receive server-issued run bindings
 and can be played, saved and resumed. Victories are not recorded for submission,
 and the validation worker stays stopped. Completion and best-turn statistics
 remain hidden when verified results are disabled; reported statistics are not collected.
+The catalogue still records personal silver/Normal and gold/Hard completion
+trophies in browser storage, scoped to the exact map revision and engine. These
+badges never update server scores and disappear if that browser data is cleared.
+The bottom Saved results panel is removed; resume controls remain in the selected
+map. Rating stars appear after returning from a custom game.
 Bootstrap inserts the named administrator only if no curator exists; migrations
 do not create identities. Keep the same database password when restarting an
 existing PostgreSQL volume: changing the environment does not rotate its user.
@@ -103,6 +109,46 @@ Run the same migration/bootstrap commands from `community/`, followed by
 | `COMMUNITY_CUSTOM_MAPS` | `1` enables the custom-map entry; otherwise disabled. |
 | `COMMUNITY_SUBMISSIONS` | `1` enables recording, new result submissions and the validation worker. `0` keeps gameplay/save/resume available without recording or validation. |
 | `COMMUNITY_VERIFIED_RESULTS` | `1` exposes verified statistics; otherwise hidden. |
+
+When **both** validation flags are `0`, the catalogue, ratings, publication and
+new-run APIs accept the pinned browser's allowlisted built-in plugins through
+[native-playback.ts](../shared/native-playback.ts). Maps still pass the bounded
+data-only parser; arbitrary scripts, unknown plugins and different engines are
+rejected. Setting either flag to `1` restores the strict reviewed configuration
+policy for those operations, so maps supported only by native playback disappear
+from discovery and cannot start new runs. Existing browser saves retain their
+original bindings. The submission validator and verified score filtering always
+use [supported-configurations.json](../shared/supported-configurations.json);
+native playback does not expand validation support.
+
+## Browser previews and publication
+
+The selected map and curator editor show a live preview from the pinned game in
+an isolated browser frame at `/community-preview`. Thumbnail rendering uses a
+shared frame and an in-memory cache. Preview frames mask persistent storage,
+disable game input and use the original preview context without starting a play
+session. The player's top-level URL remains unchanged.
+
+Map uploads no longer run a server screenshot job. Publish saves the metadata,
+then the API checks curator authorization, CSRF, expected version, support policy
+and the stored map's integrity. A failed browser preview offers a retry but does
+not block publication. There is no PNG readiness gate; old preview endpoints
+return `410`, and existing preview blobs are no longer served or required. No
+database migration is required.
+
+After upgrading from stored screenshots, remove only the retired generated cache with
+`node scripts/retire-preview-cache.ts` (dry run), then
+`node scripts/retire-preview-cache.ts --apply` in the app container. The script uses
+`DATABASE_URL` and `COMMUNITY_DATA_DIR`, retains original map objects, and reports
+skipped references for separate inspection. New browser previews never write PNGs
+to server storage.
+
+The [live-preview test](../tests/live-preview.test.ts) covers original rendering
+and isolation; [native-playback tests](../tests/native-playback.test.ts) cover the
+playback/validation boundary. Run database tests against a disposable test schema,
+not the development catalogue.
+
+## Access protection
 
 Do not log cookie values, session/CSRF proofs, keys, raw replays or personal
 profiles. Restrict backup and database access to the operator. Before release,

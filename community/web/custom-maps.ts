@@ -3,6 +3,8 @@ import { createCatalogBridge } from '../runtime/catalog-bridge.ts';
 import type { CatalogBridgeOptions, CatalogSave, CatalogSaveStore } from '../runtime/catalog-bridge.ts';
 import { installCustomMapsMenu, preservePlayerUrl, waitForCommunityEngine } from '../runtime/menu-bridge.ts';
 import { mountCatalog } from './catalog.ts';
+import { MapProgress } from './map-progress.ts';
+import { createNativeButton } from './native-controls.ts';
 
 export function createCatalogSaveStore(storage: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>): CatalogSaveStore {
   const key = (value: string) => `konkr.community.save.v1:${value}`;
@@ -29,6 +31,7 @@ export interface CustomMapsOptions extends Omit<CatalogBridgeOptions, 'loader' |
   verifiedResultsEnabled?: boolean;
   renderDetailActions?: (container: HTMLElement, entry: CatalogEntry) => void;
   renderPostPlay?: (container: HTMLElement, entry: CatalogEntry) => void;
+  renderPreview?: Parameters<typeof mountCatalog>[1]['renderPreview'];
   renderExtras?: (container: HTMLElement) => { refresh?(): void; destroy?(): void } | void;
 }
 
@@ -58,6 +61,15 @@ export async function installCustomMaps(options: CustomMapsOptions) {
   };
   root.addEventListener('community:rating-updated', forwardRating);
   let catalog: ReturnType<typeof mountCatalog>;
+  const progress = new MapProgress(localStorage);
+  let transition: Promise<unknown> = Promise.resolve();
+  let transitionCount = 0; let opening = false;
+  const sequence = <T>(work: () => Promise<T>): Promise<T> => {
+    transitionCount++; root.inert = true;
+    const next = transition.then(work).finally(() => { if (--transitionCount === 0) root.inert = false; });
+    transition = next.catch(() => {}); return next;
+  };
+  const titleReady = () => app.navigator.currentScreen === app.screen.title && !app.navigator.transitionInProgress;
   const error = (failure: Error) => {
     options.onError?.(failure);
     if (root.hidden) app.notifications.warning('Custom Maps', failure.message);
@@ -65,36 +77,54 @@ export async function installCustomMaps(options: CustomMapsOptions) {
     if (!status) { status = document.createElement('p'); status.dataset.communityError = 'true'; status.setAttribute('role', 'alert'); catalogRoot.prepend(status); }
     status.textContent = failure.message;
   };
-  const show = () => {
-    root.hidden = false; if (hasFooter) root.style.display = 'grid'; gameRoot.classList.add('hidden');
-    app.game.input.enabled = false; app.game.input.keyboard.enabled = false;
-    extras?.refresh?.(); void catalog.resume();
+  const show = (animateTitle = true): Promise<void> => {
+    if (opening || !root.hidden) return transition.then(() => {});
+    opening = true;
+    return sequence(async () => {
+      app.game.input.enabled = false; app.game.input.keyboard.enabled = false;
+      if (animateTitle && titleReady()) await loader(72431).titleOutTransition({ keepWorldMap: true, keepBackgroundPanel: true });
+      root.hidden = false; if (hasFooter) root.style.display = 'grid'; gameRoot.classList.add('hidden');
+      extras?.refresh?.(); await catalog.resume(); await catalog.animateIn();
+    }).finally(() => { opening = false; });
   };
-  const hide = () => {
+  const hide = async (returnToTitle: boolean) => {
+    await catalog.animateOut();
     catalog.suspend(); root.hidden = true; if (hasFooter) root.style.display = 'none'; gameRoot.classList.remove('hidden');
-    app.game.input.enabled = true; app.game.input.keyboard.enabled = true;
+    try {
+      if (returnToTitle && titleReady()) await loader(77361).titleInTransition({ keepBackgroundPanel: true });
+    } finally { app.game.input.enabled = true; app.game.input.keyboard.enabled = true; }
   };
+  const exit = () => sequence(() => hide(true));
+  const launch = (operation: () => Promise<void>) => sequence(async () => { await operation(); await hide(false); });
   const bridge = createCatalogBridge({ ...options, loader, onReturn(context) {
     if (options.renderPostPlay) {
       postPlay.replaceChildren(); postPlay.hidden = false;
       const rating = document.createElement('div'); postPlay.append(rating);
       options.renderPostPlay(rating, context.entry);
-      const dismiss = document.createElement('button'); dismiss.type = 'button'; dismiss.textContent = 'Not now';
+      const dismiss = createNativeButton('Not now');
       dismiss.onclick = () => { postPlay.hidden = true; }; postPlay.append(dismiss);
     }
-    show();
+    return show(false);
   }, onError: error });
+  const stopProgress = bridge.subscribe(event => {
+    if (event.type === 'outcome' && event.outcome === 'Victory') {
+      try { progress.recordVictory(event.context.entry, event.context.difficulty); }
+      catch { error(new Error('Your browser could not save the completion trophy.')); }
+    }
+  });
   catalog = mountCatalog(catalogRoot, {
     reader: options.reader, supportedDifficulties: options.supportedDifficulties, verifiedResultsEnabled: options.verifiedResultsEnabled,
-    onPlay: async (entry, difficulty) => { await bridge.start(entry, difficulty); hide(); },
-    onExit: hide,
+    onPlay: (entry, difficulty) => launch(() => bridge.start(entry, difficulty)),
+    onExit: () => { void exit().catch(error); },
+    renderPreview: options.renderPreview,
+    completedDifficulties: entry => progress.completed(entry),
     renderDetailActions(container, entry) {
       const modes = options.supportedDifficulties?.(entry) ?? ['normal', 'hard'];
       for (const mode of modes) {
         let saved = false; try { saved = bridge.hasSave(entry, mode); } catch (failure) { error(failure as Error); }
         if (!saved) continue;
-        const resume = document.createElement('button'); resume.type = 'button'; resume.className = 'catalog-button'; resume.textContent = `Resume ${mode === 'normal' ? 'Normal' : 'Hard'} game`;
-        resume.addEventListener('click', () => { resume.disabled = true; void bridge.resume(entry, mode).then(hide).catch(error).finally(() => { resume.disabled = false; }); });
+        const resume = createNativeButton(`Resume ${mode === 'normal' ? 'Normal' : 'Hard'} game`); resume.classList.add('catalog-button');
+        resume.addEventListener('click', () => { resume.disabled = true; void launch(() => bridge.resume(entry, mode)).catch(error).finally(() => { resume.disabled = false; }); });
         container.append(resume);
       }
       options.renderDetailActions?.(container, entry);
@@ -102,12 +132,12 @@ export async function installCustomMaps(options: CustomMapsOptions) {
   });
   catalog.suspend();
   const restoreUrl = preservePlayerUrl(loader);
-  const removeMenu = installCustomMapsMenu(loader, show);
+  const removeMenu = installCustomMapsMenu(loader, () => { void show().catch(error); });
   const inactive = () => { try { bridge.save(); } catch (failure) { error(failure as Error); } };
   window.addEventListener('pagehide', inactive);
   return {
     bridge, catalog, open: show,
-    async resumeSaved(save: CatalogSave) { await bridge.resume(save.context.entry, save.context.difficulty); hide(); },
-    destroy() { window.removeEventListener('pagehide', inactive); root.removeEventListener('community:rating-updated', forwardRating); bridge.destroy(); catalog.destroy(); extras?.destroy?.(); removeMenu(); restoreUrl(); },
+    async resumeSaved(save: CatalogSave) { await launch(() => bridge.resume(save.context.entry, save.context.difficulty)); },
+    destroy() { window.removeEventListener('pagehide', inactive); root.removeEventListener('community:rating-updated', forwardRating); stopProgress(); bridge.destroy(); catalog.destroy(); extras?.destroy?.(); removeMenu(); restoreUrl(); },
   };
 }

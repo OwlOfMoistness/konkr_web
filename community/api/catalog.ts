@@ -1,5 +1,7 @@
 import type { Pool } from 'pg';
 import { ContractError, normalizeTags, supports } from '../shared/contracts.ts';
+import { nativePlaybackPlugins, supportsPlayback } from '../shared/native-playback.ts';
+import type { NativePlaybackPolicy } from '../shared/native-playback.ts';
 import type { CatalogEntry, CatalogPage, CatalogQuery, CatalogReader, CatalogSort, SupportedConfigurations } from '../shared/contracts.ts';
 
 export const CATALOG_SORTS: CatalogSort[] = ['name', 'rating', 'completions', 'newest'];
@@ -7,6 +9,7 @@ export interface CatalogOptions {
   /** Enable only after the independent validator gate passes. */
   verifiedResultsEnabled?: boolean;
   previewUrl?: (key: string) => string | null;
+  nativePlayback?: NativePlaybackPolicy;
 }
 
 export function normalizeCatalogQuery(query: CatalogQuery): Required<Pick<CatalogQuery, 'search' | 'tags' | 'sort' | 'limit' | 'offset'>> & Pick<CatalogQuery, 'difficulty'> {
@@ -34,9 +37,9 @@ export function parseCatalogQuery(params: URLSearchParams): CatalogQuery {
   return normalizeCatalogQuery({ search: params.get('search') ?? undefined, tags: params.getAll('tag'), sort: (params.get('sort') ?? undefined) as CatalogSort | undefined, difficulty: (params.get('difficulty') ?? undefined) as CatalogQuery['difficulty'], limit: integer('limit'), offset: integer('offset') });
 }
 
-function visible(entry: CatalogEntry, policy: SupportedConfigurations, difficulty?: CatalogQuery['difficulty']): boolean {
+function visible(entry: CatalogEntry, policy: SupportedConfigurations, difficulty?: CatalogQuery['difficulty'], nativePlayback?: NativePlaybackPolicy): boolean {
   return entry.map.state === 'published' && entry.map.currentRevisionId === entry.revision.id && entry.map.id === entry.revision.mapId &&
-    (difficulty ? [difficulty] : ['normal', 'hard'] as const).some(mode => supports(policy, entry.revision.engineHash, mode, entry.revision.plugins));
+    (difficulty ? [difficulty] : ['normal', 'hard'] as const).some(mode => supportsPlayback(policy, entry.revision.engineHash, mode, entry.revision.plugins, nativePlayback));
 }
 
 function publicEntry(entry: CatalogEntry, policy: SupportedConfigurations, options: CatalogOptions, difficulty?: CatalogQuery['difficulty']): CatalogEntry {
@@ -56,7 +59,7 @@ export class InMemoryCatalogReader implements CatalogReader {
   }
   async list(query: CatalogQuery): Promise<CatalogPage> {
     const q = normalizeCatalogQuery(query);
-    const entries = this.entries.filter(entry => visible(entry, this.policy, q.difficulty) && entry.map.metadata.title.toLowerCase().includes(q.search.toLowerCase()) && q.tags.every(tag => entry.map.metadata.tags.includes(tag)))
+    const entries = this.entries.filter(entry => visible(entry, this.policy, q.difficulty, this.options.nativePlayback) && entry.map.metadata.title.toLowerCase().includes(q.search.toLowerCase()) && q.tags.every(tag => entry.map.metadata.tags.includes(tag)))
       .map(entry => publicEntry(entry, this.policy, this.options, q.difficulty));
     const compare = (a: string, b: string) => a < b ? -1 : a > b ? 1 : 0;
     const completions = (entry: CatalogEntry) => entry.scores.reduce((sum, score) => sum + score.completions, 0);
@@ -71,7 +74,7 @@ export class InMemoryCatalogReader implements CatalogReader {
     return { entries: entries.slice(q.offset, q.offset + q.limit), total: entries.length };
   }
   async get(mapId: string): Promise<CatalogEntry | null> {
-    const entry = this.entries.find(entry => entry.map.id === mapId && visible(entry, this.policy));
+    const entry = this.entries.find(entry => entry.map.id === mapId && visible(entry, this.policy, undefined, this.options.nativePlayback));
     return entry ? publicEntry(entry, this.policy, this.options) : null;
   }
 }
@@ -117,13 +120,15 @@ export class PostgresCatalogReader implements CatalogReader {
         ) scores ON true
         WHERE m.state = 'published' AND ($8::text IS NULL OR m.id = $8)
           AND position(lower($2::text) in lower(m.title)) > 0 AND m.tags @> $3::text[]
-          AND EXISTS (SELECT 1 FROM support c WHERE c."engineHash" = r.engine_hash AND ($4::text IS NULL OR c.difficulty = $4)
+          AND (EXISTS (SELECT 1 FROM support c WHERE c."engineHash" = r.engine_hash AND ($4::text IS NULL OR c.difficulty = $4)
             AND c.difficulty IN ('normal', 'hard')
             AND ARRAY(SELECT p FROM jsonb_array_elements_text(c.plugins) WITH ORDINALITY AS plugins(p, ordinal) ORDER BY ordinal) = r.plugins)
+            OR (r.engine_hash = $9::text AND r.plugins <@ $10::text[]
+              AND cardinality(r.plugins) = (SELECT count(DISTINCT plugin) FROM unnest(r.plugins) AS plugin)))
       )
       SELECT count(*)::text AS total, COALESCE((SELECT jsonb_agg(page.entry ORDER BY page.ordinal) FROM
         (SELECT entry, row_number() OVER (ORDER BY ${ORDER_BY[q.sort]}) AS ordinal FROM catalog ORDER BY ${ORDER_BY[q.sort]} LIMIT $5 OFFSET $6) page), '[]'::jsonb) AS rows
-      FROM catalog`, [JSON.stringify(configurations), q.search, q.tags, q.difficulty ?? null, q.limit, q.offset, this.options.verifiedResultsEnabled === true, mapId]);
+      FROM catalog`, [JSON.stringify(configurations), q.search, q.tags, q.difficulty ?? null, q.limit, q.offset, this.options.verifiedResultsEnabled === true, mapId, this.options.nativePlayback?.engineHash || null, nativePlaybackPlugins(this.options.nativePlayback)]);
     const row = result.rows[0];
     return { total: Number(row.total), entries: row.rows.map(entry => {
       if (entry.revision.previewKey === null) delete entry.revision.previewKey;

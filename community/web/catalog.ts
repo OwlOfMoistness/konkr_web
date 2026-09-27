@@ -1,3 +1,4 @@
+import { createNativeButton, createDifficultyToggle, trophy } from './native-controls.ts';
 import type { CatalogEntry, CatalogQuery, CatalogReader, CatalogSort, Difficulty } from '../shared/contracts.ts';
 
 export interface CatalogUiState {
@@ -16,6 +17,8 @@ export interface CatalogMountOptions {
   reader: CatalogReader;
   onPlay: (entry: CatalogEntry, difficulty: Difficulty) => void | Promise<void>;
   onExit?: () => void;
+  completedDifficulties?: (entry: CatalogEntry) => Difficulty[];
+  renderPreview?: (container: HTMLElement, entry: CatalogEntry, thumbnail: boolean) => { ready: Promise<void>; destroy(): void };
   storage?: StateStorage | null;
   storageKey?: string;
   /** This flag must remain off until the validator's independent review passes. */
@@ -99,6 +102,13 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
   let focusedMap: string | null = null;
   let loadedEntry: CatalogEntry | null = null;
   let restoringScroll = false;
+  let selectionRequest = 0;
+  const previewHandles = new Set<{ destroy(): void }>();
+  const clearPreviews = () => { for (const preview of previewHandles) preview.destroy(); previewHandles.clear(); };
+  const motion = (node: Element | null, frames: Keyframe[], duration = 200) => {
+    if (!node || win.matchMedia('(prefers-reduced-motion: reduce)').matches) return Promise.resolve();
+    return node.animate(frames, { duration, easing: 'cubic-bezier(.39,.575,.565,1)' }).finished.catch(() => {});
+  };
   root.classList.add('community-catalog', 'konkr-ui');
   root.setAttribute('aria-label', 'Custom maps');
   const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className = '', text = ''): HTMLElementTagNameMap[K] => {
@@ -106,7 +116,7 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
   };
   const save = () => { try { storage?.setItem(storageKey, JSON.stringify(state)); } catch { /* Retain in-memory state when storage is unavailable. */ } };
   const button = (text: string, action: () => void, className = '') => {
-    const node = el('button', `catalog-button ${className}`, text); node.type = 'button'; node.addEventListener('click', action); return node;
+    const node = createNativeButton(text, doc); node.classList.add('catalog-button'); for (const name of className.split(' ').filter(Boolean)) node.classList.add(name); if (['catalog-browse','catalog-clear','catalog-tag','catalog-map-title','catalog-preview-button'].some(name => node.classList.contains(name))) node.classList.add('konkr-plain'); node.addEventListener('click', action); return node;
   };
   const captureScroll = () => {
     const browser = root.querySelector<HTMLElement>('.catalog-browser-scroll');
@@ -141,21 +151,38 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
     if (win.innerWidth < 900) root.querySelector('.catalog-browser')?.scrollIntoView({ block: 'start' });
   };
   const openDetail = (entry: CatalogEntry) => {
-    captureScroll(); focusedMap = entry.map.id; state.detailId = entry.map.id; loadedEntry = null; save(); void render(false, true);
+    captureScroll();
+    const selection = ++selectionRequest;
+    if (state.detailId === entry.map.id) { loadedEntry = null; void render(false, true); return; }
+    const token = generation;
+    void motion(root.querySelector('.catalog-selected'), [{ opacity: 1, transform: 'translateX(0)' }, { opacity: 0, transform: 'translateX(-24px)' }], 100).then(() => {
+      if (selection !== selectionRequest || token !== generation || paused || destroyed) return;
+      focusedMap = entry.map.id; state.detailId = entry.map.id; loadedEntry = null; save(); return render(false, true);
+    });
   };
   const field = (label: string, control: HTMLElement) => { const wrap = el('label', 'catalog-field'); control.setAttribute('aria-label', label); wrap.append(el('span', '', label), control); return wrap; };
   const preview = (entry: CatalogEntry, large = false) => {
     const frame = el('div', `catalog-preview${large ? ' catalog-preview-large' : ''}`);
-    if (entry.previewUrl) {
-      let safe = false;
-      try { const url = new URL(entry.previewUrl, win.location.href); safe = ['https:', 'http:'].includes(url.protocol); } catch { /* Display a placeholder for malformed URLs. */ }
-      if (safe) {
-        const image = el('img'); image.src = entry.previewUrl; image.alt = `${entry.map.metadata.title} map preview`; image.loading = large ? 'eager' : 'lazy';
-        image.addEventListener('error', () => { frame.replaceChildren(el('span', '', 'Preview unavailable')); }, { once: true }); frame.append(image);
-      }
-    }
-    if (!frame.childNodes.length) frame.append(el('span', 'catalog-preview-label', 'Preview coming soon'));
+    frame.setAttribute('aria-label', `${entry.map.metadata.title} map preview`);
+    frame.append(el('span', 'catalog-preview-label', 'Loading map…'));
+    if (options.renderPreview) {
+      // Mount only after the frame is in the document so the renderer can size it.
+      const token = generation;
+      queueMicrotask(() => {
+        if (paused || destroyed || token !== generation || !frame.isConnected) return;
+        const handle = options.renderPreview!(frame, entry, !large); previewHandles.add(handle);
+        void handle.ready.catch(error => {
+          if (!frame.isConnected || token !== generation) return;
+          frame.replaceChildren(el('span', 'catalog-preview-label', error instanceof Error ? error.message : 'Preview unavailable'));
+        });
+      });
+    } else frame.replaceChildren(el('span', 'catalog-preview-label', 'Select a map to play'));
     return frame;
+  };
+  const completion = (entry: CatalogEntry) => {
+    const badges = el('span', 'catalog-completion');
+    for (const mode of options.completedDifficulties?.(entry) ?? []) badges.append(trophy(mode, `${mode === 'hard' ? 'Hard' : 'Normal'} completed on this browser`, doc));
+    return badges;
   };
   const tags = (entry: CatalogEntry) => {
     const list = el('div', 'catalog-tags');
@@ -214,18 +241,17 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
   const detail = (entry: CatalogEntry, token: number, focus = false) => {
     const article = el('article', 'catalog-detail');
     const heading = el('h2', '', entry.map.metadata.title); heading.tabIndex = -1;
-    const title = el('div', 'catalog-detail-title'); title.append(heading, el('p', 'catalog-creator', `Created by ${entry.map.metadata.creator || 'Unknown creator'}`));
+    const title = el('div', 'catalog-detail-title'); title.append(heading, completion(entry), el('p', 'catalog-creator', `Created by ${entry.map.metadata.creator || 'Unknown creator'}`));
     article.append(title, preview(entry, true));
     const info = el('div', 'catalog-detail-info');
     if (entry.map.metadata.description) info.append(el('p', 'catalog-description', entry.map.metadata.description));
     info.append(tags(entry), stats(entry, true));
-    const select = el('select');
     const modes = options.supportedDifficulties?.(entry) ?? ['normal', 'hard'];
-    for (const mode of modes) { const option = el('option', '', mode === 'normal' ? 'Normal' : 'Hard'); option.value = mode; select.append(option); }
-    select.value = modes.includes(state.difficulty as Difficulty) ? state.difficulty : modes[0] ?? '';
+    let chosenDifficulty = modes.includes(state.difficulty as Difficulty) ? state.difficulty as Difficulty : modes[0] ?? 'normal';
+    const toggle = createDifficultyToggle(modes, chosenDifficulty, mode => { chosenDifficulty = mode; }, doc);
     const playError = statusBox(''); playError.hidden = true;
     const play = button('Play map', () => {
-      const difficulty = select.value as Difficulty;
+      const difficulty = chosenDifficulty;
       captureScroll(); play.disabled = true; play.textContent = 'Starting…'; playError.hidden = true;
       void (async () => {
         // Check current publication/revision again immediately before starting.
@@ -243,7 +269,7 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
       }).finally(() => { play.disabled = modes.length === 0; play.textContent = 'Play map'; });
     }, 'catalog-primary');
     play.disabled = modes.length === 0;
-    const playControls = el('div', 'catalog-play-controls'); playControls.append(field('Play difficulty', select), play);
+    const playControls = el('div', 'catalog-play-controls'); playControls.append(toggle, play);
     info.append(playControls, playError);
     if (options.renderDetailActions) { const actions = el('div', 'catalog-detail-actions'); options.renderDetailActions(actions, entry); info.append(actions); }
     article.append(info);
@@ -257,14 +283,15 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
   async function render(focusMap = false, focusDetail = false): Promise<void> {
     if (destroyed || paused) return;
     const token = ++generation;
+    clearPreviews();
     restoringScroll = true;
     const content = el('div', 'catalog-shell');
     const stage = el('section', 'catalog-stage'); stage.setAttribute('aria-label', 'Selected map');
     const header = el('header', 'catalog-header');
-    if (options.onExit) header.append(button('← Main menu', () => { captureScroll(); options.onExit!(); }, 'catalog-back'));
     header.append(button('← All maps', showList, 'catalog-browse'));
     const selected = el('div', 'catalog-selected'); selected.append(statusBox('Choose an island to explore.'));
     stage.append(header, selected);
+    if (options.onExit) { const back = el('nav', 'catalog-backbar'); back.append(button('Back', () => { captureScroll(); options.onExit!(); }, 'catalog-back konkr-back')); stage.append(back); }
     const sidebar = el('aside', 'catalog-browser'); sidebar.setAttribute('aria-label', 'Browse maps');
     const browserHeader = el('header', 'catalog-browser-header'); browserHeader.append(el('h1', '', 'Custom Maps'), el('p', '', 'Islands made by the community'));
     const browser = el('div', 'catalog-browser-scroll'); browser.addEventListener('scroll', captureScroll, { passive: true });
@@ -288,7 +315,7 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
           const choose = button('', () => openDetail(entry), 'catalog-preview-button'); choose.setAttribute('aria-label', `Preview ${entry.map.metadata.title}`); choose.tabIndex = -1; choose.append(image); item.append(choose);
         }
         const details = el('div', 'catalog-card-content');
-        const heading = el('div', 'catalog-card-title'); heading.append(open);
+        const heading = el('div', 'catalog-card-title'); heading.append(open, completion(entry));
         details.append(heading, el('p', 'catalog-creator', `By ${entry.map.metadata.creator || 'Unknown creator'}`), stats(entry)); item.append(details); collection.append(item);
       }
       browser.append(collection);
@@ -307,6 +334,7 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
         if (token !== generation || destroyed) return;
         selected.removeAttribute('aria-busy'); loadedEntry = entry;
         selected.replaceChildren(entry ? detail(entry, token, focusDetail) : statusBox('This map is no longer available. Choose another map from the collection.'));
+        if (focusDetail) void motion(selected, [{ opacity: 0, transform: 'translateX(24px)' }, { opacity: 1, transform: 'translateX(0)' }]);
       } catch {
         if (token !== generation || destroyed) return;
         selected.removeAttribute('aria-busy'); selected.replaceChildren(statusBox('This map could not be loaded. Please try again.', true), button('Retry map', () => { loadedEntry = null; void render(); }));
@@ -321,8 +349,10 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
   return {
     getState: () => structuredClone(state),
     refresh: () => { captureScroll(); loadedEntry = null; return render(); },
-    suspend: () => { captureScroll(); paused = true; generation++; save(); },
+    animateIn: () => Promise.all([motion(root.querySelector('.catalog-browser'), [{ opacity: 0, transform: 'translateX(420px)' }, { opacity: 1, transform: 'translateX(0)' }], 300), motion(root.querySelector('.catalog-selected'), [{ opacity: 0, transform: 'translateX(-60px)' }, { opacity: 1, transform: 'translateX(0)' }], 300)]),
+    animateOut: () => Promise.all([motion(root.querySelector('.catalog-browser'), [{ opacity: 1, transform: 'translateX(0)' }, { opacity: 0, transform: 'translateX(420px)' }], 300), motion(root.querySelector('.catalog-selected'), [{ opacity: 1, transform: 'translateX(0)' }, { opacity: 0, transform: 'translateX(-60px)' }], 300)]),
+    suspend: () => { captureScroll(); paused = true; generation++; clearPreviews(); save(); },
     resume: (returnToList = true) => { paused = false; loadedEntry = null; save(); return render(returnToList); },
-    destroy: () => { captureScroll(); save(); destroyed = true; generation++; root.removeEventListener(RATING_UPDATED, updateRating); root.replaceChildren(); root.classList.remove('community-catalog', 'konkr-ui'); root.removeAttribute('aria-label'); },
+    destroy: () => { captureScroll(); save(); destroyed = true; generation++; clearPreviews(); root.removeEventListener(RATING_UPDATED, updateRating); root.replaceChildren(); root.classList.remove('community-catalog', 'konkr-ui'); root.removeAttribute('aria-label'); },
   };
 }

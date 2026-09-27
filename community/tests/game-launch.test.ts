@@ -35,6 +35,8 @@ test('catalog launch, isolated resume, restart and original mode navigation use 
   }
   const addon = await build({ stdin: { contents: `
     import { installCustomMaps, createCatalogSaveStore } from './web/custom-maps.ts';
+    import { initializeNativeAssets } from './web/native-controls.ts';
+    await initializeNativeAssets();
     const entries = ${JSON.stringify(entries)};
     const maps = ${JSON.stringify(encodedMaps)};
     window.startCalls = 0; window.failStart = false; window.bridgeErrors = [];
@@ -47,7 +49,7 @@ test('catalog launch, isolated resume, restart and original mode navigation use 
       onError:error=>window.bridgeErrors.push(error.message)});
     window.testReady = true;
   `, loader: 'ts', resolveDir: communityRoot }, bundle: true, write: false, format: 'esm', target: 'es2023', platform: 'browser' });
-  const css = await readFile(path.join(communityRoot, 'web/catalog.css'));
+  const css = await readFile(path.join(communityRoot, 'web/theme.css'), 'utf8') + await readFile(path.join(communityRoot, 'web/catalog.css'), 'utf8');
   const mime: Record<string, string> = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png', '.xml': 'text/xml', '.ogg': 'audio/ogg', '.mp3': 'audio/mpeg', '.css': 'text/css' };
   const server = createServer(async (request, response) => {
     try {
@@ -80,7 +82,7 @@ test('catalog launch, isolated resume, restart and original mode navigation use 
   const open = async () => { await page.getByRole('button', { name: 'Custom Maps', exact: true }).click(); await page.getByRole('heading', { name: 'Custom Maps', exact: true }).waitFor(); };
   const details = async (title: string) => { await page.getByRole('button', { name: title, exact: true }).click(); await page.getByRole('heading', { name: title, exact: true }).waitFor(); };
   await open(); await details(entries[0].map.metadata.title);
-  await page.getByLabel('Play difficulty').selectOption('hard');
+  await page.getByRole('radio', { name: 'Hard', exact: true }).click();
   await page.evaluate(() => { window.failStart = true; });
   await page.getByRole('button', { name: 'Play map', exact: true }).click();
   await page.getByRole('alert').filter({ hasText: 'could not be started' }).waitFor();
@@ -115,12 +117,13 @@ test('catalog launch, isolated resume, restart and original mode navigation use 
   // Reload must find the separate revision save, without using the native title Continue path.
   await page.reload(); await page.waitForFunction(() => window.testReady, undefined, { timeout: 30_000 });
   await open(); await details(entries[0].map.metadata.title);
+  assert.equal(await page.locator('.catalog-detail').getByRole('img', { name: 'Hard completed on this browser', exact: true }).count(), 1);
   assert.equal(await page.getByRole('button', { name: 'Resume Hard game', exact: true }).count(), 1);
   await page.getByRole('button', { name: 'Resume Hard game', exact: true }).click(); await screen('Play');
   assert.equal(await page.evaluate(() => window.startCalls), 0, 'Reload/resume must retain its old binding');
   await page.evaluate(() => window.communityReference.act('ExitLevel'));
   await page.getByRole('heading', { name: 'Custom Maps', exact: true }).waitFor();
-  await page.getByRole('button', { name: '← Main menu', exact: true }).click();
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
   for (const [event, expected] of [['GoToExpeditions', 'Overworld'], ['GoToRandomMapSelect', 'RandomMapSelect']]) {
     await page.evaluate(name => window.communityReference.act(name), event); await screen(expected);
     assert.equal(page.url(), initialURL);
@@ -132,7 +135,7 @@ test('catalog launch, isolated resume, restart and original mode navigation use 
   for (const entry of entries) for (const difficulty of ['normal', 'hard'] as const) {
     const button = page.getByRole('button', { name: 'Custom Maps', exact: true }); await button.waitFor();
     const bounds = await button.boundingBox(); assert(bounds && bounds.y >= 0 && bounds.y + bounds.height <= 812);
-    await open(); await details(entry.map.metadata.title); await page.getByLabel('Play difficulty').selectOption(difficulty);
+    await open(); await details(entry.map.metadata.title); await page.getByRole('radio', { name: difficulty === 'hard' ? 'Hard' : 'Normal', exact: true }).click();
     await page.getByRole('button', { name: 'Play map', exact: true }).click(); await screen('Play');
     const current = await page.evaluate(() => window.communityReference.inspect());
     assert.equal(current.difficulty, difficulty); assert.equal(current.state.map.width, entry.revision.width);
@@ -140,7 +143,7 @@ test('catalog launch, isolated resume, restart and original mode navigation use 
     await page.evaluate(() => window.communityReference.act('TogglePlayMenu'));
     await page.evaluate(() => window.communityReference.act('GoBack'));
     await page.getByRole('heading', { name: 'Custom Maps', exact: true }).waitFor();
-    await page.getByRole('button', { name: '← Main menu', exact: true }).click(); await screen('Title');
+    await page.getByRole('button', { name: 'Back', exact: true }).click(); await screen('Title');
     assert.equal(page.url(), initialURL);
   }
   assert.deepEqual(external, []); assert.deepEqual(failures, []);

@@ -6,7 +6,7 @@
 
 ## Outcome and agreed scope
 
-Build a separate community site using a fixed copy of the existing compiled Konkr release. Preserve gameplay, add a fifth **Custom Maps** title-screen button, and let players browse curated maps, inspect previews, play through the existing import path, and return to the catalog. Maintain ratings, verified completion counts and fewest-turn records using server-side simulation.
+Build a separate community site using a fixed copy of the existing compiled Konkr release. Preserve gameplay, add a fifth **Custom Maps** title-screen button, and let players browse curated maps, inspect previews, play through the existing import path, and return to the catalog. Maintain anonymous ratings and personal browser completion trophies. Retain server-side simulation for optional verified completion counts and fewest-turn records.
 
 Decisions already supplied by the user:
 
@@ -20,9 +20,38 @@ Decisions already supplied by the user:
 - Agents may make scoped Git commits and use isolated branches/worktrees or a repository fork when necessary, then integrate reviewed work.
 - The user has reviewed this plan and authorized execution. Keep changes to existing game/website code strictly necessary so the original developer can review and reuse the contribution easily.
 
-The delivered feature must include title/tag search and filtering, sorting by rating/completions/name/newest, list/grid views, map details and preview, creator attribution, automatic catalog return, map curation, anonymous ratings, complete run recording and authoritative result processing.
+The delivered feature includes title/tag search and filtering, sorting by rating/name/newest (and verified completions when enabled), list/grid views, map details and preview, creator attribution, automatic catalog return, map curation and anonymous ratings. Complete run recording and authoritative result processing remain available behind the validation flags.
 
 Out of scope: changes to game rules or AI, multiplayer, public accounts, a replacement map editor, social comments, real-time speed records, proof of human-only/no-rewind play, automatic upstream contribution, and automatic public deployment.
+
+### Current local review behavior
+
+The user has parked replay validation while reviewing the catalogue and curator
+workflow. These decisions supersede the original preview/publication requirements
+in the completed task history below:
+
+- The catalogue uses the original yellow button artwork and a Normal/Hard trophy
+  selector. Local victories earn silver/Normal and gold/Hard badges, stored per
+  map revision, content hash and engine in this browser. They are personal
+  progress, not verified results or server completion counts.
+- The bottom Saved results interface is removed. Existing map saves remain
+  resumable through the selected map. Editable rating stars appear after leaving
+  or completing a custom map; catalogue cards show rating summaries.
+- Selected-map and curator previews render with the pinned game in a separate
+  browser frame. Grid thumbnails are rendered lazily and cached in browser
+  memory. The service no longer generates or requires stored PNG previews.
+  Publishing saves metadata and checks the stored map, supported rules,
+  authorization and expected version; preview failure does not block Publish.
+- Only when **both** `COMMUNITY_SUBMISSIONS=0` and
+  `COMMUNITY_VERIFIED_RESULTS=0`, publication, discovery, ratings and new runs may
+  use the pinned browser's allowlisted native plugins. Enabling either flag
+  restores the strict reviewed configuration policy for those operations.
+  Submission validation and verified score filtering always use that strict
+  policy; native playback and local trophies cannot authorize a verified result.
+
+The [local operations guide](../../community/docs/operations.md) describes the
+current switches and preview path. Historical pass counts in this plan apply to
+their named earlier commits, not subsequent UI and native-playback changes.
 
 ## Evidence and fixture inventory
 
@@ -55,7 +84,7 @@ The Prison replay's initial state is not byte-identical to the supplied map; ins
 
 ## Proposed architecture and contracts
 
-Use a new `community/` workspace in this repository. Keep the existing website and original compiled release as the reference. Proposed implementation language is TypeScript, with a Node API/worker, PostgreSQL for metadata/results/jobs, and a storage abstraction for maps/previews/replays (local filesystem during development; managed object storage at deployment). Exact package versions, HTTP/UI libraries and hosting provider are selected during setup and release planning rather than guessed here.
+Use a new `community/` workspace in this repository. Keep the existing website and original compiled release as the reference. Proposed implementation language is TypeScript, with a Node API/worker, PostgreSQL for metadata/results/jobs, and a storage abstraction for maps/replays (local filesystem during development; managed object storage at deployment). Previews are rendered in the browser without stored PNGs. Exact package versions, HTTP/UI libraries and hosting provider are selected during setup and release planning rather than guessed here.
 
 The community frontend serves the fixed compiled game plus a small bridge. Catalog and curator interfaces can use HTML/CSS/TypeScript around the game surface. Invoke the real import/session path to play; route custom-map exit/victory back into catalog context. Do not depend on controlling a cross-origin tab on the official site.
 
@@ -80,8 +109,8 @@ These defaults are explicit proposals, not additional user decisions:
 - **Versions:** metadata edits retain the challenge; gameplay edits create an immutable revision. Keep old results readable and in-flight runs pinned. Engine updates do not silently combine incompatible scores.
 - **Saves:** local browser save/resume with complete recorded history; no cross-device sync. Keep the original undo/rewind behavior and validate the final canonical branch.
 - **Removal:** archive/unpublish rather than destroying historical data. Prevent new starts while continuing to adjudicate eligible previously issued runs.
-- **Curation:** private, authenticated curator/admin access is separate from anonymous public play. Draft → automatic validated preview → published → archived. Publishing is an explicit curator action; no separate playtest acknowledgment is required.
-- **Publication support:** only tested plugin combinations can be published as supported challenges. Gift rules are required for the supplied sample; zombie tags do not imply support until that ruleset passes parity.
+- **Curation:** private, authenticated curator/admin access is separate from anonymous public play. Draft → published → archived, with automatic browser previews while inspecting a draft. Publishing is an explicit curator action; no PNG or separate playtest acknowledgment is required.
+- **Publication support:** use the strict tested configuration policy when either validation flag is enabled. With both flags off, allow the pinned browser's known native plugins for play only. A plugin or tag being playable does not imply independent validator parity.
 - **Availability:** new catalog runs require a server binding before their first decision; if issuance fails, show retry. Already-issued games can continue offline and submit later. Preserve pending submissions and display honest catalog/verification errors.
 
 ### Feasibility and resource policy
@@ -161,7 +190,7 @@ Initial ready set after approval: **T-toolchain**. T-contracts follows; runtime 
 - [x] T-curator-access — protected local curator sessions, roles, CSRF and audit, 5 tests passed.
 - [x] T-map-format — bounded data-only decoder and reference validation; both supplied maps plus malformed/resource-limit cases pass.
 - [x] T-map-import — private immutable uploads, metadata/revision editing and concurrency checks, 7 tests passed, including real-browser upload/edit/preview/publish/archive and 320px layout.
-- [x] T-publishing — support/preview gates and archive retention tested; both full-board previews inspected, 4 tests passed.
+- [x] T-publishing — initial support/PNG preview gates and archive retention tested; both full-board previews inspected, 4 tests passed. The current browser-preview workflow above supersedes the PNG gate.
 - [x] T-fixtures — 14 original-browser cases / 68 checkpoints, repeated capture and fresh reproduction, 18 tests passed; legacy exports explicitly unverified.
 - [x] T-adapter-core
 - [x] T-validation-boundary
@@ -378,6 +407,10 @@ scope: M
 ```
 
 **Description:** Generate and cache revision-specific thumbnails with the fixed renderer, then provide the curator’s publish/archive workflow. Generate previews automatically on upload or when a missing preview is opened, keeping the original renderer isolated from player progress.
+
+This completed task records the initial server-rendered implementation. The
+current local review behavior above replaces its stored-preview publication
+gate with browser rendering and direct publication of supported valid content.
 
 **Acceptance:**
 
