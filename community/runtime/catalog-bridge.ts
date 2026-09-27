@@ -59,6 +59,8 @@ export function createCatalogBridge(options: CatalogBridgeOptions) {
   const codec = loader(47067);
   const contexts = loader(25972).NewGameStateContext;
   const returnModule = loader(37585);
+  const importModule = loader(20667);
+  const originalImport = importModule.parseKonkrData;
   const originalReturn = returnModule.returnToMenuFromGame;
   const originalTrigger = platform.events.trigger;
   const originalSaveProgress = inject.userData.saveLevelProgress;
@@ -85,6 +87,15 @@ export function createCatalogBridge(options: CatalogBridgeOptions) {
     emit({ type: 'saving', save: record });
     options.store.put(catalogSaveKey(active.entry, active.difficulty), record);
     return record;
+  };
+  const detach = () => {
+    if (!active) return;
+    const context = active; const result = outcome;
+    active = null; outcome = null;
+    emit({ type: 'leaving', context, outcome: result });
+  };
+  const detachReplacedMap = () => {
+    if (active && !busy && inject.gameStateModel.map.levelId !== active.runtimeLevelId) detach();
   };
   const leave = async (): Promise<void> => {
     if (!active || busy) return;
@@ -138,7 +149,25 @@ export function createCatalogBridge(options: CatalogBridgeOptions) {
     finally { app.game.input.enabled = previousInput; app.game.input.keyboard.enabled = previousKeyboard; busy = false; }
   };
   returnModule.returnToMenuFromGame = function (...args: unknown[]) {
+    detachReplacedMap();
     return active ? leave().catch(report) : originalReturn.apply(this, args);
+  };
+  importModule.parseKonkrData = async function (encoded: string, ...args: unknown[]) {
+    if (!active || busy || (!codec.isEncodedGameState(encoded) && !codec.isEncodedReplay(encoded))) return originalImport.call(this, encoded, ...args);
+    // Validate framing before detaching. Profile/chatter imports do not replace gameplay.
+    if (codec.isEncodedGameState(encoded)) codec.decodeGameState(encoded);
+    else codec.decodeReplay(encoded);
+    const previous = active; const previousOutcome = outcome; const saved = save();
+    detach();
+    try { return await originalImport.call(this, encoded, ...args); }
+    catch (error) {
+      // An import rejected before replacement must keep the original run/recording usable.
+      if (inject.gameStateModel.map.levelId === previous.runtimeLevelId) {
+        active = previous; outcome = previousOutcome;
+        emit({ type: 'started', context: previous, resume: saved });
+      }
+      throw error;
+    }
   };
   inject.userData.saveLevelProgress = function (...args: unknown[]) {
     const ordinaryLatest = this.current.latestLevelId;
@@ -147,9 +176,12 @@ export function createCatalogBridge(options: CatalogBridgeOptions) {
     if (active && this.current.latestLevelId === active.runtimeLevelId) {
       this.current.latestLevelId = ordinaryLatest; this.writeUserData();
     }
+    // Native turn/rewind checkpoints must survive even when replay recording is disabled.
+    if (active && !busy) { try { save(); } catch (error) { report(error); } }
     return result;
   };
   platform.events.trigger = function (event: EngineState) {
+    detachReplacedMap();
     if (active && !busy) {
       if (event.name === 'USER_ACTION.EXIT_LEVEL') { void leave().catch(report); return; }
       if (event.name === 'UI_EVENT.RESTART_CONFIRMED' || (event.name === 'USER_ACTION.PLAY_LEVEL' && event.payload?.levelId === active.runtimeLevelId)) {
@@ -175,6 +207,6 @@ export function createCatalogBridge(options: CatalogBridgeOptions) {
     save,
     leave,
     subscribe: (listener: (event: CatalogBridgeEvent) => void) => { listeners.add(listener); return () => listeners.delete(listener); },
-    destroy: () => { save(); destroyed = true; platform.events.trigger = originalTrigger; returnModule.returnToMenuFromGame = originalReturn; inject.userData.saveLevelProgress = originalSaveProgress; listeners.clear(); },
+    destroy: () => { save(); destroyed = true; platform.events.trigger = originalTrigger; returnModule.returnToMenuFromGame = originalReturn; importModule.parseKonkrData = originalImport; inject.userData.saveLevelProgress = originalSaveProgress; listeners.clear(); },
   };
 }
