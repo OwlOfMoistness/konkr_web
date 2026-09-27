@@ -39,6 +39,7 @@ const blockedRequests: string[] = [];
 const disabledServices: string[] = [];
 let requireModule: ReferenceModuleLoader;
 let prepared = false;
+let localErrors: { handleException(error: unknown): void } | undefined;
 const plain = <T>(value: T): T => JSON.parse(JSON.stringify(value));
 const diagnostic = (error: unknown) => {
   errors.push(error instanceof Error ? error.message : String(error));
@@ -47,12 +48,22 @@ const diagnostic = (error: unknown) => {
 window.tStart = performance.now();
 window.setLoadingStatus = (message, loading) => {
   const status = document.getElementById("status");
-  if (status) status.textContent = message;
+  if (status) {
+    status.textContent = message;
+    status.classList.toggle("hidden", !message);
+  }
   document.getElementById("loader")?.classList.toggle("hidden", loading === false);
   document.getElementById("phaser-game")?.classList.toggle("hidden", loading !== false || !!message);
 };
-window.addEventListener("error", (event) => diagnostic(event.error ?? event.message));
-window.addEventListener("unhandledrejection", (event) => diagnostic(event.reason));
+const handleException = (error: unknown) => {
+  if (localErrors) localErrors.handleException(error);
+  else {
+    diagnostic(error);
+    window.setLoadingStatus("The game could not start. Please reload the page and try again.", false);
+  }
+};
+window.addEventListener("error", (event) => handleException(event.error ?? event.message));
+window.addEventListener("unhandledrejection", (event) => handleException(event.reason));
 document.addEventListener("securitypolicyviolation", (event) => blockedRequests.push(event.blockedURI));
 
 function inspect(): ReferenceState {
@@ -125,7 +136,8 @@ window.__konkrCommunityPrepare = (loader, config) => {
   if (prepared) throw new Error("Reference bootstrap ran twice");
   prepared = true;
   requireModule = loader;
-  // Mutate only external-service configuration; preserve rule, AI and map flags.
+  // Preserve rule, AI and map flags. The local preview intentionally opens the
+  // title menu instead of automatically launching the first-visit tutorial.
   config.flags.cloudSync = false;
   config.flags.telemetry = false;
   config.flags.skipTutorial = true;
@@ -147,10 +159,26 @@ window.__konkrCommunityPrepare = (loader, config) => {
     gameRunning = false;
     hadErrors = false;
     tamperingDetected = false;
-    constructor() { disabled("sentry"); }
+    private showingFatalError = false;
+    constructor() { localErrors = this; disabled("sentry"); }
     initializeContext() {}
     logEvent() {}
-    handleException(error: unknown) { this.hadErrors = true; diagnostic(error); }
+    handleException(error: unknown) {
+      this.hadErrors = true;
+      diagnostic(error);
+      if (!this.gameRunning) {
+        window.setLoadingStatus("The game could not start. Please reload the page and try again.", false);
+        return;
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      // These browser failures are suppressed by the pinned release too.
+      if (["Failed to start the audio device", "Illegal invocation", "The database connection is closing"].some(value => message.includes(value))) return;
+      if (this.showingFatalError) return;
+      this.showingFatalError = true;
+      loader(56876).events.trigger(loader(43566).SystemEvents.FatalError({
+        correlationId: "community-local", message,
+      }));
+    }
     handleNonFatalError(error: unknown, context: string) { diagnostic(`${context}: ${String(error)}`); }
   };
   const login = loader(65358).LoginService.prototype;
@@ -165,10 +193,55 @@ window.__konkrCommunityPrepare = (loader, config) => {
     setDefaultEventParams() {}
   };
   loader(72758).Reporter = class LocalReporter {
-    constructor() { disabled("reporting"); }
+    constructor() {
+      disabled("reporting");
+      // The original reporter also owns the fatal-error UI subscription.
+      // Keep that local recovery behavior while excluding delivery and prompts.
+      loader(56876).events.on(loader(43566).SystemEvents.FatalError, ({ correlationId }: Legacy) => {
+        loader(55151).app.notifications.uncaughtError(correlationId);
+      });
+    }
     setupTelemetryReporting() {}
     async sendTelemetryEvents() {}
   };
+  loader(54209).showErrorNotification = () => {
+    const { app } = loader(55151);
+    const { NotificationStyle, NotificationCategory, NotificationScope } = loader(48823);
+    app.notifications.add({
+      style: NotificationStyle.Alert, category: NotificationCategory.Error,
+      scope: NotificationScope.Global, icon: app.notifications.ui.image("ui/icons/dead"),
+      content: new (loader(91034).CallToActionForm)(app.scene.globalUI).applyProps({
+        title: "The game encountered an error",
+        content: "Please reload the page to recover. Your latest saved progress will be available. This local preview does not send error reports.",
+        action: "RELOAD",
+        async onSubmit() {
+          loader(32070).inject.ui.session.end({ origin: "error/reload" });
+          window.location.reload();
+        },
+      }),
+    });
+  };
+  const notices = () => loader(55151).app.notifications;
+  const statistics = loader(38996);
+  const createStatisticsButton = statistics.createLevelStatsButton;
+  statistics.createLevelStatsButton = (ui: Legacy, ...args: unknown[]) => {
+    const localUi = Object.create(ui);
+    localUi.outlineButton = (options: Legacy) => ui.outlineButton({ ...options, onClicked: () => {
+      notices().warning("Statistics unavailable", "Official online statistics are disabled in this community preview.");
+    } });
+    return createStatisticsButton(localUi, ...args);
+  };
+  loader(81490).showFeedbackForm = () => {
+    notices().warning("Feedback unavailable", "Feedback delivery to the original game developer is disabled in this community preview.");
+  };
+  loader(81490).askForLevelFeedback = () => {};
+  // These information pages belong to the original website, not the local API.
+  for (const page of Object.values(loader(80149).HtmlDocs) as Legacy[]) {
+    page.url = new URL(page.url, "https://www.konkr.io").href;
+  }
+  // Preserve original share-link semantics on HTTP local previews too. Creating
+  // a clipboard URL must not navigate or change the player's current address.
+  loader(71040).createUrl = (hash: string) => `${window.location.origin}${window.location.pathname}#${hash}`;
   // Avoid the original analytics warning fallback; retain the same call shape.
   const track = loader(18658).track;
   for (const [key, value] of Object.entries(track)) {
@@ -185,8 +258,8 @@ window.addEventListener("DOMContentLoaded", async () => {
     if (!prepared) throw new Error("Guarded runtime hook did not execute");
     const platform = requireModule(56876);
     platform.events.on(requireModule(43566).SystemEvents.EngineInitialized, () => {
-      void waitForScreen().then(() => { window.communityReference.ready = true; }, diagnostic);
+      void waitForScreen().then(() => { window.communityReference.ready = true; }, handleException);
     });
     await window.launchGame();
-  } catch (error) { diagnostic(error); }
+  } catch (error) { handleException(error); }
 }, { once: true });
