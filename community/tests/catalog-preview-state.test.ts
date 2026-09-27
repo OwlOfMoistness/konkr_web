@@ -43,6 +43,15 @@ function stateHash(state: Record<string, any>): string {
   return createHash('sha256').update(JSON.stringify(copy)).digest('hex');
 }
 
+// Native save loading rebuilds membership lists. Keep their contents intact;
+// the preview-to-original AI comparisons remain strictly order-sensitive.
+function boardContents(state: Record<string, any>): Record<string, any> {
+  const copy = structuredClone(state);
+  for (const region of copy.regions ?? []) region.hexes.sort((a: number, b: number) => a - b);
+  for (const faction of copy.factions ?? []) faction.regions.sort((a: number, b: number) => a - b);
+  return copy;
+}
+
 async function playable(page: Page, turn: number): Promise<void> {
   await page.waitForFunction(expected => window.communityReference.withEngine(load => {
     const { app } = load(55151), { inject } = load(32070);
@@ -191,12 +200,27 @@ test('main-world previews preserve ordinary saves and both Prison AI trajectorie
             }), width);
           };
           await select('Prison', entries[0].revision.width);
+          await page.evaluate(() => window.communityReference.withEngine(load => {
+            const module = load(80461), Original = module.IslandPreview;
+            module.IslandPreview = class {
+              constructor() { module.IslandPreview = Original; throw new Error('Fixture miniature renderer failure'); }
+            };
+          }));
           await select('Gifts', entries[1].revision.width);
+          assert.equal(await page.evaluate(() => window.communityReference.withEngine(load => {
+            const world = load(55151).app.scene.worldMap;
+            return world.scene.isVisible() && world.cameras.main.alpha === 1;
+          })), true, 'A miniature failure falls back to the full board without locking navigation');
           await page.setViewportSize({ width: 1120, height: 820 });
           await select('Prison', entries[0].revision.width);
           await page.setViewportSize({ width: 1280, height: 900 });
           await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))));
           assert.equal(await page.locator('#phaser-game canvas').isVisible(), true);
+          assert.equal(await page.evaluate(() => window.communityReference.withEngine(load => {
+            const { app } = load(55151);
+            return app.scene.worldMap.cameras.main.alpha === 0 && app.game.scene.getScenes(true).some((scene: any) =>
+              scene.scene.isVisible() && scene.children.getAll().some((child: any) => child instanceof load(80461).IslandPreview));
+          })), true, 'The original Expedition miniature replaces detailed sprites while browsing');
           assert.equal(await page.locator('.catalog-preview-large iframe, iframe[src*="/community-preview"]').count(), 0, 'The selected preview uses the original main canvas');
           assert.deepEqual(JSON.parse(await page.evaluate(() => window.previewStateHarness.ordinarySnapshot())), JSON.parse(ordinary), 'Browsing and resizing preserve ordinary profile, session, history and native storage');
           assert.ok(Object.values(await page.evaluate(() => window.previewStateHarness.counters)).every(value => value === 0), 'Preview must not call save, session start, history mutation, plays or AI');
@@ -225,6 +249,18 @@ test('main-world previews preserve ordinary saves and both Prison AI trajectorie
         const trace = await page.evaluate(() => window.previewStateHarness.trace);
         assert.ok(trace.length > 1, 'Observe committed player and opponent actions, not just initial state');
         runs.push({ initial: stateHash(initial.state), final: stateHash(final.state), trace: trace.map(step => ({ play: step.play, state: stateHash(step.state) })) });
+        if (preview) {
+          await page.evaluate(() => window.communityReference.act('ExitLevel'));
+          await page.waitForFunction(() => window.communityReference.withEngine(load => {
+            const { app } = load(55151);
+            return app.navigator.activeScreen?.name === 'CustomMaps' && !app.navigator.transitionInProgress && app.scene.worldMap.cameras.main.alpha === 0;
+          }));
+          assert.equal(stateHash((await page.evaluate(() => window.communityReference.inspect())).state), stateHash(final.state), 'Returning to the miniature retains the played board');
+          await page.getByRole('button', { name: `Resume ${difficulty === 'normal' ? 'Normal' : 'Hard'} game`, exact: true }).click();
+          await playable(page, 2);
+          assert.equal(await page.evaluate(() => window.communityReference.withEngine(load => load(55151).app.scene.worldMap.cameras.main.alpha)), 1, 'Resume fully restores the detailed renderer');
+          assert.deepEqual(boardContents((await page.evaluate(() => window.communityReference.inspect())).state), boardContents(final.state), 'Resuming preserves the played board contents');
+        }
         assert.equal(page.url(), url);
         assert.deepEqual(external, []); assert.deepEqual(failures, []);
         assert.deepEqual(await page.evaluate(() => window.communityReference.errors), []);

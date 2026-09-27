@@ -1,5 +1,6 @@
 import type { CatalogEntry } from '../shared/contracts.ts';
 import type { ReferenceModuleLoader } from './bootstrap.ts';
+import { createCatalogMiniature } from './catalog-miniature.ts';
 
 interface CatalogScreenOptions {
   loader: ReferenceModuleLoader;
@@ -19,6 +20,7 @@ export function createCatalogScreen(options: CatalogScreenOptions) {
   const { loader } = options;
   const { app } = loader(55151), { inject } = loader(32070);
   const world = app.scene.worldMap;
+  const miniature = createCatalogMiniature(loader);
   const gameRoot = app.game.canvas.parentElement as HTMLElement;
   let previousInert = gameRoot.inert;
   const { PreviewMode } = loader(28208);
@@ -31,6 +33,15 @@ export function createCatalogScreen(options: CatalogScreenOptions) {
   let disposed = false;
   let layout = '';
   let screen: any;
+
+  const prepareMiniature = async () => {
+    try { await miniature.prepare(inject.currentGameState); }
+    catch {
+      // This optional presentation must never block native Navigator or Play.
+      // Clearing restores the detailed board, which remains loaded underneath.
+      miniature.clear();
+    }
+  };
 
   const loadMap = (entry: CatalogEntry): Promise<string> => {
     const key = identity(entry); let pending = cache.get(key);
@@ -82,6 +93,7 @@ export function createCatalogScreen(options: CatalogScreenOptions) {
       world.scene.setVisible(true); world.setMode(new PreviewMode());
       // Retain the played board on return. A sync here would snap PreviewMode's camera to center.
       world.overlays.set(inject.currentGameState, loader(91693).OverlayModes.disabled);
+      if (selectedKey) await prepareMiniature();
       try { await options.show(); } catch (error) { options.onError(error as Error); }
     }
     deactivate() {
@@ -94,10 +106,12 @@ export function createCatalogScreen(options: CatalogScreenOptions) {
       await Promise.all([
         previous === app.screen.title ? loader(72431).titleOutTransition({ keepWorldMap: true }) : Promise.resolve(),
         selectedKey ? fit(duration()) : Promise.resolve(), options.animateIn(),
+        selectedKey ? miniature.fadeTo(1, duration()) : Promise.resolve(),
       ]);
     }
     async transitionOut(_next: any) {
-      await options.animateOut(); options.hide();
+      await Promise.all([options.animateOut(), miniature.fadeTo(0, duration())]);
+      miniature.clear(); options.hide();
     }
   })();
 
@@ -133,6 +147,7 @@ export function createCatalogScreen(options: CatalogScreenOptions) {
       const key = identity(entry);
       const ready = (async () => {
         if (selectedKey !== key) {
+          miniature.clear();
           world.scene.setVisible(false);
           const encoded = await loadMap(entry);
           // Downloads do not hold Navigator (or Back) hostage. Wait for the menu animation,
@@ -144,6 +159,9 @@ export function createCatalogScreen(options: CatalogScreenOptions) {
           const state = loader(47067).decodeGameState(encoded);
           inject.gameStateController.loadState(state, contexts.Preview);
           world.setMode(new PreviewMode()); world.syncState(); selectedKey = key;
+          await prepareMiniature();
+          if (destroyed || disposed || token !== selection || app.navigator.currentScreen !== screen) return;
+          await miniature.fadeTo(1, 0);
           await fit();
           if (!destroyed && token === selection) world.scene.setVisible(true);
         }
@@ -160,6 +178,7 @@ export function createCatalogScreen(options: CatalogScreenOptions) {
     },
     destroy() {
       disposed = true; selection++; cache.clear();
+      miniature.destroy();
       if (app.navigator.currentScreen === screen) gameRoot.inert = previousInert;
       app.game.events.off('poststep', update);
       if (app.screen.play.activate === activate) app.screen.play.activate = originalActivate;
