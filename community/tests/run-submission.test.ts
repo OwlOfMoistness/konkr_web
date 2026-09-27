@@ -5,6 +5,9 @@ import { Pool } from 'pg';
 import { Runs, digest } from '../api/runs.ts';
 import { Visitors } from '../api/visitors.ts';
 import { hashSecret } from '../api/admin-auth.ts';
+import { developmentIdentityProvider } from '../api/admin-auth.ts';
+import { createCommunityServer } from '../api/server.ts';
+import { ValidationWorker } from '../worker/validate-job.ts';
 import type { ObjectStorage, RunBinding, SupportedConfigurations } from '../shared/contracts.ts';
 
 const url=process.env.CATALOG_TEST_DATABASE_URL;
@@ -45,6 +48,29 @@ describe('server-bound run submission',{skip:!url},()=>{
     assert.equal((await runs.route(request(`/api/runs/${binding.id}/map`,another)))!.status,404);
     assert.deepEqual(await (await runs.route(request(`/api/runs/${binding.id}`,owner)))!.json(),{binding,result:null});
     await assert.rejects(db.query("UPDATE runs SET binding='{}' WHERE id=$1",[binding.id]),/immutable/);
+  });
+  it('starts bound gameplay with submissions disabled without accepting results or starting validation',async()=>{
+    const owner=await session();const stopped=service({submissionsEnabled:false});
+    const response=(await stopped.route(request('/api/runs',owner,{mapId:'map',revisionId:'r1',difficulty:'hard'})))!;
+    assert.equal(response.status,201);
+    const binding:RunBinding=(await response.json()).binding;
+    assert.deepEqual([binding.mapId,binding.revisionId,binding.mapHash,binding.difficulty],['map','r1',digest('map'),'hard']);
+    assert.equal(await (await stopped.route(request(`/api/runs/${binding.id}/map`,owner)))!.text(),'map');
+    assert.equal((await stopped.route(request(`/api/runs/${binding.id}/submission`,owner,submit(binding))))!.status,503);
+    assert.deepEqual((await db.query('SELECT state,submission_key,result,counted FROM runs WHERE id=$1',[binding.id])).rows[0],{state:'issued',submission_key:null,result:null,counted:false});
+    assert.equal((await stopped.route(request('/api/runs',{},{})))!.status,401);
+    assert.equal((await stopped.route(request('/api/runs',owner,{mapId:'unsupported',revisionId:'unsupported-r1',difficulty:'hard'})))!.status,422);
+    // A queued run from an earlier enabled deployment must remain untouched too.
+    const queued=await issue(owner);assert.equal((await runs.route(request(`/api/runs/${queued.id}/submission`,owner,submit(queued))))!.status,202);
+    const worker=new ValidationWorker(db,storage,{async validate(){throw new Error('Disabled worker must not validate');}},{pollMs:1});
+    const app=await createCommunityServer({db,storage,origin,csrfSecret:'test-csrf-secret-'.repeat(4),identityProvider:developmentIdentityProvider([{id:'local-curator',key:'test-curator-key-'.repeat(4)}]),flags:{customMaps:true,submissions:false,verifiedResults:false},worker});
+    try{
+      app.startWorker();
+      await new Promise(resolve=>setTimeout(resolve,20));
+      assert.equal(worker.health().running,false);assert.equal(worker.health().lastPollAt,null);
+      assert.equal((await db.query('SELECT state FROM runs WHERE id=$1',[queued.id])).rows[0].state,'queued');
+      assert.equal((await db.query('SELECT count(*) FROM map_score_buckets')).rows[0].count,'0');
+    }finally{await app.close();}
   });
   it('accepts exact concurrent retries once and rejects altered bodies, keys and snapshots',async()=>{
     const owner=await session();const binding=await issue(owner);const body=submit(binding);

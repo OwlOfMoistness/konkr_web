@@ -55,6 +55,6 @@ async function boot():Promise<void>{
     renderDetailActions:ratingControls(visitor),
     renderExtras:container=>mountResults(container,{controller:results,store,reader,resumeSaved:save=>custom!.resumeSaved(save)}),
   });
-  attachRunRecorder({loader,bridge:custom.bridge,onError:failure,onVictory:results.enqueue});
+  if(config.flags.submissions)attachRunRecorder({loader,bridge:custom.bridge,onError:failure,onVictory:results.enqueue});
 }
 void boot().catch(failure);

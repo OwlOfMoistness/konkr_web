@@ -53,7 +53,7 @@ export class Runs {
       const id=match![1]; const action=match![2];
       const visitor=await this.visitors.require(request,request.method!=='GET');
       if (!id && request.method==='POST') {
-        if (!this.options.submissionsEnabled) throw new AdminError(503,'New verified runs are temporarily disabled. Existing saves remain available.');
+        // Gameplay and saved revisions remain available while verification is disabled.
         const data=await readJson(request); requireFields(data,['mapId','revisionId','difficulty']);
         if (typeof data.mapId!=='string' || !/^[A-Za-z0-9_-]{1,128}$/.test(data.mapId) || typeof data.revisionId!=='string' || !/^[A-Za-z0-9_-]{1,128}$/.test(data.revisionId) || !['normal','hard'].includes(data.difficulty as string)) throw new AdminError(400,'Invalid map or difficulty');
         const binding=await inTransaction(this.db,async client=>{

@@ -88,7 +88,7 @@ export async function createCommunityServer(options:ServerOptions) {
       const migrated=Number((await options.db.query('SELECT count(*) FROM community_migrations WHERE name=ANY($1::text[])',[migrationNames])).rows[0].count)===migrationNames.length;
       // A reachable but unmigrated database is not a usable community service.
       await options.db.query('SELECT r.id FROM runs r JOIN map_revisions m ON m.id=r.revision_id LIMIT 0');
-      const workerReady=options.worker?.health().healthy??!options.flags.submissions;
+      const workerReady=!options.flags.submissions || options.worker?.health().healthy===true;
       return adminResponse({status:migrated&&workerReady?'ready':'unavailable',worker:workerReady},migrated&&workerReady?200:503);
     }
     if(url.pathname==='/api/admin/metrics'){
@@ -138,7 +138,7 @@ export async function createCommunityServer(options:ServerOptions) {
       .finally(()=>{const ms=performance.now()-start;metrics.totalLatencyMs+=ms;metrics.maxLatencyMs=Math.max(metrics.maxLatencyMs,ms);});
   });
   server.requestTimeout=15_000;server.headersTimeout=10_000;server.keepAliveTimeout=5_000;
-  return {server,async close(){await options.worker?.stop();server.closeAllConnections();if(server.listening)await new Promise<void>((resolve,reject)=>server.close(error=>error?reject(error):resolve()));},metrics};
+  return {server,startWorker(){if(options.flags.submissions)options.worker?.start();},async close(){await options.worker?.stop();server.closeAllConnections();if(server.listening)await new Promise<void>((resolve,reject)=>server.close(error=>error?reject(error):resolve()));},metrics};
 }
 
 async function main():Promise<void> {
@@ -160,7 +160,7 @@ async function main():Promise<void> {
   const worker=new ValidationWorker(db,storage,new NodeSimulationAdapter({policy,...DEFAULT_VALIDATOR_RESOURCES}),{onMetric:event=>console.log(JSON.stringify(event))});
   const app=await createCommunityServer({db,storage,origin,csrfSecret:process.env.COMMUNITY_CSRF_SECRET??'',identityProvider:provider,flags,worker});
   const port=Number(process.env.PORT??8080);await new Promise<void>((resolve,reject)=>{app.server.once('error',reject);app.server.listen(port,host,resolve);});
-  worker.start();console.log(JSON.stringify({event:'community-ready',origin,flags}));
+  app.startWorker();console.log(JSON.stringify({event:'community-ready',origin,flags}));
   const stop=()=>{void app.close().then(()=>db.end()).then(()=>process.exit(0));};process.once('SIGINT',stop);process.once('SIGTERM',stop);
 }
 if(process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.url))void main().catch(()=>{console.error('Community startup failed. Check required configuration, database migrations and pinned runtime inputs.');process.exitCode=1;});

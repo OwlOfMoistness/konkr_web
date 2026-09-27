@@ -57,6 +57,10 @@ curl --fail http://127.0.0.1:8080/readyz
 Open `http://127.0.0.1:8080/`. The player remains on this URL through catalog,
 details, play and return. Curators use `/admin/maps` with the generated local key.
 The key is a local fixture, not an approved public authentication method.
+With submissions disabled, custom games still receive server-issued run bindings
+and can be played, saved and resumed. Victories are not recorded for submission,
+and the validation worker stays stopped. Completion and best-turn statistics
+remain hidden when verified results are disabled; reported statistics are not collected.
 Bootstrap inserts the named administrator only if no curator exists; migrations
 do not create identities. Keep the same database password when restarting an
 existing PostgreSQL volume: changing the environment does not rotate its user.
@@ -97,7 +101,7 @@ Run the same migration/bootstrap commands from `community/`, followed by
 | `COMMUNITY_CSRF_SECRET` | Random secret of at least 32 characters; protects anonymous request proofs. |
 | `COMMUNITY_DEV_CURATOR_ID`, `COMMUNITY_DEV_CURATOR_KEY` | Explicit local identity and random key of at least 32 characters. |
 | `COMMUNITY_CUSTOM_MAPS` | `1` enables the custom-map entry; otherwise disabled. |
-| `COMMUNITY_SUBMISSIONS` | `1` permits new result submissions; otherwise disabled. |
+| `COMMUNITY_SUBMISSIONS` | `1` enables recording, new result submissions and the validation worker. `0` keeps gameplay/save/resume available without recording or validation. |
 | `COMMUNITY_VERIFIED_RESULTS` | `1` exposes verified statistics; otherwise hidden. |
 
 Do not log cookie values, session/CSRF proofs, keys, raw replays or personal
@@ -118,11 +122,11 @@ Back up before migration and test every new migration against a restored copy.
 For an incident, first set `COMMUNITY_SUBMISSIONS=0` and
 `COMMUNITY_VERIFIED_RESULTS=0`, then recreate the app container with the same
 database/object volumes. This rejects new submissions and hides published
-statistics; it does not delete queued jobs or reverse accepted results. Set
+statistics and stops the validation worker; it does not delete queued jobs or reverse accepted results. Set
 `COMMUNITY_CUSTOM_MAPS=0` too if the player entry must disappear. Feature flags
 are read on startup. They are not a promise to cancel an in-flight transaction.
 
-To halt validation or all writes, stop the app gracefully. The worker must
+To halt all writes, stop the app gracefully. The worker must
 release or recover leased work on restart; only the reviewed accounting path
 may apply completion counters. Do not manually mark a job successful, zero
 counters, purge the queue or delete replay blobs to clear an incident. Confirm
