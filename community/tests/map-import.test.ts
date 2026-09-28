@@ -53,6 +53,20 @@ describe('private draft uploads and revision changes', { skip: !url }, () => {
     const concurrent = await Promise.all([upload(encode(raw('concurrent'))), upload(encode(raw('concurrent')))]);
     assert.deepEqual(concurrent.map(r => r.status).sort(), [201,409]);
   });
+  it('uploads and publishes Twin Continents without changing its map bytes or dimensions', async () => {
+    const fixture = JSON.parse(await readFile(new URL('fixtures/twin-continents.json', import.meta.url), 'utf8'));
+    const response = await upload(fixture.encodedMap); assert.equal(response.status, 201);
+    const imported = await response.json(); const revision = imported.revisions[0];
+    assert.deepEqual([revision.width, revision.height, revision.content_hash], [16, 13, fixture.sha256]);
+    assert.equal(Buffer.from(objects.get(revision.object_key)!.bytes).toString('utf8'), fixture.encodedMap);
+    const policy = { version: 1 as const, configurations: [{ engineHash: 'pinned-engine', difficulty: 'hard' as const, plugins: [], evidence: 'import regression test only' }] };
+    const publication = new PublicationService(service, policy);
+    const published = (await publication.route(req(`/api/admin/maps/${imported.map.id}/publication`, 'POST', {
+      expectedVersion: imported.map.version, state: 'published',
+    })))!;
+    assert.equal(published.status, 200);
+    assert.equal((await new PostgresCatalogReader(db, policy).get(imported.map.id))?.map.metadata.title, 'Twin Continents');
+  });
   it('keeps metadata edits distinct and protects against concurrent stale edits', async () => {
     const data = await (await upload(encode(raw('metadata')))).json(); const id = data.map.id; const revision = data.map.current_revision_id;
     const metadata = { title: '<img onerror=evil>', description: 'literal text', creator: 'Map author', tags: ['#Xmas'] };

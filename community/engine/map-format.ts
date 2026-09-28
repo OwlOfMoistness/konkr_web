@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { ContractError, LIMITS } from '../shared/contracts.ts';
+import { HEX_GRID_AREA, MAX_HEX_ID } from './hex-grid.ts';
 
 type Data = null | boolean | number | string | Data[] | { [key: string]: Data };
 type ObjectData = { [key: string]: Data };
@@ -103,9 +104,9 @@ export function parseMap(encoded: string): ParsedMap {
   text(map.introduction, 'introduction', LIMITS.descriptionLength);
   const plugins = array(map.plugins ?? [], 'plugins', PLUGINS.size).map(value => text(value, 'plugin', 64));
   if (new Set(plugins).size !== plugins.length || plugins.some(plugin => !PLUGINS.has(plugin))) fail('Unsupported plugin');
-  const regions = array(state.regions, 'regions', width * height);
+  const regions = array(state.regions, 'regions', HEX_GRID_AREA);
   const factions = array(state.factions, 'factions', 7);
-  const pawns = array(state.pawns, 'pawns', width * height * 4);
+  const pawns = array(state.pawns, 'pawns', HEX_GRID_AREA * 4);
   const regionIds = new Set<number>();
   const hexes = new Set<number>();
   for (const value of regions) {
@@ -115,9 +116,11 @@ export function parseMap(encoded: string): ParsedMap {
     if (regionIds.has(id)) fail('Duplicate region ID');
     regionIds.add(id);
     text(region.name, 'region name', 256);
-    for (const value of array(region.hexes, 'region hexes', width * height)) {
-      const hex = integer(value, 'hex', 0, 9999);
-      if (Math.floor(hex / 100) >= height || hex % 100 >= width || hexes.has(hex)) fail('Invalid or overlapping hex');
+    for (const value of array(region.hexes, 'region hexes', HEX_GRID_AREA)) {
+      // The original importer retains land outside the nominal dimensions.
+      // Preserve the file and its rules; bound coordinates by the native grid.
+      const hex = integer(value, 'hex', 0, MAX_HEX_ID);
+      if (hexes.has(hex)) fail('Overlapping hex');
       hexes.add(hex);
     }
   }
@@ -160,7 +163,7 @@ export function parseMap(encoded: string): ParsedMap {
     if (pawnIds.has(id)) fail('Duplicate pawn ID');
     pawnIds.add(id);
     if (!PAWNS.has(pawn.type as string)) fail('Unsupported pawn type');
-    if (!hexes.has(integer(pawn.hex, 'pawn hex', 0, 9999))) fail('Pawn outside land');
+    if (!hexes.has(integer(pawn.hex, 'pawn hex', 0, MAX_HEX_ID))) fail('Pawn outside land');
     if (pawn.count !== undefined) integer(pawn.count, 'pawn count', 1, 1_000_000);
     text(pawn.name, 'pawn name', 256);
   }

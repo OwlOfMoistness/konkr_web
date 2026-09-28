@@ -2,6 +2,7 @@ import { parseDecision } from '../shared/contracts.ts';
 import type { PlayerDecision } from '../shared/contracts.ts';
 import type { EngineSession } from './adapter.ts';
 import type { Recovered } from './platform.ts';
+import { MAX_HEX_ID } from './hex-grid.ts';
 
 export class PlayerCommandError extends Error {
   code: string;
@@ -14,9 +15,9 @@ export class UnsupportedDecisionError extends Error {
 const deny = (code: string): never => { throw new PlayerCommandError(code); };
 
 function destination(session: EngineSession, id: number): Recovered {
-  // Lookup is safe only after structural integer parsing, then bounded by the
-  // current canonical map, not the global Hex cache's larger coordinate domain.
-  if (Math.floor(id / 100) >= session.parsedMap.height || id % 100 >= session.parsedMap.width) deny('invalid-destination');
+  // parseDecision already checks nonnegative integers. Bound the native cache,
+  // then require actual server-owned land, including tiles beyond nominal size.
+  if (id > MAX_HEX_ID) deny('invalid-destination');
   const hex = session.requireModule(35326).getHex(id);
   if (!hex || !session.model.regions.byHex(hex)) deny('invalid-destination');
   return hex;
