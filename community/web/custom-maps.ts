@@ -31,6 +31,8 @@ export interface CustomMapsOptions extends Omit<CatalogBridgeOptions, 'loader' |
   onError?: (error: Error) => void;
   supportedDifficulties?: (entry: CatalogEntry) => Difficulty[];
   verifiedResultsEnabled?: boolean;
+  statisticsEnabled?: boolean;
+  progressEnabled?: boolean;
   renderDetailActions?: (container: HTMLElement, entry: CatalogEntry) => void;
   renderPostPlay?: (container: HTMLElement, entry: CatalogEntry) => void;
   renderPreview?: Parameters<typeof mountCatalog>[1]['renderPreview'];
@@ -115,20 +117,20 @@ export async function installCustomMaps(options: CustomMapsOptions) {
     await sequence(() => presentation.returnFromPlay(context.entry));
   }, onError: error });
   const stopProgress = bridge.subscribe(event => {
-    if (event.type === 'outcome' && event.outcome === 'Victory') {
+    if (options.progressEnabled !== false && event.type === 'outcome' && event.outcome === 'Victory') {
       try { progress.recordVictory(event.context.entry, event.context.difficulty); }
       catch { error(new Error('Your browser could not save the completion trophy.')); }
     }
   });
   catalog = mountCatalog(catalogRoot, {
-    reader: options.reader, supportedDifficulties: options.supportedDifficulties, verifiedResultsEnabled: options.verifiedResultsEnabled,
+    reader: options.reader, supportedDifficulties: options.supportedDifficulties, verifiedResultsEnabled: options.verifiedResultsEnabled, statisticsEnabled: options.statisticsEnabled,
     onPlay: (entry, difficulty) => launch(() => bridge.start(entry, difficulty)),
     onExit: () => { void exit().catch(error); },
     sharedWorld: true,
     renderPreview: (container, entry, thumbnail) => thumbnail
       ? options.renderPreview?.(container, entry, true) ?? { ready: Promise.resolve(), destroy() {} }
       : presentation.mount(container, entry),
-    completedDifficulties: entry => progress.completed(entry),
+    completedDifficulties: options.progressEnabled === false ? undefined : entry => progress.completed(entry),
     renderDetailActions(container, entry) {
       const modes = options.supportedDifficulties?.(entry) ?? ['normal', 'hard'];
       for (const mode of modes) {

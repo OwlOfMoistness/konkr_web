@@ -1,9 +1,9 @@
 name: Community checks
 'on':
   pull_request:
-    paths: ['community/**', '_site/releases/2.35.30/**', '.github/workflows/community-checks.yml']
+    paths: ['community/**', 'community maps/**', '_site/releases/2.35.30/**', '.github/workflows/community-checks.yml']
   push:
-    paths: ['community/**', '_site/releases/2.35.30/**', '.github/workflows/community-checks.yml']
+    paths: ['community/**', 'community maps/**', '_site/releases/2.35.30/**', '.github/workflows/community-checks.yml']
   workflow_dispatch:
 permissions: {}
 concurrency:
@@ -63,6 +63,7 @@ jobs:
           NODE
       - run: npm run build
       - run: npm run prepare:runtime
+      - run: npm run build:static
       - name: Run all tests serially and reject skipped coverage
         run: |
           set -o pipefail

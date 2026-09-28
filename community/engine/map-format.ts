@@ -89,13 +89,30 @@ export function decodeKonkrData(encoded: string, prefix: 'konkrmap.v7.' | 'konkr
 }
 
 export function parseMap(encoded: string): ParsedMap {
+  return parseMapData(encoded, false);
+}
+
+/** PR-reviewed static maps use native browser rules, never the public replay validator. */
+export function parseCuratedMap(encoded: string): ParsedMap {
+  return parseMapData(encoded, true);
+}
+
+function parseMapData(encoded: string, curated: boolean): ParsedMap {
   const state = record(decodeKonkrData(encoded), 'map state');
   allowed(state, ['version', 'map', 'regions', 'factions', 'pawns', 'currentPhase', 'hexHistory'], 'state');
   if (state.version !== 7) fail('Unsupported map schema');
   const map = record(state.map, 'map');
-  // Scripts, custom win conditions and arbitrary rule overrides require a separate
-  // reviewed schema/support extension; accepting JSON alone does not make them safe.
-  allowed(map, ['width', 'height', 'plugins', 'levelId', 'name', 'author', 'description', 'introduction', 'theme'], 'map');
+  // Replay validation keeps its strict schema. Curated browser maps can name the
+  // reviewed native conditions below; neither path permits executable rule hooks.
+  allowed(map, ['width', 'height', 'plugins', 'levelId', 'name', 'author', 'description', 'introduction', 'theme', ...(curated ? ['descriptor', 'winConditions'] : [])], 'map');
+  if (curated) {
+    text(map.descriptor, 'descriptor', LIMITS.descriptionLength);
+    if (map.winConditions !== undefined) for (const value of array(map.winConditions, 'win conditions', 2)) {
+      const condition = record(value, 'win condition');
+      allowed(condition, ['type'], 'win condition');
+      if (!['destroy-haunted-towns', 'defeat-all-rivals'].includes(condition.type as string)) fail('Unsupported native win condition');
+    }
+  }
   const width = integer(map.width, 'width', 3, 99);
   const height = integer(map.height, 'height', 3, 99);
   const levelId = text(map.levelId, 'level ID', 128);
@@ -105,7 +122,8 @@ export function parseMap(encoded: string): ParsedMap {
   const plugins = array(map.plugins ?? [], 'plugins', PLUGINS.size).map(value => text(value, 'plugin', 64));
   if (new Set(plugins).size !== plugins.length || plugins.some(plugin => !PLUGINS.has(plugin))) fail('Unsupported plugin');
   const regions = array(state.regions, 'regions', HEX_GRID_AREA);
-  const factions = array(state.factions, 'factions', 7);
+  const maxFactionId = curated ? 7 : 6;
+  const factions = array(state.factions, 'factions', maxFactionId + 1);
   const pawns = array(state.pawns, 'pawns', HEX_GRID_AREA * 4);
   const regionIds = new Set<number>();
   const hexes = new Set<number>();
@@ -131,7 +149,7 @@ export function parseMap(encoded: string): ParsedMap {
   for (const value of factions) {
     const faction = record(value, 'faction');
     allowed(faction, ['id', 'name', 'themeIndex', 'controller', 'approval', 'credit', 'regions', 'aiPersonality', 'persona'], 'faction');
-    const id = integer(faction.id, 'faction ID', 0, 6);
+    const id = integer(faction.id, 'faction ID', 0, maxFactionId);
     if (factionIds.has(id)) fail('Duplicate faction ID');
     factionIds.add(id);
     if (!['local-user', 'ai', 'none'].includes(faction.controller as string)) fail('Unsupported controller');
@@ -149,10 +167,10 @@ export function parseMap(encoded: string): ParsedMap {
       if (faction[field] !== undefined && faction[field] !== null) {
         const values = record(faction[field], field);
         for (const [target, amount] of Object.entries(values))
-          if (!/^\d+$/.test(target) || Number(target) > 6 || typeof amount !== 'number' || Math.abs(amount) > 1_000_000) fail(`Invalid ${field}`);
+          if (!/^\d+$/.test(target) || Number(target) > maxFactionId || typeof amount !== 'number' || Math.abs(amount) > 1_000_000) fail(`Invalid ${field}`);
       }
     }
-    if (faction.aiPersonality !== undefined || faction.persona !== undefined) fail('Custom AI personalities require support review');
+    if (faction.aiPersonality !== undefined || faction.persona !== undefined && (!curated || !['king', 'goose', 'lich'].includes(faction.persona as string))) fail('Custom AI personalities require support review');
   }
   if (localPlayers !== 1 || !factionIds.has(0) || ownedRegions.size !== regionIds.size) fail('Invalid faction setup');
   const pawnIds = new Set<number>();

@@ -6,6 +6,8 @@
   "engines": { "node": ">=24.0.0" },
   "scripts": {
     "build": "tsc --noEmit",
+    "build:static": "node scripts/build-static.ts",
+    "preview:static": "node scripts/serve-static.ts",
     "test": "node --test",
     "start": "node api/server.ts",
     "prepare:runtime": "node scripts/prepare-runtime.ts"

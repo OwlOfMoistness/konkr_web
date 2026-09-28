@@ -1,5 +1,8 @@
 # Local community service operations
 
+The current release uses the [static catalogue](../README.md). The server/admin
+edition below is retained but dormant; it is not required for static hosting.
+
 This package is for local review. It does not authorize publishing the original
 game or assets. Public hosting remains blocked on distribution permission, a
 reviewed curator identity provider, hosting and budget decisions, retention

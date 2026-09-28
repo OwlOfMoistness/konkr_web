@@ -25,6 +25,8 @@ export interface CatalogMountOptions {
   storageKey?: string;
   /** This flag must remain off until the validator's independent review passes. */
   verifiedResultsEnabled?: boolean;
+  /** Static releases can keep all rating/count features dormant. */
+  statisticsEnabled?: boolean;
   supportedDifficulties?: (entry: CatalogEntry) => Difficulty[];
   /** Optional map actions, such as resuming a saved game. */
   renderDetailActions?: (container: HTMLElement, entry: CatalogEntry) => void;
@@ -98,6 +100,7 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
   const storageKey = options.storageKey ?? 'konkr.community.catalog.v1';
   let state: CatalogUiState;
   try { state = restoreCatalogState(storage?.getItem(storageKey) ?? null); } catch { state = defaultCatalogState(); }
+  if (options.statisticsEnabled === false && ['rating', 'completions'].includes(state.sort)) state.sort = 'name';
   let generation = 0;
   let destroyed = false;
   let paused = false;
@@ -128,6 +131,7 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
     if (browser && !paused && !restoringScroll) { state.scrollTop = browser.scrollTop; save(); }
   };
   const updateRating = (event: Event) => {
+    if (options.statisticsEnabled === false) return;
     const entry = (event as CustomEvent<CatalogEntry>).detail;
     for (const card of root.querySelectorAll<HTMLElement>('.catalog-card')) {
       if (card.dataset.entryId === entry.map.id && card.dataset.revisionId === entry.revision.id) card.querySelector('.catalog-rating')!.textContent = shortRating(entry.rating);
@@ -198,6 +202,7 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
   };
   const stats = (entry: CatalogEntry, detail = false) => {
     const wrap = el('div', 'catalog-stats');
+    if (options.statisticsEnabled === false) { wrap.hidden = true; return wrap; }
     wrap.append(el('span', 'catalog-rating', detail ? ratingText(entry.rating) : shortRating(entry.rating)));
     if (options.verifiedResultsEnabled) {
       if (detail) {
@@ -229,7 +234,10 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
     tagInput.addEventListener('input', () => tagInput.setCustomValidity(''));
     const toolbar = el('div', 'catalog-toolbar');
     const sort = el('select');
-    for (const [value, label] of [['newest', 'Newest'], ['name', 'Name A–Z'], ['rating', 'Highest rating'], ['completions', 'Most finished']]) { const option = el('option', '', label); option.value = value; sort.append(option); }
+    for (const [value, label] of [['newest', 'Newest'], ['name', 'Name A–Z'], ['rating', 'Highest rating'], ['completions', 'Most finished']]) {
+      if (options.statisticsEnabled === false && ['rating', 'completions'].includes(value)) continue;
+      const option = el('option', '', label); option.value = value; sort.append(option);
+    }
     sort.value = state.sort; sort.addEventListener('change', () => setQuery({ sort: sort.value as CatalogSort }));
     const difficulty = el('select');
     for (const [value, label] of [['all', 'All'], ['normal', 'Normal'], ['hard', 'Hard']]) { const option = el('option', '', label); option.value = value; difficulty.append(option); }
