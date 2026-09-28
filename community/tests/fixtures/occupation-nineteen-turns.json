@@ -1,0 +1,459 @@
+{
+  "version": 1,
+  "sourceFilename": "replay-2026-06-18-occupation-19t.konkr",
+  "sourceHash": "2c9e5825ad3c26b366fd8c632de037b37f2380d482555182b64b8d4e963aeb17",
+  "sourceEngineVersion": "unknown",
+  "provenance": "Selected first snapshot and player-only decisions from the supplied legacy replay. AI moves and later snapshots are not simulation inputs. This fixture is not a server-issued public run.",
+  "scope": "Normal capture-towns compatibility regression only; production support policy unchanged. No fresh browser state-parity claim.",
+  "input": {
+    "canonicalMap": "konkrmap.v7.eyJtYXAiOnsid2lkdGgiOjIxLCJoZWlnaHQiOjE2LCJwbHVnaW5zIjpbImNhcHR1cmUtdG93bnMiXSwibGV2ZWxJZCI6Imwtb2NjdXBhdGlvbiIsImRlc2NyaXB0aW9uIjoiVHJ1ZSBjb25xdWVyb3JzIGNhcHR1cmUgdG93bnMsIG5vdCByYXplIHRoZW0hIiwiaW50cm9kdWN0aW9uIjoiT3VyIGluaXRpYWwgcG9zaXRpb24gb24gdGhpcyBpc2xhbmQgaXNuJ3QgZ3JlYXQsIGJ1dCB0aGVyZSBhcmUgc29tZSBhYmFuZG9uZWQgc2V0dGxlbWVudHMgbmVhcmJ5IHRoYXQgd2UgY2FuIHJlc3RvcmUgaWYgd2UgY2FwdHVyZSB0aGVtISBXZSBjYW4gYWxzbyBjYXB0dXJlIHRoZSByaXZhbCB0b3ducyBmb3Igb3Vyc2VsdmVzISIsIm5hbWUiOiJPY2N1cGF0aW9uIn0sInZlcnNpb24iOjcsInJlZ2lvbnMiOlt7ImlkIjoxLCJuYW1lIjoibGFuZCIsImhleGVzIjpbNTEyLDUxMyw4MDMsOTA3LDEwMDcsOTEyLDExMDgsMTExMSwxMTEyLDExMTMsMTIwOSwxMTE0LDEyMTAsMTMwNyw0MTEsNDEyLDE0MDYsNDE0LDQxNV19LHsiaWQiOjIsIm5hbWUiOiJEYXlwYXNzIiwiaGV4ZXMiOlsxMTIsMTEzLDExNCwyMTIsMjEzLDMxNF19LHsiaWQiOjMsIm5hbWUiOiJTdGFyc291bmQiLCJoZXhlcyI6WzIwNywyMDgsMzA3LDMwOCwzMDksNDA3XX0seyJpZCI6NCwibmFtZSI6IkRlYWR3aW5nIiwiaGV4ZXMiOlsyMDksMjEwLDIxMSwzMTAsMzExLDMxMl19LHsiaWQiOjUsIm5hbWUiOiJTYW5kbW91bnQiLCJoZXhlcyI6WzIxNCwyMTUsMzE1XX0seyJpZCI6NiwibmFtZSI6IkJhaW5kZWVwIiwiaGV4ZXMiOls1MTQsMzEzLDQxM119LHsiaWQiOjcsIm5hbWUiOiJIaWdoc2hpZWxkIiwiaGV4ZXMiOls0MTYsMzE2LDMxN119LHsiaWQiOjgsIm5hbWUiOiJCYW5ldGhvcnBlIiwiaGV4ZXMiOls0MDgsNDA5LDQxMCw1MDksNTEwLDUxMV19LHsiaWQiOjksIm5hbWUiOiJBc2h2aWxsZSIsImhleGVzIjpbNDAyLDQwMyw1MDMsNTA0LDYwMyw2MDRdfSx7ImlkIjoxMCwibmFtZSI6IlJleGdyYWQiLCJoZXhlcyI6WzUwNSw1MDYsNTA3LDYwNSw2MDZdfSx7ImlkIjoxMSwibmFtZSI6IkJlcnlsY2l0eSIsImhleGVzIjpbODAyLDYwMiw3MDIsNzAzXX0seyJpZCI6MTIsIm5hbWUiOiJMZXlwYXJrIiwiaGV4ZXMiOls2MDgsNzA3LDcwOCw4MDcsNTA4LDYwN119LHsiaWQiOjEzLCJuYW1lIjoiTWlkZGxlbXVyayIsImhleGVzIjpbNjEwLDYxMSw2MTIsNjEzLDcxMSw3MTJdfSx7ImlkIjoxNCwibmFtZSI6IkNsYXltYXNzIiwiaGV4ZXMiOls3MDQsNzA1LDcwNl19LHsiaWQiOjE1LCJuYW1lIjoiTmV2ZXJidXJ5IiwiaGV4ZXMiOls4MDQsODA1LDgwNiw5MDUsOTA2XX0seyJpZCI6MTYsIm5hbWUiOiJNb3VybmZsaW50IiwiaGV4ZXMiOls4MTAsODExLDkxMF19LHsiaWQiOjE3LCJuYW1lIjoiS2luZ2JhY2siLCJoZXhlcyI6WzcxMyw4MTIsODEzLDkxM119LHsiaWQiOjE4LCJuYW1lIjoiTXVkZ2xlbiIsImhleGVzIjpbODA4LDkwOCw5MDksMTAwOCwxMTA5XX0seyJpZCI6MTksIm5hbWUiOiJUaW1iZXJibHVmZiIsImhleGVzIjpbOTExLDEwMTEsMTAxMl19LHsiaWQiOjIwLCJuYW1lIjoiQ3JhYm11cmsiLCJoZXhlcyI6WzkxNCwxMDEzLDEwMTRdfSx7ImlkIjoyMSwibmFtZSI6IlNoaWVsZHBhcmsiLCJoZXhlcyI6WzEwMDksMTAxMCwxMTEwXX0seyJpZCI6MjIsIm5hbWUiOiJSYWluYm93cml2ZXIiLCJoZXhlcyI6WzkxOSwxMDE4LDEwMTksMTExOV19LHsiaWQiOjIzLCJuYW1lIjoiQmVhcmJlbGwiLCJoZXhlcyI6WzEzMTUsMTMxNiwxMTE1LDExMTYsMTIxNCwxMjE1XX0seyJpZCI6MjQsIm5hbWUiOiJGZWxyYXkiLCJoZXhlcyI6WzEyMTYsMTIxNywxMDE3LDExMTcsMTExOF19LHsiaWQiOjI1LCJuYW1lIjoiRmFpcnNwZWFyIiwiaGV4ZXMiOlsxMjA3LDEyMDgsMTMwOV19LHsiaWQiOjI2LCJuYW1lIjoiQ29uZG9yY292ZSIsImhleGVzIjpbMTQwOCwxMzA4LDE0MDddfV0sImZhY3Rpb25zIjpbeyJpZCI6MCwibmFtZSI6Im5hdHVyZSIsInRoZW1lSW5kZXgiOjAsImNvbnRyb2xsZXIiOiJub25lIiwicmVnaW9ucyI6WzFdfSx7ImlkIjoxLCJuYW1lIjoiUGxheWVyIDEiLCJ0aGVtZUluZGV4IjowLCJjb250cm9sbGVyIjoibG9jYWwtdXNlciIsInJlZ2lvbnMiOlsyLDE0LDE4LDIwXX0seyJpZCI6MiwibmFtZSI6IlBsYXllciAyIiwidGhlbWVJbmRleCI6MSwiY29udHJvbGxlciI6ImFpIiwicmVnaW9ucyI6WzYsOCwxNiwyNCwyNV19LHsiaWQiOjMsIm5hbWUiOiJQbGF5ZXIgMyIsInRoZW1lSW5kZXgiOjIsImNvbnRyb2xsZXIiOiJhaSIsInJlZ2lvbnMiOls1LDEyLDE3LDI2XX0seyJpZCI6NCwibmFtZSI6IlBsYXllciA0IiwidGhlbWVJbmRleCI6MywiY29udHJvbGxlciI6ImFpIiwicmVnaW9ucyI6WzQsMTUsMTksMjNdfSx7ImlkIjo1LCJuYW1lIjoiUGxheWVyIDUiLCJ0aGVtZUluZGV4Ijo0LCJjb250cm9sbGVyIjoiYWkiLCJyZWdpb25zIjpbNywxMCwxMSwyMSwyMl19LHsiaWQiOjYsIm5hbWUiOiJQbGF5ZXIgNiIsInRoZW1lSW5kZXgiOjUsImNvbnRyb2xsZXIiOiJhaSIsInJlZ2lvbnMiOlszLDksMTNdfV0sInBhd25zIjpbeyJpZCI6MSwidHlwZSI6ImZvcmVzdCIsImhleCI6NDExfSx7ImlkIjoyLCJ0eXBlIjoiZm9yZXN0IiwiaGV4Ijo0MTJ9LHsiaWQiOjMsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjUxMn0seyJpZCI6NCwidHlwZSI6ImZvcmVzdCIsImhleCI6NTEzfSx7ImlkIjo1LCJ0eXBlIjoiZm9yZXN0IiwiaGV4Ijo5MTJ9LHsiaWQiOjYsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjgwM30seyJpZCI6NywidHlwZSI6ImZvcmVzdCIsImhleCI6MTExNH0seyJpZCI6OCwidHlwZSI6ImZvcmVzdCIsImhleCI6NDE1fSx7ImlkIjo5LCJ0eXBlIjoiZm9yZXN0IiwiaGV4Ijo0MTR9LHsiaWQiOjEwLCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxMjA5fSx7ImlkIjoxMSwidHlwZSI6ImZvcmVzdCIsImhleCI6MTIxMH0seyJpZCI6MTIsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjExMTF9LHsiaWQiOjEzLCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxMTEyfSx7ImlkIjoxNCwidHlwZSI6ImZvcmVzdCIsImhleCI6MTExM30seyJpZCI6MTUsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjkwN30seyJpZCI6MTYsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjEwMDd9LHsiaWQiOjE3LCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxMTA4fSx7ImlkIjoxOCwidHlwZSI6ImZvcmVzdCIsImhleCI6MTMwN30seyJpZCI6MTksInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjE0MDZ9LHsiaWQiOjIwLCJ0eXBlIjoidG93biIsImhleCI6ODA4fSx7ImlkIjoyMSwidHlwZSI6ImNvaW5zIiwiaGV4Ijo4MDgsImNvdW50IjoxMH0seyJpZCI6MjIsInR5cGUiOiJ0b3duIiwiaGV4IjoxMjE3fSx7ImlkIjoyMywidHlwZSI6ImNvaW5zIiwiaGV4IjoxMjE3LCJjb3VudCI6NX0seyJpZCI6MjQsInR5cGUiOiJ0b3duIiwiaGV4IjoxNDA4fSx7ImlkIjoyNSwidHlwZSI6ImNvaW5zIiwiaGV4IjoxNDA4LCJjb3VudCI6N30seyJpZCI6MjYsInR5cGUiOiJ0b3duIiwiaGV4IjoyMTV9LHsiaWQiOjI3LCJ0eXBlIjoiY29pbnMiLCJoZXgiOjIxNSwiY291bnQiOjd9LHsiaWQiOjI4LCJ0eXBlIjoidG93biIsImhleCI6OTA1fSx7ImlkIjoyOSwidHlwZSI6ImNvaW5zIiwiaGV4Ijo5MDUsImNvdW50Ijo1fSx7ImlkIjozMCwidHlwZSI6InRvd24iLCJoZXgiOjUwNn0seyJpZCI6MzEsInR5cGUiOiJjb2lucyIsImhleCI6NTA2LCJjb3VudCI6NX0seyJpZCI6MzIsInR5cGUiOiJ0b3duIiwiaGV4Ijo3MTF9LHsiaWQiOjMzLCJ0eXBlIjoiY29pbnMiLCJoZXgiOjcxMSwiY291bnQiOjR9LHsiaWQiOjM0LCJ0eXBlIjoidG93bi1ydWlucyIsImhleCI6NTA5fSx7ImlkIjozNSwidHlwZSI6InRvd24tcnVpbnMiLCJoZXgiOjEwMTN9LHsiaWQiOjM2LCJ0eXBlIjoidG93bi1ydWlucyIsImhleCI6MjExfSx7ImlkIjozNywidHlwZSI6InRvd24tcnVpbnMiLCJoZXgiOjcwMn1dLCJjdXJyZW50UGhhc2UiOnsidHlwZSI6ImZhY3Rpb24tdHVybiIsInR1cm5OdW1iZXIiOjEsImZhY3Rpb24iOjEsInRhcHBlZFVuaXRzIjpbXX0sImhleEhpc3RvcnkiOnt9fQ==",
+    "decisions": [
+      {
+        "kind": "buy",
+        "pawnType": "villager",
+        "destinationHexId": 1009,
+        "buyerRegionId": 18
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "move",
+        "pawnId": 38,
+        "destinationHexId": 1010
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "move",
+        "pawnId": 38,
+        "destinationHexId": 1011
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "move",
+        "pawnId": 38,
+        "destinationHexId": 1012
+      },
+      {
+        "kind": "buy",
+        "pawnType": "villager",
+        "destinationHexId": 1115,
+        "buyerRegionId": 18
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "move",
+        "pawnId": 38,
+        "destinationHexId": 1115
+      },
+      {
+        "kind": "move",
+        "pawnId": 62,
+        "destinationHexId": 1109
+      },
+      {
+        "kind": "buy",
+        "pawnType": "villager",
+        "destinationHexId": 1208,
+        "buyerRegionId": 18
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "move",
+        "pawnId": 62,
+        "destinationHexId": 1308
+      },
+      {
+        "kind": "move",
+        "pawnId": 63,
+        "destinationHexId": 1110
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "move",
+        "pawnId": 62,
+        "destinationHexId": 1408
+      },
+      {
+        "kind": "buy",
+        "pawnType": "pikeman",
+        "destinationHexId": 909,
+        "buyerRegionId": 18
+      },
+      {
+        "kind": "move",
+        "pawnId": 81,
+        "destinationHexId": 1115
+      },
+      {
+        "kind": "move",
+        "pawnId": 63,
+        "destinationHexId": 913
+      },
+      {
+        "kind": "buy",
+        "pawnType": "villager",
+        "destinationHexId": 807,
+        "buyerRegionId": 18
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "move",
+        "pawnId": 62,
+        "destinationHexId": 1115
+      },
+      {
+        "kind": "move",
+        "pawnId": 88,
+        "destinationHexId": 1215
+      },
+      {
+        "kind": "move",
+        "pawnId": 63,
+        "destinationHexId": 1316
+      },
+      {
+        "kind": "move",
+        "pawnId": 82,
+        "destinationHexId": 1116
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "move",
+        "pawnId": 88,
+        "destinationHexId": 1216
+      },
+      {
+        "kind": "move",
+        "pawnId": 82,
+        "destinationHexId": 1309
+      },
+      {
+        "kind": "move",
+        "pawnId": 63,
+        "destinationHexId": 1207
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "move",
+        "pawnId": 88,
+        "destinationHexId": 1217
+      },
+      {
+        "kind": "move",
+        "pawnId": 63,
+        "destinationHexId": 1407
+      },
+      {
+        "kind": "move",
+        "pawnId": 82,
+        "destinationHexId": 1010
+      },
+      {
+        "kind": "buy",
+        "pawnType": "villager",
+        "destinationHexId": 1010,
+        "buyerRegionId": 18
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "move",
+        "pawnId": 88,
+        "destinationHexId": 910
+      },
+      {
+        "kind": "move",
+        "pawnId": 63,
+        "destinationHexId": 911
+      },
+      {
+        "kind": "move",
+        "pawnId": 113,
+        "destinationHexId": 810
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "move",
+        "pawnId": 88,
+        "destinationHexId": 711
+      },
+      {
+        "kind": "move",
+        "pawnId": 63,
+        "destinationHexId": 1214
+      },
+      {
+        "kind": "move",
+        "pawnId": 113,
+        "destinationHexId": 1315
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "move",
+        "pawnId": 88,
+        "destinationHexId": 908
+      },
+      {
+        "kind": "move",
+        "pawnId": 63,
+        "destinationHexId": 1117
+      },
+      {
+        "kind": "move",
+        "pawnId": 113,
+        "destinationHexId": 1118
+      },
+      {
+        "kind": "buy",
+        "pawnType": "villager",
+        "destinationHexId": 1017,
+        "buyerRegionId": 18
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "move",
+        "pawnId": 88,
+        "destinationHexId": 808
+      },
+      {
+        "kind": "move",
+        "pawnId": 142,
+        "destinationHexId": 1018
+      },
+      {
+        "kind": "move",
+        "pawnId": 63,
+        "destinationHexId": 1119
+      },
+      {
+        "kind": "buy",
+        "pawnType": "villager",
+        "destinationHexId": 1019,
+        "buyerRegionId": 18
+      },
+      {
+        "kind": "move",
+        "pawnId": 113,
+        "destinationHexId": 811
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "move",
+        "pawnId": 88,
+        "destinationHexId": 807
+      },
+      {
+        "kind": "move",
+        "pawnId": 113,
+        "destinationHexId": 712
+      },
+      {
+        "kind": "move",
+        "pawnId": 142,
+        "destinationHexId": 611
+      },
+      {
+        "kind": "move",
+        "pawnId": 63,
+        "destinationHexId": 610
+      },
+      {
+        "kind": "move",
+        "pawnId": 150,
+        "destinationHexId": 919
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "move",
+        "pawnId": 113,
+        "destinationHexId": 806
+      },
+      {
+        "kind": "move",
+        "pawnId": 88,
+        "destinationHexId": 706
+      },
+      {
+        "kind": "move",
+        "pawnId": 63,
+        "destinationHexId": 705
+      },
+      {
+        "kind": "move",
+        "pawnId": 142,
+        "destinationHexId": 604
+      },
+      {
+        "kind": "move",
+        "pawnId": 150,
+        "destinationHexId": 504
+      },
+      {
+        "kind": "buy",
+        "pawnType": "villager",
+        "destinationHexId": 704,
+        "buyerRegionId": 18
+      },
+      {
+        "kind": "buy",
+        "pawnType": "villager",
+        "destinationHexId": 603,
+        "buyerRegionId": 18
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "move",
+        "pawnId": 88,
+        "destinationHexId": 712
+      },
+      {
+        "kind": "move",
+        "pawnId": 113,
+        "destinationHexId": 703
+      },
+      {
+        "kind": "move",
+        "pawnId": 173,
+        "destinationHexId": 704
+      },
+      {
+        "kind": "move",
+        "pawnId": 184,
+        "destinationHexId": 702
+      },
+      {
+        "kind": "buy",
+        "pawnType": "pikeman",
+        "destinationHexId": 805,
+        "buyerRegionId": 18
+      },
+      {
+        "kind": "move",
+        "pawnId": 142,
+        "destinationHexId": 705
+      },
+      {
+        "kind": "move",
+        "pawnId": 188,
+        "destinationHexId": 905
+      },
+      {
+        "kind": "move",
+        "pawnId": 150,
+        "destinationHexId": 906
+      },
+      {
+        "kind": "buy",
+        "pawnType": "villager",
+        "destinationHexId": 804,
+        "buyerRegionId": 18
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "move",
+        "pawnId": 187,
+        "destinationHexId": 505
+      },
+      {
+        "kind": "move",
+        "pawnId": 88,
+        "destinationHexId": 506
+      },
+      {
+        "kind": "move",
+        "pawnId": 191,
+        "destinationHexId": 605
+      },
+      {
+        "kind": "move",
+        "pawnId": 150,
+        "destinationHexId": 612
+      },
+      {
+        "kind": "move",
+        "pawnId": 188,
+        "destinationHexId": 613
+      },
+      {
+        "kind": "move",
+        "pawnId": 113,
+        "destinationHexId": 510
+      },
+      {
+        "kind": "move",
+        "pawnId": 184,
+        "destinationHexId": 509
+      },
+      {
+        "kind": "buy",
+        "pawnType": "villager",
+        "destinationHexId": 713,
+        "buyerRegionId": 18
+      },
+      {
+        "kind": "buy",
+        "pawnType": "villager",
+        "destinationHexId": 813,
+        "buyerRegionId": 18
+      },
+      {
+        "kind": "end-turn"
+      },
+      {
+        "kind": "accept-surrender"
+      }
+    ],
+    "binding": {
+      "id": "occupation-fixture-run",
+      "mapId": "occupation",
+      "revisionId": "legacy-start",
+      "mapHash": "2d0e15b2a41de5957886035a1574e389f2a2e55bbce8f2d80021277eb8cadbe7",
+      "engineHash": "29377f4e0a30607db86558af7f09cfe546dca5e9993fb87060fdb2eb160cd98a",
+      "adapterVersion": "konkr-node-1",
+      "difficulty": "normal",
+      "plugins": [
+        "capture-towns"
+      ],
+      "issuedAt": "2026-09-26T00:00:00Z",
+      "expiresAt": "2026-10-26T00:00:00Z"
+    }
+  },
+  "expectedResult": {
+    "status": "verified",
+    "outcome": "victory",
+    "turns": 19,
+    "finalStateHash": "dc2a218176401e2d2164c5791c765d87146b8bd8db127ef6364aeef55cd738b1"
+  }
+}

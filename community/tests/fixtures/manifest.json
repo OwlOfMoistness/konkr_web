@@ -1,0 +1,155 @@
+{
+  "version": 1,
+  "engineHash": "29377f4e0a30607db86558af7f09cfe546dca5e9993fb87060fdb2eb160cd98a",
+  "browserVersion": "153.0.8010.12",
+  "capture": "Original map importer + controller plays + UI EndTurn; checkpoints begin at fresh trusted map start, include each player decision and each AI/neutral completed turn, and stop at first GAME_OVER. Surrender requires observing the original claimVictory notification.",
+  "comparison": "Raw states retained. Comparison excludes only regions[].name; every other field and array order is preserved.",
+  "repetition": 2,
+  "comparisonEvidence": {
+    "excludedPath": "regions[].name",
+    "observedDifference": "Repeated tiny-defeat-normal created region3 with different labels; gameplay data matched",
+    "sourceModules": [
+      66810,
+      99999,
+      50061
+    ],
+    "rationale": "Region labels use global RNG also consumed by UI chatter; gameplay random helpers reset using turn and hex IDs. No name-derived simulation seed or ordering found."
+  },
+  "cases": [
+    {
+      "id": "tiny-win-normal",
+      "expected": "victory",
+      "difficulty": "normal",
+      "checkpoints": 2,
+      "traceHash": "9973d0f9dcdd0dd74595bac8dac35ec39197ba4fe03f453c46d526cea00a8235"
+    },
+    {
+      "id": "tiny-buy-win-normal",
+      "expected": "victory",
+      "difficulty": "normal",
+      "checkpoints": 3,
+      "traceHash": "e8233342f92cd573502967a2a1a2c48529491dc52947a7811dcb0699726f63fe"
+    },
+    {
+      "id": "tiny-defeat-normal",
+      "expected": "defeat",
+      "difficulty": "normal",
+      "checkpoints": 3,
+      "traceHash": "40ff8268f284cc81f3703049ffa764d007d5ea86a9f8851789fd1c3d2b8fad0e"
+    },
+    {
+      "id": "tiny-surrender-normal",
+      "expected": "victory",
+      "difficulty": "normal",
+      "checkpoints": 2,
+      "traceHash": "484243fac383dc4974cd10d1d96f822f943d7a3718afbe5632c37e6274587b16"
+    },
+    {
+      "id": "tiny-unfinished-normal",
+      "expected": "unfinished",
+      "difficulty": "normal",
+      "checkpoints": 1,
+      "traceHash": "14c01016c303e1a78322ac74a7fe0e0694fdc269087ac3fbd8374dbe7bf73d79"
+    },
+    {
+      "id": "prison-first-turn-normal",
+      "expected": "unfinished",
+      "difficulty": "normal",
+      "checkpoints": 8,
+      "traceHash": "bc6b94e204d150fcc54b32804002ecd654cca29ab40953bce1f4a52ca497ce13"
+    },
+    {
+      "id": "gifts-two-turns-normal",
+      "expected": "unfinished",
+      "difficulty": "normal",
+      "checkpoints": 15,
+      "traceHash": "5e7f2ca098309cffba9d3fa616ed52db791a286b490ff6aebf58b9b6decddaa2"
+    },
+    {
+      "id": "tiny-win-hard",
+      "expected": "victory",
+      "difficulty": "hard",
+      "checkpoints": 2,
+      "traceHash": "9973d0f9dcdd0dd74595bac8dac35ec39197ba4fe03f453c46d526cea00a8235"
+    },
+    {
+      "id": "tiny-buy-win-hard",
+      "expected": "victory",
+      "difficulty": "hard",
+      "checkpoints": 3,
+      "traceHash": "e8233342f92cd573502967a2a1a2c48529491dc52947a7811dcb0699726f63fe"
+    },
+    {
+      "id": "tiny-defeat-hard",
+      "expected": "defeat",
+      "difficulty": "hard",
+      "checkpoints": 3,
+      "traceHash": "40ff8268f284cc81f3703049ffa764d007d5ea86a9f8851789fd1c3d2b8fad0e"
+    },
+    {
+      "id": "tiny-surrender-hard",
+      "expected": "victory",
+      "difficulty": "hard",
+      "checkpoints": 2,
+      "traceHash": "484243fac383dc4974cd10d1d96f822f943d7a3718afbe5632c37e6274587b16"
+    },
+    {
+      "id": "tiny-unfinished-hard",
+      "expected": "unfinished",
+      "difficulty": "hard",
+      "checkpoints": 1,
+      "traceHash": "14c01016c303e1a78322ac74a7fe0e0694fdc269087ac3fbd8374dbe7bf73d79"
+    },
+    {
+      "id": "prison-first-turn-hard",
+      "expected": "unfinished",
+      "difficulty": "hard",
+      "checkpoints": 8,
+      "traceHash": "c7716946708db0b377fc3be7d053da243c5975e9117e8343bbba439e2517dfc9"
+    },
+    {
+      "id": "gifts-two-turns-hard",
+      "expected": "unfinished",
+      "difficulty": "hard",
+      "checkpoints": 15,
+      "traceHash": "9cef0d61790976b8843f5d319c28602a90d9dee41d1691c46e1298d95c3c3f6d"
+    }
+  ],
+  "legacy": [
+    {
+      "id": "sherwood-legacy",
+      "sourceFilename": "replay-2026-05-16-sherwood-4t.konkr",
+      "sourceHash": "7f09b26ac6ff90b77616f36f8b67e06dc9c9bdf7044891c14cd9f379017a08dc",
+      "status": "unverified-engine-version",
+      "actions": 73,
+      "snapshots": 19,
+      "finalTurn": 4,
+      "finalAction": "PLAY.END_TURN"
+    },
+    {
+      "id": "prison-profile-latest",
+      "sourceFilename": "player-profile-export-2026-09-26.konkr",
+      "sourceHash": "0083a809474a29ed2c77776e7d7be064c18fc7d7af3cd32358202b34f573e907",
+      "status": "unverified-engine-version",
+      "actions": 328,
+      "snapshots": 2,
+      "finalTurn": 12,
+      "finalAction": "PLAY.ACCEPT_SURRENDER"
+    }
+  ],
+  "limitations": [
+    "Legacy replays have unknown engine builds and remain unverified",
+    "Browser-repeat equality is not independent Node adapter parity",
+    "Gift spawning is covered by supplied-map turns; dedicated gift-buy legality remains modifier coverage"
+  ],
+  "mapSources": [
+    {
+      "filename": "prison.konkr",
+      "sha256": "fd9957b88133f31fd795e4214ec6f67a85b3e9c57781ea61eff4449025fa3eef"
+    },
+    {
+      "filename": "escalating-quickly.konkr",
+      "sha256": "154dd5bbbaf0d5a8bbf51bce3cffe2717e193d50e9dfeaf1dd9befa423c4f49a"
+    }
+  ]
+}

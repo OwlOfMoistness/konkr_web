@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "configurations": [
+    {
+      "engineHash": "29377f4e0a30607db86558af7f09cfe546dca5e9993fb87060fdb2eb160cd98a",
+      "difficulty": "normal",
+      "plugins": [],
+      "evidence": "tests/fixtures/base-cases.json: tiny wins, purchase win, defeat, genuine surrender, unfinished and Prison first turn; two browser captures plus Node parity. See docs/plugin-support.md."
+    },
+    {
+      "engineHash": "29377f4e0a30607db86558af7f09cfe546dca5e9993fb87060fdb2eb160cd98a",
+      "difficulty": "hard",
+      "plugins": [],
+      "evidence": "tests/fixtures/base-cases.json: tiny wins, purchase win, defeat, genuine surrender, unfinished and Prison first turn; two browser captures plus Node parity. See docs/plugin-support.md."
+    },
+    {
+      "engineHash": "29377f4e0a30607db86558af7f09cfe546dca5e9993fb87060fdb2eb160cd98a",
+      "difficulty": "normal",
+      "plugins": ["spawn-gifts", "buy-gifts"],
+      "evidence": "tests/fixtures/modifier-cases.json: gift-purchase-and-spawning-normal; original-price purchase and two neutral spawning phases, two browser captures plus Node/strict-worker parity and adversarial purchase mutations. See docs/plugin-support.md."
+    },
+    {
+      "engineHash": "29377f4e0a30607db86558af7f09cfe546dca5e9993fb87060fdb2eb160cd98a",
+      "difficulty": "hard",
+      "plugins": ["spawn-gifts", "buy-gifts"],
+      "evidence": "tests/fixtures/modifier-cases.json: gift-purchase-and-spawning-hard; original-price purchase and two neutral spawning phases, two browser captures plus Node/strict-worker parity and adversarial purchase mutations. See docs/plugin-support.md."
+    }
+  ]
+}

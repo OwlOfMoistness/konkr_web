@@ -1,0 +1,246 @@
+# Independent simulation and recording review
+
+Initially reviewed on 2026-09-26. The simulation and strict command-boundary gate
+is approved for the corrected configuration and scoped matrix below, following
+the reopened gate and independent correction checks recorded here. The earlier
+recorder review remains separate evidence. This permits dependent local service
+work; it does not approve public deployment or production capacity.
+
+## Follow-up: long-trace gate reopened, 2026-09-26
+
+This section records the temporary gate reopening; the correction and current
+approval appear in the next section. A fresh current-browser execution of the
+79-decision Prison branch differed from the Node execution at turn 4, faction 2, in gameplay bookkeeping including
+`hexHistory` and credit fields. This reopened the gate. The earlier
+short traces remain reproducible evidence, but they do not establish parity for
+this longer trajectory. Keep submissions and verified statistics disabled by
+default. A correction needs repeated current-browser comparisons, the existing
+adversarial/regression suite and independent review before this gate closes.
+Do not exclude the differing gameplay fields to make the comparison pass.
+
+The diagnostic browser capture also reports missing pawn IDs 245 and 286.
+Inspection of the pinned 2.35.30 main bundle identifies these as presentation
+warnings: module `54029` (`playPawnMove`) looks up a rendered pawn through
+`PawnsManager.getById`; module `74742` implements that lookup against its sprite
+dictionary `pawnsById`, not the engine pawn collection. Caller `54231` passes
+already-computed `update.stateAfter`. On a missing sprite, the warning path calls
+`handleNonFatalError` and, outside the debug overlay, `WorldMapScene.syncState`.
+Module `71472` rebuilds presentation objects from that state through a
+`StaticGameStateModel`; no controller play, reducer or gameplay-state setter
+occurs in this warning/recovery path. The precise animation timing that lost the
+sprite is not yet established. These source findings do not explain or excuse
+the Node/browser bookkeeping divergence. Keep the warnings visible and retain
+them in diagnostic evidence rather than suppressing them.
+
+At this historical checkpoint Docker execution and restore drills had not run.
+Their subsequent results are recorded in the [release review](release-review.md).
+Production capacity and public deployment remain separate decisions; actual
+Jekyll output inspection is still unverified.
+
+## Follow-up: corrected simulation gate approved, 2026-09-26
+
+The independent source investigation found that the adapter omitted the original
+`flags.mergeMutations: true` setting. Pinned production configuration module
+`5964` enables batching, while `StateEngine` module `76223` checks that flag in
+`beginTransaction`. The old adapter applied mutations immediately. During
+`WorldUpdateBuilder.move` (`77022`), connected-region liveness was consequently
+read after a merge instead of before the original commit point. The first
+affected move, native index 83, moves pawn 213 to hex 1913 and should preserve
+dead-hex history for 1814 and 1914. Later diplomacy differences followed from
+that omitted history. Neither the original game nor comparison projection was
+changed to fix this.
+
+Correction `52f814f5107953b537d06dcd5303d43bd4ce5eff` preserves production batching
+and relevant debug defaults, adds a source-backed configuration check, and
+commits [36 four-turn browser state hashes](../tests/fixtures/prison-four-turn-checkpoints.json).
+The independent reviewer reran `npm run build` and the combined
+adapter/boundary/modifier suite: **23 passed, zero skipped**. All 36 compact hashes
+and eleven decisions were also compared directly with the coordinator's saved
+current-browser capture. A separate fresh Node negative control with batching
+disabled reproduces the first mismatch at checkpoint 30, AI faction 2, turn 4.
+
+The coordinator independently reran all 79 decisions from the initial map:
+**136 of 136 checkpoints matched**, ending in victory on turn 12 in 30.5 seconds
+locally. Both final projected states hash to
+`3daa285fcc827f0ef83b9868ea2c2577326f43980aa49b26a34679c5ad89b47f`.
+The reviewer inspected that browser evidence and reproduced its first 36 hashes;
+the full rerun is coordinator evidence, not a second full execution by this
+reviewer. Its two renderer warnings remain visible; no page errors or external
+requests were recorded. `regions[].name` remains the sole comparison exclusion.
+
+The source audit covered the identical 266-module dependency sets loaded by the
+supported Prison and gift imports. Besides batching, the simulation consumes
+production debug controls for AI, history logging, state-change logging and
+integrity checks. No additional gameplay configuration mismatch was found.
+Transitive Halloween/theme, portable-mode unlocking and URL-cheat helpers do not
+run in the supported imported-map simulation path. New configuration access or
+support expansion still requires review.
+
+This closes the identified longer-trace correctness blocker for the reviewed
+matrix. It does not authenticate an old replay's originating engine or grant it
+a server score. Provisional local limits are one worker, a 120-second adapter
+deadline and a 512 MiB V8 heap ceiling; these are not a production sizing claim.
+Worker/accounting, integrated browser flows, packaging and public-release
+decisions retain their own gates. Feature switches remain off by default.
+
+## Reviewed changes
+
+The commit identifiers below identify the authors' changes, before their
+coordinator/reviewer cherry-picks. The review used those committed changes in an
+isolated worktree, read the tests and implementation, and reran the checks.
+
+| Area | Reviewed commit |
+| --- | --- |
+| Original-engine Node adapter | `c710fa50fa1446daba52c8560319a2ad2f4dd12f` |
+| Strict player-command and worker boundary | `4d7427e472d636bd623d8bdae4285445b0b0e5d7` |
+| Exhausted-unit regression | `02772e63e46bdb04933776466292df7e72da9118` |
+| Gift evidence and executable support policy | `9796b4a5638d42b6d9b35b2ca6f4fdb6dabeaae9` |
+| Client recording and local retry storage | `c9f8f0f6aefb3e10e732c0058b22480eb78982e6` |
+| Catalog launch lifecycle dependency | `e7fc08b366843f13d3aae96092f990cc68e35f51` |
+| Catalog composition hook dependency | `380c6b676ec234d26831187572f0e188d249e207` |
+| Base browser evidence | `6043e4e937b6044df8390d2055ceae6681b09f40` |
+| Concurrent runtime preparation dependency | `b83e32669ea94db10f8280c2ea135da657671ce8` |
+
+The reviewer authored the browser harness/base-fixture work, but did not author
+the reviewed Node adapter, strict command boundary, modifier policy or client
+recorder. The independent work here is review and reproduction of those changes;
+the simulation deliberately reuses the original engine rather than a separately
+written interpretation of its rules.
+
+## Exact approved matrix
+
+The executable policy is [supported-configurations.json](../shared/supported-configurations.json).
+
+| Ordered map plugins | Normal | Hard |
+| --- | --- | --- |
+| `[]` | Approved | Approved |
+| `["spawn-gifts", "buy-gifts"]` | Approved | Approved |
+
+Approval applies to adapter `konkr-node-1`, release `2.35.30`, main SHA-256
+`29377f4e0a30607db86558af7f09cfe546dca5e9993fb87060fdb2eb160cd98a`, and vendor
+SHA-256 `e52e1a4f98527997624db96fe72a7d3a2c366c6b8861c8d24371a0b8f39f34c1`.
+The browser evidence used Playwright `1.63.0`, Chromium `153.0.8010.12`; the
+independent Node checks ran on Node `26.4.0`. See the complete input manifest in
+[runtime/manifest.json](../runtime/manifest.json).
+
+The reversed gift order, either gift modifier alone, zombies, landing setup,
+always-retreat, buy-towns, capture-towns, low-upkeep and all other combinations
+remain unsupported. Scripted/custom-rule maps, custom AI, custom win conditions
+and fixed-difficulty imports remain outside the accepted schema. Recognition by
+the map parser is not support approval. A changed engine, vendor, adapter,
+projection or plugin policy requires renewed evidence and review.
+
+## Evidence and checks actually completed
+
+[Base fixtures](../tests/fixtures/manifest.json) contain 14 cases and 68
+checkpoints: both difficulties have complete wins, purchase-then-win, AI defeat,
+genuinely offered surrender, unfinished play, Prison's first round and Escalating
+Quickly's first two rounds. Each case was captured twice in fresh original-browser
+contexts. The fixture integrity/fresh-browser reproduction suite passed all 18
+checks. Histories begin at the freshly imported map before any decision; later
+snapshots never repair a divergent simulation.
+
+[Modifier fixtures](../tests/fixtures/modifier-cases.json) contain two additional
+cases with 16 checkpoints each. In each difficulty, the player buys a present at
+hex 704 from region 16 for the original price of ten coins, then ends two turns.
+The evidence includes treasury reduction and new gifts in both neutral phases.
+Each case was captured twice by the author. The reviewer separately replayed
+both cases in fresh pinned browsers without rewriting the fixtures; every
+projected checkpoint and complete trace hash matched the committed evidence.
+
+The independent combined adapter/boundary/modifier suite passed **21 checks**.
+It compares the initial state, every recorded player decision and AI/neutral
+turn, and the first engine terminal state. Public worker results agree with the
+browser's winning turn count and final gameplay-state hash. Namespaced catalog
+identities preserve the tested trajectories apart from the intended map ID.
+
+The command-boundary review covered strict semantic parsing, current player
+ownership and phase, native movement/drop rules, original shop inventory/prices,
+treasury, tapped units, genuine surrender offers, rejected trailing commands,
+map/version/plugin bindings, worker termination and failure classification.
+Adversarial checks reject reordered winning sequences, opposing pawns, internal
+commands, snapshot/tap/price injection, fabricated surrender and illegal special
+purchases. Removing a final winning move produces an unfinished result. A separate reviewer counterexample
+confirmed that a legal nonterminal knight conquest exhausts the pawn and rejects
+a second conquest; the author retained it as the exhausted-unit regression.
+
+The independent recorder suite passed **5 checks**, including a real browser
+run across the 14 base cases. It verified prior-faction attribution, AI exclusion,
+undo and cross-turn rewind, surviving-branch replay equality, reload/resume,
+stable submission identity, six actual victories queued, and unchanged player
+URL. It also checked incomplete/cropped saves, unexpected history replacement,
+local-storage failures and pending-result persistence. Client saves, outcomes
+and recordings remain untrusted inputs to server validation.
+
+Original release files were not modified. Browser runs used fresh storage,
+blocked service workers, denied external requests before boot, and reported no
+unexpected game errors or external-service requests.
+
+## Deliberate exclusions and remaining gates
+
+Raw checkpoints preserve their fields and order. The only gameplay comparison
+exclusion is `regions[].name`: the original label generators consume the shared
+UI RNG, and repeated browser defeat traces differed at that label while all
+gameplay fields matched. The source-backed rationale is recorded in
+[adapter-parity.md](adapter-parity.md). No arrays are sorted; no money, units,
+turns, factions or plugin ordering is excluded.
+
+The selected Sherwood and profile Prison replays are compatibility material,
+not validated wins. Their originating engine builds are unknown. Only selected
+replay steps and difficulty metadata are committed, not profile progress,
+preferences or statistics. The Prison extract ends in accepted surrender on
+turn 12; that observation alone does not prove a valid complete run.
+
+The production resource envelope is **not closed**. The initial 79-decision
+Prison investigation exceeded a 60-second deadline; the subsequent VM performance
+correction and production-batching correction are now verified as described
+above. The complete current-engine trajectory matches in approximately 30.5
+seconds locally. This resolves the observed timeout/divergence investigation,
+not worst-case production sizing. Time, process memory, concurrency, queue and
+retention limits still need representative measurements. Timeouts remain
+infrastructure errors, not wins or allegations of invalid play.
+
+The service gates that were pending during the initial review are implemented
+in worker `bbefb969` and assembly `dc749daf`: authoritative immutable bindings,
+anonymous ownership, expiry, quotas, idempotency and atomic once-only accounting.
+The independent worker/service suite passed 13 tests without skips, including
+real HTTP, PostgreSQL and browser flows. The coordinator's integrated regression
+at `b8a5e742` passed all 123 tests without skips. Publication, issuance and
+validation share the reviewed policy. See the [release review](release-review.md)
+for packaging/restore evidence and the remaining public-release decisions;
+this simulation approval alone does not authorize deployment.
+
+## Reproduction
+
+From `community/`, with the pinned dependencies installed:
+
+```sh
+npm run build
+npm test -- tests/adapter-parity.test.ts tests/validation.test.ts tests/modifier-parity.test.ts
+PLAYWRIGHT_BROWSERS_PATH=/path/to/pinned-cache npm test -- tests/recording.test.ts tests/fixture-import.test.ts
+```
+
+The first two commands reproduced the independent combined check. The recorder
+and fixture suites were run separately during review; the final command groups
+the same suites for convenience. The runtime preparation lock permits their
+concurrent use of unchanged generated files.
+
+To repeat the reviewer's additional browser comparison without changing fixtures:
+
+```sh
+PLAYWRIGHT_BROWSERS_PATH=/path/to/pinned-cache node --input-type=module <<'JS'
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { referenceHarness, captureCase, gameplayProjection, hash } from './scripts/import-fixtures.ts';
+const corpus = JSON.parse(await readFile('tests/fixtures/modifier-cases.json', 'utf8'));
+const harness = await referenceHarness();
+try {
+  assert.equal(harness.browser.version(), corpus.browserVersion);
+  for (const fixture of corpus.cases) {
+    const actual = await captureCase(harness.browser, harness.baseURL, fixture);
+    assert.deepEqual(gameplayProjection(actual.checkpoints), gameplayProjection(fixture.checkpoints));
+    assert.equal(hash({ checkpoints: gameplayProjection(actual.checkpoints), outcome: actual.outcome }), fixture.repeatHashes[0]);
+  }
+} finally { await harness.close(); }
+JS
+```

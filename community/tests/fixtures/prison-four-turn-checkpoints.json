@@ -1,0 +1,285 @@
+{
+  "version": 1,
+  "id": "prison-four-turn-hard",
+  "sourceCaseId": "prison-first-turn-hard",
+  "sourceMapHash": "fd9957b88133f31fd795e4214ec6f67a85b3e9c57781ea61eff4449025fa3eef",
+  "engineHash": "29377f4e0a30607db86558af7f09cfe546dca5e9993fb87060fdb2eb160cd98a",
+  "browser": {
+    "playwright": "1.63.0",
+    "chromiumRevision": "1243",
+    "chromiumVersion": "153.0.8010.12"
+  },
+  "difficulty": "hard",
+  "decisions": [
+    {
+      "kind": "buy",
+      "pawnType": "villager",
+      "destinationHexId": 1708,
+      "buyerRegionId": 1
+    },
+    {
+      "kind": "end-turn"
+    },
+    {
+      "kind": "buy",
+      "pawnType": "villager",
+      "destinationHexId": 1708,
+      "buyerRegionId": 1
+    },
+    {
+      "kind": "move",
+      "pawnId": 184,
+      "destinationHexId": 1806
+    },
+    {
+      "kind": "end-turn"
+    },
+    {
+      "kind": "move",
+      "pawnId": 184,
+      "destinationHexId": 1907
+    },
+    {
+      "kind": "buy",
+      "pawnType": "villager",
+      "destinationHexId": 1706,
+      "buyerRegionId": 1
+    },
+    {
+      "kind": "end-turn"
+    },
+    {
+      "kind": "move",
+      "pawnId": 199,
+      "destinationHexId": 1708
+    },
+    {
+      "kind": "move",
+      "pawnId": 184,
+      "destinationHexId": 2006
+    },
+    {
+      "kind": "end-turn"
+    }
+  ],
+  "repeatCaptures": 2,
+  "projection": "omit-regions-name-only",
+  "checkpoints": [
+    {
+      "afterDecision": -1,
+      "phase": "initial",
+      "factionId": 1,
+      "stateHash": "5e2eea82fa741bc9b984d1ee1f54b60e2ccc62fae369d4ef94e9e9e49fa017df"
+    },
+    {
+      "afterDecision": 0,
+      "phase": "player",
+      "factionId": 1,
+      "stateHash": "dfac6554508d1e8556d243eed2b16c7030e1337f4312d5883bdd544c1eb87c70"
+    },
+    {
+      "afterDecision": 1,
+      "phase": "player",
+      "factionId": 1,
+      "stateHash": "9b67c74f448bb50bdb2893bfb0e23de300271afba6b742bb58b85226d63bb38c"
+    },
+    {
+      "afterDecision": 1,
+      "phase": "ai-turn",
+      "factionId": 2,
+      "stateHash": "33ce9c8ca386b27cd50a501b10b7c54c47b8f45b60849285183b4802c1062f0a"
+    },
+    {
+      "afterDecision": 1,
+      "phase": "ai-turn",
+      "factionId": 3,
+      "stateHash": "328b4964f9eab868531ea6ed7c1c2c939e9de1368cfe4928c8cb4dcf2f639a09"
+    },
+    {
+      "afterDecision": 1,
+      "phase": "ai-turn",
+      "factionId": 4,
+      "stateHash": "3b56119a33e3dafd8588a6a6a4f3cd68cf9852e31bc5e6bf50c8aeff74fde54a"
+    },
+    {
+      "afterDecision": 1,
+      "phase": "ai-turn",
+      "factionId": 5,
+      "stateHash": "e2c3de2acfcb85adff0f57bd4a6448801760f10ac299a3d5758349fe5073d457"
+    },
+    {
+      "afterDecision": 1,
+      "phase": "ai-turn",
+      "factionId": 6,
+      "stateHash": "dad68fa048fd162d7509ddd261ca8c8cdca164781965ecda52f4a46d491e402c"
+    },
+    {
+      "afterDecision": 1,
+      "phase": "neutral-turn",
+      "factionId": 0,
+      "stateHash": "5103abbf36943bac77265924c794009ccd8fb920b9d1326677a44cfb441bdf77"
+    },
+    {
+      "afterDecision": 2,
+      "phase": "player",
+      "factionId": 1,
+      "stateHash": "6a03bbda35f0b54c33eb0ebf21969742f81f5d1b618c6697312ce5e8a7a9b3fc"
+    },
+    {
+      "afterDecision": 3,
+      "phase": "player",
+      "factionId": 1,
+      "stateHash": "ba54e01174b7d11df7ef64e6d49a85b6bc36af96868e9be58fe735d4ad0cb73e"
+    },
+    {
+      "afterDecision": 4,
+      "phase": "player",
+      "factionId": 1,
+      "stateHash": "d5d52857e28420c65e6d908387b66bf2a34fbfb6669d29ff8e99a9fc6725e8e6"
+    },
+    {
+      "afterDecision": 4,
+      "phase": "ai-turn",
+      "factionId": 2,
+      "stateHash": "791d2925c99577be0f86d10f4e2517884ad044c39b354651a664e1a1b768337d"
+    },
+    {
+      "afterDecision": 4,
+      "phase": "ai-turn",
+      "factionId": 3,
+      "stateHash": "aa2a480eb9347c20b9470556213a3246c69d89e207619e0336f233fd46636498"
+    },
+    {
+      "afterDecision": 4,
+      "phase": "ai-turn",
+      "factionId": 4,
+      "stateHash": "d1516e54b65a27c4b75b0dc724e2a8aca29e9b74f6e4d2c552059a7d29c985cd"
+    },
+    {
+      "afterDecision": 4,
+      "phase": "ai-turn",
+      "factionId": 5,
+      "stateHash": "cb5206d0ab486738b4376cfeddd1d725ca24d63a1284e83d6ec4f3883b44502b"
+    },
+    {
+      "afterDecision": 4,
+      "phase": "ai-turn",
+      "factionId": 6,
+      "stateHash": "58f356f6ee804aadd0fccddf15e8f495563959be5e57fa6ce8f57cb15212d1c9"
+    },
+    {
+      "afterDecision": 4,
+      "phase": "neutral-turn",
+      "factionId": 0,
+      "stateHash": "e0a6074822402900078726bbddd0ecf5fa1cce50914775598787ced22cd8d083"
+    },
+    {
+      "afterDecision": 5,
+      "phase": "player",
+      "factionId": 1,
+      "stateHash": "59d0caea7aa33dcadaad819b93e946e04509ca8d2efc2764c840189ff3608c41"
+    },
+    {
+      "afterDecision": 6,
+      "phase": "player",
+      "factionId": 1,
+      "stateHash": "96baa637f1538caf944126e9d463c3b0f7f97b0066b6db0c77c34ff08f9748e5"
+    },
+    {
+      "afterDecision": 7,
+      "phase": "player",
+      "factionId": 1,
+      "stateHash": "9fd2835d01f3dbf44a23583bc87715c59530a0f728346841d57b168f4928403f"
+    },
+    {
+      "afterDecision": 7,
+      "phase": "ai-turn",
+      "factionId": 2,
+      "stateHash": "12eab208dca8fa4c7f20f84ed6428e201493e88f759d262f0f209ed9587eadc3"
+    },
+    {
+      "afterDecision": 7,
+      "phase": "ai-turn",
+      "factionId": 3,
+      "stateHash": "5f86bba0f00cf2205806d8c5809c1a332958b8189017f17cde94409ddc95837d"
+    },
+    {
+      "afterDecision": 7,
+      "phase": "ai-turn",
+      "factionId": 4,
+      "stateHash": "8a326d3115941d2f76036a5d111b98e5073f07df1c034954eb4ed4a1109c3b7f"
+    },
+    {
+      "afterDecision": 7,
+      "phase": "ai-turn",
+      "factionId": 5,
+      "stateHash": "41c1976a9d66822d0750b0febc6d59ec775a048155a74df01fbfbd73728ad08a"
+    },
+    {
+      "afterDecision": 7,
+      "phase": "ai-turn",
+      "factionId": 6,
+      "stateHash": "e1a07aa94c392827e1969b8a984ede1f5bc465dc329dbcba0e0bfbd07dc888b7"
+    },
+    {
+      "afterDecision": 7,
+      "phase": "neutral-turn",
+      "factionId": 0,
+      "stateHash": "32fac6ead9ab738abc72088142b3f68d92352acdea2afbf5d8f2230b41c847bd"
+    },
+    {
+      "afterDecision": 8,
+      "phase": "player",
+      "factionId": 1,
+      "stateHash": "f63a4d6fff8eddc655ce8a2d8d50a673a6d115b89bd6dca555fd4591b22712ab"
+    },
+    {
+      "afterDecision": 9,
+      "phase": "player",
+      "factionId": 1,
+      "stateHash": "e0b6095e17bab5fbd0da5fce99ef2be132c5695c3040981181c268ff168a7534"
+    },
+    {
+      "afterDecision": 10,
+      "phase": "player",
+      "factionId": 1,
+      "stateHash": "4cfc38d589f92358fac397f9b5d4b5093662099b158c9bc96a86ec63838d5db0"
+    },
+    {
+      "afterDecision": 10,
+      "phase": "ai-turn",
+      "factionId": 2,
+      "stateHash": "6734ab6aca6f84719da47ee1057de2d67356e252d24b78a08e3b22b2828ac4a7"
+    },
+    {
+      "afterDecision": 10,
+      "phase": "ai-turn",
+      "factionId": 3,
+      "stateHash": "68a699993674c54eedda9bda802a098b07514d41bff8d4dfaf6e437c2f25c092"
+    },
+    {
+      "afterDecision": 10,
+      "phase": "ai-turn",
+      "factionId": 4,
+      "stateHash": "d4f04e70afd3d09a52f115a2bba0d146617c45bc1a79ee5e357b43395451529b"
+    },
+    {
+      "afterDecision": 10,
+      "phase": "ai-turn",
+      "factionId": 5,
+      "stateHash": "3d2dcf3307639588d09e5082ef90d508f9ed67fa238b123dda02c56d0369e724"
+    },
+    {
+      "afterDecision": 10,
+      "phase": "ai-turn",
+      "factionId": 6,
+      "stateHash": "7bcf924256498d6894cd9cff593908445be037bf70eb9aa6d0e88f8a76b15b5b"
+    },
+    {
+      "afterDecision": 10,
+      "phase": "neutral-turn",
+      "factionId": 0,
+      "stateHash": "318221172d284f7a9b5adbaac123f9a8907bdaae2aceeb59a710c6c9a45e0618"
+    }
+  ]
+}

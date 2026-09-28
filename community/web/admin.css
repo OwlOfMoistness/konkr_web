@@ -1,0 +1,46 @@
+body.admin-page { height: auto; min-height: 100dvh; background: var(--konkr-ocean); }
+.community-admin { width: min(1120px, 100%); min-height: 100dvh; margin: 0 auto; padding: 20px 32px 40px; }
+.admin-navigation { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 0 0 20px; }
+.admin-navigation button[aria-pressed=true] { background: var(--konkr-hover); box-shadow: 0 4px 0 var(--konkr-shadow), inset 0 0 0 2px var(--konkr-muted); }
+.community-admin > h1, .admin-title { color: white; font-size: 32px; margin: 8px 0 24px; }
+.admin-panel, .admin-login { padding: 24px; background: rgb(177 221 242 / .92); border-radius: 8px; }
+.admin-login { max-width: 440px; margin: 32px auto; }
+.community-admin h2 { margin: 0 0 16px; font-size: 27px; }
+.community-admin h3 { margin: 0 0 12px; font-size: 21px; }
+.community-admin label { display: grid; gap: 4px; font-size: 16px; }
+.community-admin input:not([type=checkbox]), .community-admin textarea { width: 100%; }
+.community-admin form { display: grid; gap: 16px; }
+.community-admin form > button { justify-self: start; }
+.community-admin p { margin: 10px 0; }
+.community-admin p, .community-admin details, .community-admin li { overflow-wrap: anywhere; }
+.community-admin textarea { min-height: 84px; resize: vertical; }
+.admin-editor-heading { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
+.admin-editor-heading h1, .admin-editor-heading h2 { margin: 0; flex: 1; }
+.admin-map-state { border-radius: 4px; padding: 4px 10px; background: var(--konkr-hover); font: 14px Arial, sans-serif; text-transform: capitalize; }
+.admin-map-state[data-state=published] { background: var(--konkr-green); }
+.admin-map-state[data-state=archived] { background: var(--konkr-danger); }
+.admin-editor-layout { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(260px, 1fr); gap: 24px; align-items: start; }
+.admin-metadata-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.admin-field-wide { grid-column: 1 / -1; }
+.admin-editor-actions, .admin-publication-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.admin-preview-panel { min-width: 0; }
+.admin-preview-frame { height: clamp(180px, 32vh, 300px); min-height: 180px; background: var(--konkr-ocean); border-radius: 6px; overflow: hidden; display: grid; place-items: center; margin-bottom: 16px; }
+.admin-preview-frame img, .admin-preview-panel img { display: block; max-width: 100%; width: 100%; border-radius: 6px; }
+.admin-preview-frame p { color: white; padding: 16px; text-align: center; }
+.admin-publication-actions button { min-width: 112px; }
+.admin-upload { padding: 16px; background: rgb(219 235 242 / .65); border-radius: 6px; margin-bottom: 20px; }
+.admin-upload input[type=file] { background: transparent; border: 0; padding: 8px 0; }
+.admin-upload-results { padding-left: 24px; font: 14px/1.6 Arial, sans-serif; }
+.admin-map-list { display: grid; gap: 8px; padding: 0; list-style: none; }
+.admin-map-list li { margin: 0; }
+.admin-map-list button { display: flex; justify-content: space-between; width: 100%; text-align: left; border-radius: 6px; padding: 10px 16px; }
+.admin-map-list .admin-map-state { margin-left: 12px; white-space: nowrap; }
+.admin-advanced { margin-top: 24px; border-top: 1px solid var(--konkr-shadow); padding-top: 16px; font: 14px/1.5 Arial, sans-serif; }
+.admin-advanced summary { cursor: pointer; min-height: 32px; }
+.admin-advanced label { margin: 12px 0; }
+.admin-access { max-width: 620px; }
+.admin-access ul { padding-left: 20px; }
+.admin-access li { margin: 12px 0; }
+.admin-access form { margin-top: 24px; }
+@media(max-width: 720px) { .community-admin { padding: 16px 12px 28px; } .admin-panel { padding: 18px; } .admin-editor-layout { grid-template-columns: 1fr; } .admin-preview-panel { grid-row: 1; } .admin-preview-frame { height: 220px; min-height: 180px; } .admin-preview-panel img { max-height: 220px; object-fit: contain; background: var(--konkr-ocean); } }
+@media(max-width: 400px) { .admin-navigation { gap: 8px; } .admin-navigation button, .admin-navigation a { padding-inline: 16px; } .admin-metadata-grid { grid-template-columns: 1fr; } }

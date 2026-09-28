@@ -1,0 +1,2 @@
+# Content hashes identify revisions; retain the exact exported bytes on every OS.
+*.konkr -text
