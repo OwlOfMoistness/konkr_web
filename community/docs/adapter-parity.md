@@ -279,3 +279,36 @@ legacy final-state hash. The filename claims release 2.35.30; the replay metadat
 does not authenticate its originating engine. This is a compatibility test,
 not a historical server-issued score. Reproduce with
 `npm test -- tests/orchard-replay.test.ts`.
+
+### Furor, Fjords, Sherwood, and Milk and Honey
+
+These four user-supplied Hard replays have no map plugins and run under the
+service's existing reviewed policy, without a test-only rule allowance.
+[The fixture](../tests/fixtures/four-map-replays.json) contains source-file hashes,
+first map snapshots and player-only semantic decisions. The
+[regressions](../tests/four-map-replays.test.ts) exercise the actual isolated
+validation worker and compare all four endpoints with the supplied final states.
+
+| Replay | Player decisions | Observed result |
+| --- | ---: | --- |
+| Furor | 70 | Verified victory on turn 9; final move completes the win. |
+| Fjords | 26 | Legal but unfinished on turn 6; no surrender is offered. |
+| Sherwood | 14 | Legal but unfinished on turn 4; no surrender is offered. |
+| Milk and Honey | 28 | Verified victory on turn 6 through genuinely offered surrender. |
+
+All four final-state hashes match the supplied snapshots under the existing
+projection: remove cosmetic region names and substitute the binding-derived
+map identity, preserving all other gameplay fields and array ordering. The
+non-winning worker response does not expose a state hash, so the tests replay
+those two traces through the same strict command boundary to inspect their
+endpoint separately. No later snapshots or recorded AI moves repair simulation.
+Appending a synthetic surrender acceptance to either unfinished trace is
+rejected as `surrender-not-offered`; that added action is never represented as
+part of the supplied replay or awarded a score.
+
+The newly supplied Sherwood file is byte-identical to the earlier Sherwood
+export already inventoried in the base corpus. These tests now cover its
+submission-worker classification and final state explicitly. Filenames and
+turn counts do not establish a win or authenticate an originating engine build.
+No production code or support policy changed. Run
+`npm test -- tests/four-map-replays.test.ts` to reproduce the six regressions.

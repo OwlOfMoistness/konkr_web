@@ -1,0 +1,820 @@
+{
+  "version": 1,
+  "provenance": "Selected first snapshots and semantic player decisions from four supplied legacy replays, attributed using the preceding faction. Recorded AI actions and later snapshots are not simulation inputs. Source engine builds are not authenticated by replay metadata.",
+  "finalStateProjection": "Final-state hashes derive from the supplied final snapshots with only cosmetic region names omitted and levelId replaced by each binding-derived runtime identity. All remaining gameplay fields and array order are preserved.",
+  "cases": [
+    {
+      "id": "furor",
+      "title": "Furor",
+      "sourceFilename": "29 furor-9t Mein v2.35.30.konkr",
+      "sourceHash": "78a315c9301cf001b0f2fd48df948644a55ae0e08febf8ea4df5e1c2b221b770",
+      "input": {
+        "canonicalMap": "konkrmap.v7.eyJtYXAiOnsid2lkdGgiOjE5LCJoZWlnaHQiOjIzLCJwbHVnaW5zIjpbXSwibGV2ZWxJZCI6ImwtZnVyb3IiLCJuYW1lIjoiRnVyb3IifSwidmVyc2lvbiI6NywicmVnaW9ucyI6W3siaWQiOjUsIm5hbWUiOiJCaXJjaHdvcnRoIiwiaGV4ZXMiOlsxNzEzLDE3MTQsMTgxMiwxODEzLDE4MTQsMTkxMywxOTE0XX0seyJpZCI6NiwibmFtZSI6IlR1bWJsZXJlaWduIiwiaGV4ZXMiOlszMTMsMzE0LDQxM119LHsiaWQiOjcsIm5hbWUiOiJTaGFycGhvb2QiLCJoZXhlcyI6WzgwNyw4MDgsOTA4XX0seyJpZCI6MTEsIm5hbWUiOiJXYXJzdG93IiwiaGV4ZXMiOlsxNTA0LDE1MDUsMTQwNF19LHsiaWQiOjEzLCJuYW1lIjoiRW1iZXJmZWxsIiwiaGV4ZXMiOls3MTYsODE1LDgxNl19LHsiaWQiOjE1LCJuYW1lIjoiRW1iZXJlbmQiLCJoZXhlcyI6WzE1MDhdfSx7ImlkIjoxNywibmFtZSI6IlNvdXRod2F5IiwiaGV4ZXMiOlsxMjE3XX0seyJpZCI6MTgsIm5hbWUiOiJBbHJ1dW4iLCJoZXhlcyI6WzIwMDYsMjEwNiwyMTA3XX0seyJpZCI6MTksIm5hbWUiOiJXaGl0cGlrZSIsImhleGVzIjpbMTAxMV19LHsiaWQiOjIwLCJuYW1lIjoiVW1iZXJiYXJvbiIsImhleGVzIjpbMTkwOSwxOTEwLDIwMDldfSx7ImlkIjoyMSwibmFtZSI6IldoaXR2YWxlIiwiaGV4ZXMiOlsxNTE3LDE2MTZdfSx7ImlkIjoyMiwibmFtZSI6IkF1YnVybnJlYWNoIiwiaGV4ZXMiOlsxNDExLDE0MTIsMTUxMl19LHsiaWQiOjIzLCJuYW1lIjoiQmlyY2hmdWxsIiwiaGV4ZXMiOlsxNTEzLDE1MTQsMTYxMywxNjE0LDE2MTVdfSx7ImlkIjoyNSwibmFtZSI6IlR1bWJsZWxlYWYiLCJoZXhlcyI6WzE3MTEsMTcxMiwxODExXX0seyJpZCI6MjcsIm5hbWUiOiJTb3V0aHdlYWxkIiwiaGV4ZXMiOlsxOTExLDE5MTIsMjAxMCwyMDExXX0seyJpZCI6MjgsIm5hbWUiOiJUd2lucm90dCIsImhleGVzIjpbMTcxNSwxNzE2LDE4MTVdfSx7ImlkIjozMCwibmFtZSI6IlRvd2VyZGFuZSIsImhleGVzIjpbMTMxNiwxMzE3LDE0MTYsMTQxN119LHsiaWQiOjMxLCJuYW1lIjoiUmVkd29vZGZpcmUiLCJoZXhlcyI6WzEzMTMsMTMxNSwxNDEzLDE0MTQsMTQxNSwxMjEzLDEyMTRdfSx7ImlkIjozMiwibmFtZSI6IldhdGVyYmxhY2siLCJoZXhlcyI6WzE1MTUsMTUxNl19LHsiaWQiOjMzLCJuYW1lIjoiVHdpbmhlaW0iLCJoZXhlcyI6WzEzMTRdfSx7ImlkIjozNCwibmFtZSI6Ik9sZGdyYWQiLCJoZXhlcyI6WzkxNSw5MTYsMTAxNSwxMDE2LDExMTYsMTIxNV19LHsiaWQiOjM3LCJuYW1lIjoiQ3Jhd2ZhaXJlIiwiaGV4ZXMiOls5MTEsOTEyLDEwMTIsMTExMiwxMTEzXX0seyJpZCI6MzksIm5hbWUiOiJHcmF2ZWZlbHQiLCJoZXhlcyI6WzEwMTQsMTExNCwxMTE1XX0seyJpZCI6NDAsIm5hbWUiOiJMYXJjaGJlbiIsImhleGVzIjpbMTIwNSwxMjA2LDEzMDZdfSx7ImlkIjo0MiwibmFtZSI6IkJyaW1mZWwiLCJoZXhlcyI6WzE1MDcsMTYwNywxNDA3XX0seyJpZCI6NDQsIm5hbWUiOiJGYWxoYWxsIiwiaGV4ZXMiOlsxNDA4LDE0MTAsMTUwOSwxNTExLDE2MDgsMTYxMCwxNzA5LDE3MTAsMTMwOSwxMzEwXX0seyJpZCI6NDUsIm5hbWUiOiJFZGdlYm91cm5lIiwiaGV4ZXMiOlsxNjExLDE2MTJdfSx7ImlkIjo0NiwibmFtZSI6IkVhc3Rob29kIiwiaGV4ZXMiOlsxODA4LDE5MDhdfSx7ImlkIjo0NywibmFtZSI6Ik1vc3NzcGVhciIsImhleGVzIjpbMTQwOSwxNTEwLDE2MDldfSx7ImlkIjo0OCwibmFtZSI6Ik1vc3NiYXkiLCJoZXhlcyI6WzEzMTIsMTIxMCwxMjExLDEyMTIsMTMxMV19LHsiaWQiOjUwLCJuYW1lIjoiQmVlY2hnYXJkciIsImhleGVzIjpbMTgwOSwxODEwXX0seyJpZCI6NTIsIm5hbWUiOiJMaXZlcmhhcmJvdXIiLCJoZXhlcyI6WzIwMDgsMjEwOCwyMTA5XX0seyJpZCI6NTQsIm5hbWUiOiJBbWV0cmluZXBpbmUiLCJoZXhlcyI6WzE2MDIsMTYwMywxNjA0LDE3MDMsMTcwNCwxNTAzXX0seyJpZCI6NTcsIm5hbWUiOiJTdGFybW9yZSIsImhleGVzIjpbMTcwMiwxODAxLDE4MDIsMTgwM119LHsiaWQiOjU4LCJuYW1lIjoiUGlrZXF1aW5uIiwiaGV4ZXMiOlsxNTA2LDE2MDUsMTYwNiwxNzA1XX0seyJpZCI6NjAsIm5hbWUiOiJBcmJvcmZvcmdlIiwiaGV4ZXMiOlsxNzA2LDE3MDcsMTcwOCwxODA2LDE4MDddfSx7ImlkIjo2MSwibmFtZSI6IkJhbmVmYWwiLCJoZXhlcyI6WzE5MDcsMjAwN119LHsiaWQiOjYyLCJuYW1lIjoiUnVieWZheCIsImhleGVzIjpbMTIwNywxMzA3LDEzMDhdfSx7ImlkIjo2MywibmFtZSI6IkZpcmVob2xtZSIsImhleGVzIjpbMTAwOCwxMTA5LDExMTAsMTIwOV19LHsiaWQiOjY1LCJuYW1lIjoiQ29sZHdheSIsImhleGVzIjpbMTAwNSwxMDA2LDEwMDcsMTEwNiwxMTA3XX0seyJpZCI6NjYsIm5hbWUiOiJXaGV0cml2ZXIiLCJoZXhlcyI6WzExMDgsMTIwOF19LHsiaWQiOjY3LCJuYW1lIjoiSGVhcnRzdG9jayIsImhleGVzIjpbNzA2LDcwNyw4MDYsOTA3XX0seyJpZCI6NjksIm5hbWUiOiJIYW1tZXJiYW5rIiwiaGV4ZXMiOls4MDQsODA1LDkwNSw5MDZdfSx7ImlkIjo3MCwibmFtZSI6IkVib25sZWFwIiwiaGV4ZXMiOls1MTQsNjE0LDcxNCw4MTMsOTE0XX0seyJpZCI6NzEsIm5hbWUiOiJCcmlhcnNoaXJlIiwiaGV4ZXMiOls1MTUsNTE2LDYxNSw2MTYsNzE1LDgxNCw0MTRdfSx7ImlkIjo3MiwibmFtZSI6IlN0YW5zb2wiLCJoZXhlcyI6WzQxNiw1MTcsMjE0LDIxNSwzMTUsMzE2LDQxNV19LHsiaWQiOjc1LCJuYW1lIjoiQnJpZ2h0aG9sZCIsImhleGVzIjpbMTExLDExMiwxMTMsMjExLDIxMiwyMTNdfSx7ImlkIjo3NiwibmFtZSI6IlNoYXd2YWxsZXkiLCJoZXhlcyI6WzE2MDEsMTcwMSwxNTAxXX0seyJpZCI6NzcsIm5hbWUiOiJTdG9ybXN3b3J0aCIsImhleGVzIjpbNzA1LDUwNCw2MDQsNjA1XX1dLCJmYWN0aW9ucyI6W3siaWQiOjAsIm5hbWUiOiJuYXR1cmUiLCJ0aGVtZUluZGV4IjowLCJjb250cm9sbGVyIjoibm9uZSIsInJlZ2lvbnMiOlszMiwzMyw2Niw0NSw0Niw0N119LHsiaWQiOjEsIm5hbWUiOiJQbGF5ZXIgMSIsInRoZW1lSW5kZXgiOjAsImNvbnRyb2xsZXIiOiJsb2NhbC11c2VyIiwicmVnaW9ucyI6WzUsMzksNzEsNDAsMTUsMTcsMTksMjAsMjEsMjIsNTRdfSx7ImlkIjoyLCJuYW1lIjoiUGxheWVyIDIiLCJ0aGVtZUluZGV4IjoxLCJjb250cm9sbGVyIjoiYWkiLCJyZWdpb25zIjpbMzcsNzAsNyw0Miw3Nyw1NywyNywyOCw2MSwzMF19LHsiaWQiOjMsIm5hbWUiOiJQbGF5ZXIgMyIsInRoZW1lSW5kZXgiOjIsImNvbnRyb2xsZXIiOiJhaSIsInJlZ2lvbnMiOls2NSwzNCwxMSw3Niw0OCw1MiwyMywyNV19LHsiaWQiOjQsIm5hbWUiOiJQbGF5ZXIgNCIsInRoZW1lSW5kZXgiOjMsImNvbnRyb2xsZXIiOiJhaSIsInJlZ2lvbnMiOls2Nyw2LDQ0LDEzXX0seyJpZCI6NSwibmFtZSI6IlBsYXllciA1IiwidGhlbWVJbmRleCI6NCwiY29udHJvbGxlciI6ImFpIiwicmVnaW9ucyI6WzY5LDcyLDE4LDUwLDU4LDYyLDMxLDYzXX0seyJpZCI6NiwibmFtZSI6IlBsYXllciA2IiwidGhlbWVJbmRleCI6NSwiY29udHJvbGxlciI6ImFpIiwicmVnaW9ucyI6Wzc1LDYwXX1dLCJwYXducyI6W3siaWQiOjEsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjEzMTR9LHsiaWQiOjIsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjE1MTB9LHsiaWQiOjMsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjE2MDl9LHsiaWQiOjQsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjE0MDl9LHsiaWQiOjUsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjEyMDh9LHsiaWQiOjYsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjExMDh9LHsiaWQiOjcsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjE2MTJ9LHsiaWQiOjgsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjE2MTF9LHsiaWQiOjksInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjE4MDh9LHsiaWQiOjEwLCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxOTA4fSx7ImlkIjoxMSwidHlwZSI6ImZvcmVzdCIsImhleCI6MTUxNn0seyJpZCI6MTIsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjE1MTV9LHsiaWQiOjE0LCJ0eXBlIjoidG93biIsImhleCI6MTgxM30seyJpZCI6MTUsInR5cGUiOiJ0b3duIiwiaGV4Ijo4MDh9LHsiaWQiOjE3LCJ0eXBlIjoidG93biIsImhleCI6MzEzfSx7ImlkIjoxOCwidHlwZSI6InZpbGxhZ2VyIiwiaGV4Ijo0MTN9LHsiaWQiOjE5LCJ0eXBlIjoidmlsbGFnZXIiLCJoZXgiOjkwOH0seyJpZCI6MjAsInR5cGUiOiJ0b3duIiwiaGV4IjoxNDA0fSx7ImlkIjoyMSwidHlwZSI6InRvd24iLCJoZXgiOjgxNn0seyJpZCI6MjMsInR5cGUiOiJ0b3duIiwiaGV4IjoxNTA4fSx7ImlkIjoyNCwidHlwZSI6InRvd24iLCJoZXgiOjEyMTd9LHsiaWQiOjI1LCJ0eXBlIjoidmlsbGFnZXIiLCJoZXgiOjE1MDV9LHsiaWQiOjI2LCJ0eXBlIjoidmlsbGFnZXIiLCJoZXgiOjE3MTN9LHsiaWQiOjI3LCJ0eXBlIjoiY29pbnMiLCJoZXgiOjMxMywiY291bnQiOjV9LHsiaWQiOjI4LCJ0eXBlIjoiY29pbnMiLCJoZXgiOjgwOCwiY291bnQiOjV9LHsiaWQiOjI5LCJ0eXBlIjoiY29pbnMiLCJoZXgiOjgxNiwiY291bnQiOjV9LHsiaWQiOjMyLCJ0eXBlIjoiY29pbnMiLCJoZXgiOjE0MDQsImNvdW50Ijo1fSx7ImlkIjozNCwidHlwZSI6ImNvaW5zIiwiaGV4IjoxODEzLCJjb3VudCI6N30seyJpZCI6MzUsInR5cGUiOiJ0b3duIiwiaGV4IjoyMTA2fSx7ImlkIjozNiwidHlwZSI6ImNvaW5zIiwiaGV4IjoyMTA2LCJjb3VudCI6NX0seyJpZCI6MzcsInR5cGUiOiJ2aWxsYWdlciIsImhleCI6MjAwNn0seyJpZCI6MzgsInR5cGUiOiJ2aWxsYWdlciIsImhleCI6NzE2fSx7ImlkIjozOSwidHlwZSI6InRvd24iLCJoZXgiOjEwMTF9LHsiaWQiOjQwLCJ0eXBlIjoidmlsbGFnZXIiLCJoZXgiOjIxMDd9LHsiaWQiOjQxLCJ0eXBlIjoidmlsbGFnZXIiLCJoZXgiOjE1MDR9XSwiY3VycmVudFBoYXNlIjp7InR5cGUiOiJmYWN0aW9uLXR1cm4iLCJ0dXJuTnVtYmVyIjoxLCJmYWN0aW9uIjoxLCJ0YXBwZWRVbml0cyI6W119LCJoZXhIaXN0b3J5Ijp7fX0=",
+        "decisions": [
+          {
+            "kind": "move",
+            "pawnId": 26,
+            "destinationHexId": 1811
+          },
+          {
+            "kind": "end-turn"
+          },
+          {
+            "kind": "move",
+            "pawnId": 26,
+            "destinationHexId": 1810
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 1613,
+            "buyerRegionId": 5
+          },
+          {
+            "kind": "end-turn"
+          },
+          {
+            "kind": "move",
+            "pawnId": 45,
+            "destinationHexId": 1513
+          },
+          {
+            "kind": "move",
+            "pawnId": 26,
+            "destinationHexId": 1313
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 1213,
+            "buyerRegionId": 5
+          },
+          {
+            "kind": "end-turn"
+          },
+          {
+            "kind": "move",
+            "pawnId": 45,
+            "destinationHexId": 1809
+          },
+          {
+            "kind": "move",
+            "pawnId": 26,
+            "destinationHexId": 1709
+          },
+          {
+            "kind": "move",
+            "pawnId": 46,
+            "destinationHexId": 1608
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 1614,
+            "buyerRegionId": 5
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 1615,
+            "buyerRegionId": 5
+          },
+          {
+            "kind": "end-turn"
+          },
+          {
+            "kind": "move",
+            "pawnId": 46,
+            "destinationHexId": 1507
+          },
+          {
+            "kind": "move",
+            "pawnId": 45,
+            "destinationHexId": 1607
+          },
+          {
+            "kind": "move",
+            "pawnId": 53,
+            "destinationHexId": 1417
+          },
+          {
+            "kind": "move",
+            "pawnId": 52,
+            "destinationHexId": 1317
+          },
+          {
+            "kind": "move",
+            "pawnId": 26,
+            "destinationHexId": 1113
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 1112,
+            "buyerRegionId": 5
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 1407,
+            "buyerRegionId": 5
+          },
+          {
+            "kind": "end-turn"
+          },
+          {
+            "kind": "move",
+            "pawnId": 62,
+            "destinationHexId": 1307
+          },
+          {
+            "kind": "move",
+            "pawnId": 46,
+            "destinationHexId": 1106
+          },
+          {
+            "kind": "move",
+            "pawnId": 45,
+            "destinationHexId": 1006
+          },
+          {
+            "kind": "move",
+            "pawnId": 26,
+            "destinationHexId": 906
+          },
+          {
+            "kind": "move",
+            "pawnId": 53,
+            "destinationHexId": 806
+          },
+          {
+            "kind": "move",
+            "pawnId": 61,
+            "destinationHexId": 707
+          },
+          {
+            "kind": "move",
+            "pawnId": 52,
+            "destinationHexId": 1708
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 2008,
+            "buyerRegionId": 5
+          },
+          {
+            "kind": "buy",
+            "pawnType": "pikeman",
+            "destinationHexId": 2108,
+            "buyerRegionId": 5
+          },
+          {
+            "kind": "end-turn"
+          },
+          {
+            "kind": "move",
+            "pawnId": 70,
+            "destinationHexId": 1707
+          },
+          {
+            "kind": "move",
+            "pawnId": 52,
+            "destinationHexId": 1706
+          },
+          {
+            "kind": "move",
+            "pawnId": 62,
+            "destinationHexId": 1705
+          },
+          {
+            "kind": "move",
+            "pawnId": 69,
+            "destinationHexId": 1704
+          },
+          {
+            "kind": "move",
+            "pawnId": 46,
+            "destinationHexId": 1603
+          },
+          {
+            "kind": "move",
+            "pawnId": 45,
+            "destinationHexId": 1503
+          },
+          {
+            "kind": "move",
+            "pawnId": 53,
+            "destinationHexId": 707
+          },
+          {
+            "kind": "move",
+            "pawnId": 82,
+            "destinationHexId": 807
+          },
+          {
+            "kind": "buy",
+            "pawnType": "pikeman",
+            "destinationHexId": 808,
+            "buyerRegionId": 5
+          },
+          {
+            "kind": "move",
+            "pawnId": 26,
+            "destinationHexId": 1806
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 1907,
+            "buyerRegionId": 5
+          },
+          {
+            "kind": "end-turn"
+          },
+          {
+            "kind": "move",
+            "pawnId": 70,
+            "destinationHexId": 915
+          },
+          {
+            "kind": "move",
+            "pawnId": 82,
+            "destinationHexId": 815
+          },
+          {
+            "kind": "move",
+            "pawnId": 83,
+            "destinationHexId": 816
+          },
+          {
+            "kind": "move",
+            "pawnId": 26,
+            "destinationHexId": 716
+          },
+          {
+            "kind": "buy",
+            "pawnType": "pikeman",
+            "destinationHexId": 515,
+            "buyerRegionId": 5
+          },
+          {
+            "kind": "move",
+            "pawnId": 52,
+            "destinationHexId": 514
+          },
+          {
+            "kind": "move",
+            "pawnId": 46,
+            "destinationHexId": 1503
+          },
+          {
+            "kind": "move",
+            "pawnId": 97,
+            "destinationHexId": 1504
+          },
+          {
+            "kind": "move",
+            "pawnId": 84,
+            "destinationHexId": 1705
+          },
+          {
+            "kind": "move",
+            "pawnId": 98,
+            "destinationHexId": 1404
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 1704,
+            "buyerRegionId": 5
+          },
+          {
+            "kind": "move",
+            "pawnId": 100,
+            "destinationHexId": 2006
+          },
+          {
+            "kind": "end-turn"
+          },
+          {
+            "kind": "move",
+            "pawnId": 100,
+            "destinationHexId": 2106
+          },
+          {
+            "kind": "move",
+            "pawnId": 96,
+            "destinationHexId": 816
+          },
+          {
+            "kind": "move",
+            "pawnId": 109,
+            "destinationHexId": 413
+          },
+          {
+            "kind": "move",
+            "pawnId": 26,
+            "destinationHexId": 1408
+          },
+          {
+            "kind": "move",
+            "pawnId": 97,
+            "destinationHexId": 1309
+          },
+          {
+            "kind": "move",
+            "pawnId": 52,
+            "destinationHexId": 1606
+          },
+          {
+            "kind": "move",
+            "pawnId": 70,
+            "destinationHexId": 815
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 1506,
+            "buyerRegionId": 5
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 1209,
+            "buyerRegionId": 5
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 1307,
+            "buyerRegionId": 5
+          },
+          {
+            "kind": "move",
+            "pawnId": 98,
+            "destinationHexId": 1206
+          },
+          {
+            "kind": "move",
+            "pawnId": 110,
+            "destinationHexId": 313
+          }
+        ],
+        "binding": {
+          "id": "furor-fixture-run",
+          "mapId": "furor",
+          "revisionId": "legacy-start",
+          "mapHash": "92f28e2be6f69d3b4111d889f6e31d1388ba65f3245407ae38ea84bb1cc4fde8",
+          "engineHash": "29377f4e0a30607db86558af7f09cfe546dca5e9993fb87060fdb2eb160cd98a",
+          "adapterVersion": "konkr-node-1",
+          "difficulty": "hard",
+          "plugins": [],
+          "issuedAt": "2026-09-26T00:00:00Z",
+          "expiresAt": "2026-10-26T00:00:00Z"
+        }
+      },
+      "legacyFinalStateHash": "8c2c959abc58062329eabae49cf4daa82829e5d55035380c9743950befd674dd",
+      "expectedResult": {
+        "status": "verified",
+        "outcome": "victory",
+        "turns": 9,
+        "finalStateHash": "8c2c959abc58062329eabae49cf4daa82829e5d55035380c9743950befd674dd"
+      }
+    },
+    {
+      "id": "fjords",
+      "title": "Fjords",
+      "sourceFilename": "replay-2026-05-16-fjords-6t.konkr",
+      "sourceHash": "05438aa4ef78beaa76f248b4e887a30b187cdb37b5650bda7c8ab22a1d90659a",
+      "input": {
+        "canonicalMap": "konkrmap.v7.eyJtYXAiOnsid2lkdGgiOjEyLCJoZWlnaHQiOjIyLCJsZXZlbElkIjoibC1mam9yZHMiLCJwbHVnaW5zIjpbXSwibmFtZSI6IkZqb3JkcyJ9LCJ2ZXJzaW9uIjo3LCJyZWdpb25zIjpbeyJpZCI6MTQsIm5hbWUiOiJUZW1wbGVnYXRlIiwiaGV4ZXMiOlsxNzA0LDE3MDYsMTgwNCwxODA1LDE4MDYsMTkwNCwxOTA1LDIwMDRdfSx7ImlkIjoxNywibmFtZSI6IkV2ZXJidXJnIiwiaGV4ZXMiOlsxMDQsMTA1LDEwNiwyMDMsMjA0LDIwNSwyMDYsMzA1XX0seyJpZCI6MTksIm5hbWUiOiJOZXdzaGllbGQiLCJoZXhlcyI6WzcwNiw4MDUsOTA0LDkwNSw5MDYsMTAwNCwxMDA1LDExMDUsMzA2LDQwMiwzMDcsNDAzLDQwNCw0MDUsNDA2LDUwMyw1MDQsNTA1LDUwNiw2MDIsNjA1XX0seyJpZCI6MjMsIm5hbWUiOiJNb29uYmFuayIsImhleGVzIjpbMTcwNV19LHsiaWQiOjI0LCJuYW1lIjoiRmFsbHRvd24iLCJoZXhlcyI6WzE1MDgsMTYwN119LHsiaWQiOjI3LCJuYW1lIjoiQmVyeWx3aW5kIiwiaGV4ZXMiOlsxMzA1XX0seyJpZCI6MjgsIm5hbWUiOiJUb3JjaHBlYWsiLCJoZXhlcyI6WzE1MDUsMTUwNiwxNTA3LDE2MDMsMTYwNCwxNjA1LDE2MDYsMTMwNiwxMzA3LDE0MDQsMTQwNSwxNDA2LDE0MDddfSx7ImlkIjoyOSwibmFtZSI6IkJhc2FsdGRlbCIsImhleGVzIjpbMTEwOCwxMjA4XX0seyJpZCI6MzMsIm5hbWUiOiJIZWF0aHdvcnRoIiwiaGV4ZXMiOlsxMDA2XX0seyJpZCI6NDEsIm5hbWUiOiJEZWVwYmVjayIsImhleGVzIjpbMTYwOSwxNzA4LDE3MDksMTgwNywxODA4XX0seyJpZCI6NDMsIm5hbWUiOiJOaWdodGZpcmUiLCJoZXhlcyI6WzE0MDgsNjA4LDE0MDksNjA5LDE0MTAsNjEwLDE1MDksNzA5LDcxMCwxNjA4LDgwOSw4MTAsOTA5LDkxMCwxMDA4LDExMDksMTIwNywxMjA5LDEzMDgsMTMwOSwxMzEwLDUxMF19LHsiaWQiOjQ2LCJuYW1lIjoiQ3JhZ3NvdW5kIiwiaGV4ZXMiOlsxNzAyLDE3MDMsMTgwMSwxOTAxXX0seyJpZCI6NTAsIm5hbWUiOiJDbGF5c3RhdGlvbiIsImhleGVzIjpbMTIwMywxMjA0LDEzMDMsMTMwNCwxNDAxLDE0MDIsMTUwMV19LHsiaWQiOjU1LCJuYW1lIjoiUGx1bWhlbG0iLCJoZXhlcyI6WzMwOCw0MDcsNDA4LDUwOF19LHsiaWQiOjU2LCJuYW1lIjoiRm9ydGhvbGxvdyIsImhleGVzIjpbNzA4LDgwNyw4MDhdfSx7ImlkIjo1OCwibmFtZSI6IkRlZXB3aGFyZiIsImhleGVzIjpbMTcwN119LHsiaWQiOjY4LCJuYW1lIjoiQ2FzdGxld2F0ZXIiLCJoZXhlcyI6WzExMDYsMTEwNywxMjA1LDEyMDZdfSx7ImlkIjo3MSwibmFtZSI6IlRlYWtyYXBpZHMiLCJoZXhlcyI6WzkwMywxMDAxLDEwMDIsMTAwM119LHsiaWQiOjc0LCJuYW1lIjoiVG9wYXpoZWFkIiwiaGV4ZXMiOlsxNTAyXX0seyJpZCI6NzUsIm5hbWUiOiJDbGF5aGFuZCIsImhleGVzIjpbMTgwMl19LHsiaWQiOjc3LCJuYW1lIjoiU3Vubnlob2xtIiwiaGV4ZXMiOls1MDldfSx7ImlkIjo3OCwibmFtZSI6IkdyYW5kZmFpciIsImhleGVzIjpbMTUxMF19LHsiaWQiOjc5LCJuYW1lIjoiUGlrZWxhZ29vbiIsImhleGVzIjpbMzAyXX0seyJpZCI6ODAsIm5hbWUiOiJXYXJzaWRlIiwiaGV4ZXMiOls3MDNdfSx7ImlkIjo4MSwibmFtZSI6IkhpZ2hmZWxkdCIsImhleGVzIjpbOTAyXX0seyJpZCI6ODIsIm5hbWUiOiJGYWVoZWltIiwiaGV4ZXMiOlsxMDA5LDEwMTAsMTExMCwxMjEwXX0seyJpZCI6ODMsIm5hbWUiOiJNdXJrYnJvb2siLCJoZXhlcyI6WzUwNyw2MDYsNjA3XX0seyJpZCI6ODQsIm5hbWUiOiJHdWlsZGdsb3ciLCJoZXhlcyI6WzE2MTBdfSx7ImlkIjo4NSwibmFtZSI6IldvbGZkZWwiLCJoZXhlcyI6WzcwNyw4MDYsOTA3LDkwOCwxMDA3XX1dLCJmYWN0aW9ucyI6W3siaWQiOjAsIm5hbWUiOiJuYXR1cmUiLCJ0aGVtZUluZGV4IjowLCJjb250cm9sbGVyIjoibm9uZSIsInJlZ2lvbnMiOlszMywyMyw1NSwyNCw1NiwyNywyOV19LHsiaWQiOjEsIm5hbWUiOiJQbGF5ZXIgMSIsInRoZW1lSW5kZXgiOjAsImNvbnRyb2xsZXIiOiJsb2NhbC11c2VyIiwicmVnaW9ucyI6WzY4LDE0XX0seyJpZCI6MiwibmFtZSI6IlBsYXllciAyIiwidGhlbWVJbmRleCI6MSwiY29udHJvbGxlciI6ImFpIiwicmVnaW9ucyI6WzQxLDc0LDc1LDc5LDgwLDgxLDg1XX0seyJpZCI6MywibmFtZSI6IlBsYXllciAzIiwidGhlbWVJbmRleCI6MiwiY29udHJvbGxlciI6ImFpIiwicmVnaW9ucyI6Wzc3LDc4LDgyLDI4XX0seyJpZCI6NCwibmFtZSI6IlBsYXllciA0IiwidGhlbWVJbmRleCI6MywiY29udHJvbGxlciI6ImFpIiwicmVnaW9ucyI6WzcxLDE3LDgzXX0seyJpZCI6NSwibmFtZSI6IlBsYXllciA1IiwidGhlbWVJbmRleCI6NCwiY29udHJvbGxlciI6ImFpIiwicmVnaW9ucyI6WzQzLDQ2LDUwLDg0LDU4XX0seyJpZCI6NiwibmFtZSI6IlBsYXllciA2IiwidGhlbWVJbmRleCI6NSwiY29udHJvbGxlciI6ImFpIiwicmVnaW9ucyI6WzE5XX1dLCJwYXducyI6W3siaWQiOjEsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjEzMDV9LHsiaWQiOjIsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjE3MDV9LHsiaWQiOjMsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjgwN30seyJpZCI6NiwidHlwZSI6ImZvcmVzdCIsImhleCI6MTAwNn0seyJpZCI6OCwidHlwZSI6ImZvcmVzdCIsImhleCI6MTEwOH0seyJpZCI6MTAsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjE1MDh9LHsiaWQiOjExLCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxNjA3fSx7ImlkIjoxMywidHlwZSI6ImZvcmVzdCIsImhleCI6NTA4fSx7ImlkIjoxNCwidHlwZSI6ImZvcmVzdCIsImhleCI6NDA3fSx7ImlkIjoxNSwidHlwZSI6ImZvcmVzdCIsImhleCI6NDA4fSx7ImlkIjoxNiwidHlwZSI6ImZvcmVzdCIsImhleCI6MzA4fSx7ImlkIjoyNCwidHlwZSI6InRvd24iLCJoZXgiOjIwMDR9LHsiaWQiOjI1LCJ0eXBlIjoidG93biIsImhleCI6MTA2fSx7ImlkIjoyOCwidHlwZSI6ImZvcmVzdCIsImhleCI6MTIwOH0seyJpZCI6MjksInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjgwOH0seyJpZCI6MzAsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjcwOH0seyJpZCI6MzEsInR5cGUiOiJjb2lucyIsImhleCI6MTA2LCJjb3VudCI6OH0seyJpZCI6MzMsInR5cGUiOiJjb2lucyIsImhleCI6MjAwNCwiY291bnQiOjd9LHsiaWQiOjM0LCJ0eXBlIjoidmlsbGFnZXIiLCJoZXgiOjE5MDV9LHsiaWQiOjM2LCJ0eXBlIjoidmlsbGFnZXIiLCJoZXgiOjIwNn0seyJpZCI6MzcsInR5cGUiOiJjYXN0bGUiLCJoZXgiOjIwNX0seyJpZCI6MzgsInR5cGUiOiJjYXN0bGUiLCJoZXgiOjE4MDR9LHsiaWQiOjQxLCJ0eXBlIjoidG93biIsImhleCI6NTA5fSx7ImlkIjo0MiwidHlwZSI6InRvd24iLCJoZXgiOjE1MTB9LHsiaWQiOjQzLCJ0eXBlIjoiY29pbnMiLCJoZXgiOjUwOSwiY291bnQiOjV9LHsiaWQiOjQ1LCJ0eXBlIjoiY29pbnMiLCJoZXgiOjE1MTAsImNvdW50Ijo1fSx7ImlkIjo0NiwidHlwZSI6InZpbGxhZ2VyIiwiaGV4IjozMDV9LHsiaWQiOjQ3LCJ0eXBlIjoidmlsbGFnZXIiLCJoZXgiOjE5MDR9LHsiaWQiOjQ5LCJ0eXBlIjoidG93biIsImhleCI6MzAyfSx7ImlkIjo1MCwidHlwZSI6InRvd24iLCJoZXgiOjcwM30seyJpZCI6NTEsInR5cGUiOiJ0b3duIiwiaGV4Ijo5MDJ9LHsiaWQiOjUyLCJ0eXBlIjoidG93biIsImhleCI6MTUwMn0seyJpZCI6NTMsInR5cGUiOiJ0b3duIiwiaGV4IjoxODAyfSx7ImlkIjo1NCwidHlwZSI6InRvd24iLCJoZXgiOjExMTB9LHsiaWQiOjU1LCJ0eXBlIjoiY29pbnMiLCJoZXgiOjMwMiwiY291bnQiOjV9LHsiaWQiOjU2LCJ0eXBlIjoiY29pbnMiLCJoZXgiOjcwMywiY291bnQiOjV9LHsiaWQiOjU3LCJ0eXBlIjoiY29pbnMiLCJoZXgiOjkwMiwiY291bnQiOjV9LHsiaWQiOjU4LCJ0eXBlIjoiY29pbnMiLCJoZXgiOjExMTAsImNvdW50Ijo1fSx7ImlkIjo1OSwidHlwZSI6ImNvaW5zIiwiaGV4IjoxNTAyLCJjb3VudCI6NX0seyJpZCI6NjAsInR5cGUiOiJjb2lucyIsImhleCI6MTgwMiwiY291bnQiOjV9XSwiY3VycmVudFBoYXNlIjp7InR1cm5OdW1iZXIiOjEsImZhY3Rpb24iOjEsInR5cGUiOiJmYWN0aW9uLXR1cm4iLCJ0YXBwZWRVbml0cyI6W119LCJoZXhIaXN0b3J5Ijp7fX0=",
+        "decisions": [
+          {
+            "kind": "move",
+            "pawnId": 34,
+            "destinationHexId": 1606
+          },
+          {
+            "kind": "move",
+            "pawnId": 47,
+            "destinationHexId": 1507
+          },
+          {
+            "kind": "end-turn"
+          },
+          {
+            "kind": "move",
+            "pawnId": 47,
+            "destinationHexId": 1407
+          },
+          {
+            "kind": "move",
+            "pawnId": 34,
+            "destinationHexId": 1307
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 1007,
+            "buyerRegionId": 14
+          },
+          {
+            "kind": "end-turn"
+          },
+          {
+            "kind": "move",
+            "pawnId": 62,
+            "destinationHexId": 1008
+          },
+          {
+            "kind": "move",
+            "pawnId": 34,
+            "destinationHexId": 1109
+          },
+          {
+            "kind": "move",
+            "pawnId": 47,
+            "destinationHexId": 1703
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 1408,
+            "buyerRegionId": 14
+          },
+          {
+            "kind": "end-turn"
+          },
+          {
+            "kind": "move",
+            "pawnId": 34,
+            "destinationHexId": 1008
+          },
+          {
+            "kind": "move",
+            "pawnId": 68,
+            "destinationHexId": 1110
+          },
+          {
+            "kind": "move",
+            "pawnId": 65,
+            "destinationHexId": 1703
+          },
+          {
+            "kind": "move",
+            "pawnId": 69,
+            "destinationHexId": 1802
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 1509,
+            "buyerRegionId": 14
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 1204,
+            "buyerRegionId": 14
+          },
+          {
+            "kind": "end-turn"
+          },
+          {
+            "kind": "move",
+            "pawnId": 68,
+            "destinationHexId": 1510
+          },
+          {
+            "kind": "move",
+            "pawnId": 71,
+            "destinationHexId": 907
+          },
+          {
+            "kind": "move",
+            "pawnId": 70,
+            "destinationHexId": 806
+          },
+          {
+            "kind": "move",
+            "pawnId": 69,
+            "destinationHexId": 706
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 605,
+            "buyerRegionId": 14
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 1203,
+            "buyerRegionId": 14
+          },
+          {
+            "kind": "end-turn"
+          }
+        ],
+        "binding": {
+          "id": "fjords-fixture-run",
+          "mapId": "fjords",
+          "revisionId": "legacy-start",
+          "mapHash": "f8c5310c16a90a1c096b286c217328f611938bd9dc07335956352be986bc78f9",
+          "engineHash": "29377f4e0a30607db86558af7f09cfe546dca5e9993fb87060fdb2eb160cd98a",
+          "adapterVersion": "konkr-node-1",
+          "difficulty": "hard",
+          "plugins": [],
+          "issuedAt": "2026-09-26T00:00:00Z",
+          "expiresAt": "2026-10-26T00:00:00Z"
+        }
+      },
+      "legacyFinalStateHash": "05606519bc8178b3dc71c3d99380f05ef047cbb076c8eb0db92754894aeb6aca",
+      "expectedResult": {
+        "status": "non-winning",
+        "outcome": "unfinished",
+        "turns": 6
+      },
+      "syntheticSurrenderProbe": {
+        "note": "This extra acceptance is NOT in the supplied replay and must be rejected.",
+        "expectedResult": {
+          "status": "invalid",
+          "code": "surrender-not-offered",
+          "decisionIndex": 26
+        }
+      }
+    },
+    {
+      "id": "sherwood",
+      "title": "Sherwood",
+      "sourceFilename": "replay-2026-05-16-sherwood-4t (1).konkr",
+      "sourceHash": "7f09b26ac6ff90b77616f36f8b67e06dc9c9bdf7044891c14cd9f379017a08dc",
+      "input": {
+        "canonicalMap": "konkrmap.v7.eyJtYXAiOnsid2lkdGgiOjI2LCJoZWlnaHQiOjIwLCJsZXZlbElkIjoibC1zaGVyd29vZCIsInBsdWdpbnMiOltdLCJuYW1lIjoiU2hlcndvb2QifSwidmVyc2lvbiI6NywicmVnaW9ucyI6W3siaWQiOjMsIm5hbWUiOiJNYXNvbnRhcm4iLCJoZXhlcyI6WzkwOCwxMDA3LDEwMDhdfSx7ImlkIjoyMCwibmFtZSI6IkFtZXRoeXN0cG9vbCIsImhleGVzIjpbNzE5LDcyMCw4MTgsODE5LDgyMCw5MTgsOTE5LDkyMCw5MjEsMTAxOSwxMDIwLDEwMjFdfSx7ImlkIjoyMSwibmFtZSI6IkxhZHlsYW5kIiwiaGV4ZXMiOlsxMDE4XX0seyJpZCI6MjIsIm5hbWUiOiJTbm93YmFyb24iLCJoZXhlcyI6WzEwMDMsMTAwNCwxMTAzLDExMDQsMTEwNSwxMjAzLDEyMDRdfSx7ImlkIjoyMywibmFtZSI6IlR5cnNoaXAiLCJoZXhlcyI6WzExMiwxMTMsMjExLDIxMiwyMTMsMzEyLDMxM119LHsiaWQiOjI1LCJuYW1lIjoiRWJvbmJhcmQiLCJoZXhlcyI6WzE1MTQsMTYxMiwxNjEzLDE2MTQsMTcxM119LHsiaWQiOjI2LCJuYW1lIjoiRWRnZXRyYWlsIiwiaGV4ZXMiOlsxNzE0LDE4MTEsMTgxMiwxODEzLDE4MTRdfSx7ImlkIjoyOSwibmFtZSI6IlNob3JlbWFuZSIsImhleGVzIjpbMTIxNiwxMzE2LDEzMTcsMTMxOCwxNDE2LDE0MTddfSx7ImlkIjozMSwibmFtZSI6Ik1hcGxlcXVpbiIsImhleGVzIjpbNjEwLDYxMSw3MTAsNzExLDcxMiw4MDksODEwLDgxMSw4MTJdfSx7ImlkIjozNCwibmFtZSI6IlJpY2hzaGlyZSIsImhleGVzIjpbMjE1LDMxNl19LHsiaWQiOjQ2LCJuYW1lIjoiUm9ja2xvZGdlIiwiaGV4ZXMiOlsxMzA3LDEzMDgsMTQwN119LHsiaWQiOjQ3LCJuYW1lIjoiU3VtbWVycmFpbiIsImhleGVzIjpbNzA0LDcwNSw2MDQsNjA1XX0seyJpZCI6NDksIm5hbWUiOiJCYWludG93biIsImhleGVzIjpbMTAwOSwxMDEwLDEwMTEsMTExMCwxMTExXX0seyJpZCI6NTQsIm5hbWUiOiJUcnVlaG9yc2UiLCJoZXhlcyI6WzQwNiw0MDcsNDA4LDUwNyw1MDhdfSx7ImlkIjo1NiwibmFtZSI6IkJpcmNobGFnb29uIiwiaGV4ZXMiOlsxMzA0LDE0MDQsMTQwNV19LHsiaWQiOjYxLCJuYW1lIjoiQmlncG9vbCIsImhleGVzIjpbMTQwOV19LHsiaWQiOjY1LCJuYW1lIjoiQnJhc3NiZWFjaCIsImhleGVzIjpbMTQxMiwxNTEzXX0seyJpZCI6ODIsIm5hbWUiOiJDcmF3ZmVsIiwiaGV4ZXMiOls3MDYsMzA2LDMwNywzMDgsNDA1LDUwNiw2MDZdfSx7ImlkIjo4NCwibmFtZSI6IkFzaGZpZWxkIiwiaGV4ZXMiOls1MTddfSx7ImlkIjo4NiwibmFtZSI6Ikxha2Vsb2Z0IiwiaGV4ZXMiOls3MTQsNzE1LDgxNF19LHsiaWQiOjkyLCJuYW1lIjoiQnJpZGdlZ3JhZGUiLCJoZXhlcyI6WzEzMTIsMTQxMCwxNDExLDE1MTAsMTUxMSwxMTEyLDEyMTAsMTIxMSwxMzEwLDEzMTFdfSx7ImlkIjo5MywibmFtZSI6IkJyaWdodHJlaWduIiwiaGV4ZXMiOlsxNjA4LDE2MDksMTcwOCwxNzA5XX0seyJpZCI6OTYsIm5hbWUiOiJXaGl0ZWJsYWNrIiwiaGV4ZXMiOlsxMzE1LDYxMywxNDE0LDE0MTUsNzEzLDE1MTUsMTUxNiw4MTMsOTE0LDkxNSwxMDE1LDExMTUsMTExNiwxMjE1XX0seyJpZCI6OTcsIm5hbWUiOiJGYWxib3JkZXIiLCJoZXhlcyI6WzYxNSw2MTYsNzE2LDgxNSw4MTYsOTE2XX0seyJpZCI6OTgsIm5hbWUiOiJNYWlud2F5IiwiaGV4ZXMiOls4MDUsOTA2LDEwMDUsMTEwNiwxMjA1LDEzMDVdfSx7ImlkIjo5OSwibmFtZSI6IldvbGZtb3VudCIsImhleGVzIjpbOTExLDkxMiw5MTMsMTAxMl19LHsiaWQiOjEwMCwibmFtZSI6IkFsZGVlcCIsImhleGVzIjpbNTEyLDUxMyw2MTIsNDEyXX0seyJpZCI6MTAxLCJuYW1lIjoiTGFyY2hwYXJrIiwiaGV4ZXMiOlsxMzEzLDEzMTQsMTQxMywxMjEzLDEyMTRdfSx7ImlkIjoxMDUsIm5hbWUiOiJBcmRoYXJib3VyIiwiaGV4ZXMiOlsxMTA3LDExMDgsMTEwOSwxMjA2LDEyMDcsMTIwOCwxMjA5LDEzMDYsMTMwOV19LHsiaWQiOjExMCwibmFtZSI6IkZpcmNvdmUiLCJoZXhlcyI6WzcxNyw3MTgsODE3LDkxN119LHsiaWQiOjExMSwibmFtZSI6IkxvY2hzaGlwIiwiaGV4ZXMiOlsxMTIzLDgyMiw4MjMsOTI0LDEwMjNdfSx7ImlkIjoxMTIsIm5hbWUiOiJTaGllbGRib3VyZyIsImhleGVzIjpbNDE2LDQxNyw0MTgsNTE0LDUxNSw1MTYsNjE0LDMxNCwzMTUsMzE3LDQxMywzMTgsNDE0LDQxNV19LHsiaWQiOjExNCwibmFtZSI6Ik15c3Rzb3IiLCJoZXhlcyI6WzMyMCw0MTksNDIwLDUyMF19LHsiaWQiOjExNSwibmFtZSI6IlNub3dydW5lIiwiaGV4ZXMiOlszMjEsMjE5LDIyMCwyMjEsMzE5XX0seyJpZCI6MTE2LCJuYW1lIjoiTWFuc2J1cm4iLCJoZXhlcyI6WzYxOCw2MTldfSx7ImlkIjoxMTcsIm5hbWUiOiJBbWJlcmJhcmQiLCJoZXhlcyI6WzYyMCw3MjEsNzIyLDgyMV19LHsiaWQiOjExOCwibmFtZSI6IlF1ZWVuZmlyZSIsImhleGVzIjpbOTIyLDkyMywxMDIyXX0seyJpZCI6MTE5LCJuYW1lIjoiRWxtbGF3IiwiaGV4ZXMiOlsxNDIwLDE1MTcsMTUxOCwxNTE5LDE1MjBdfSx7ImlkIjoxMjAsIm5hbWUiOiJNaW5lY3Jlc3QiLCJoZXhlcyI6WzE0MTgsMTQxOV19LHsiaWQiOjEyMSwibmFtZSI6Ik5ldHRsZWJhcmQiLCJoZXhlcyI6WzEwMTMsMTAxNCwxMTEzLDExMTQsMTIxMl19LHsiaWQiOjEyMiwibmFtZSI6IldoZXRidXJnIiwiaGV4ZXMiOlsxMDE2XX0seyJpZCI6MTIzLCJuYW1lIjoiQXJyb3dkYW5lIiwiaGV4ZXMiOlsxNzExLDE3MTIsMTgxMF19LHsiaWQiOjEyNSwibmFtZSI6IkRhcmtiZWNrIiwiaGV4ZXMiOls5MDcsMTAwNl19LHsiaWQiOjEyOCwibmFtZSI6IkhlYXJ0cm9vc3QiLCJoZXhlcyI6WzgwMiw4MDMsODA0LDkwMiw5MDMsOTA0LDEwMDJdfSx7ImlkIjoxMzAsIm5hbWUiOiJFYWdsZXJlc3QiLCJoZXhlcyI6WzkwNV19LHsiaWQiOjEzMywibmFtZSI6IkVtYmVydGVhciIsImhleGVzIjpbNjA4LDYwOSw3MDksNDEwLDQxMSw1MDksNTEwLDUxMV19LHsiaWQiOjEzNiwibmFtZSI6IlJlZHdvb2Rmb3J0aCIsImhleGVzIjpbNzA3LDcwOCw4MDYsODA3LDgwOCw2MDddfSx7ImlkIjoxMzcsIm5hbWUiOiJCcmVha3dvb2QiLCJoZXhlcyI6WzkwOSw5MTBdfV0sImZhY3Rpb25zIjpbeyJpZCI6MCwibmFtZSI6Im5hdHVyZSIsInRoZW1lSW5kZXgiOjAsImNvbnRyb2xsZXIiOiJub25lIiwiYXBwcm92YWwiOnsiMSI6LTYwLCIyIjotMTQwLCIzIjotMTAwLCI0IjotMTcwfSwicmVnaW9ucyI6WzY1LDM0LDEzMCwxMTEsNDksODIsMTE1LDg0LDExNiwyMSw4Niw1NiwxMjAsMTIxLDI2LDEyMiw2MSwxMjUsMzFdfSx7ImlkIjoxLCJuYW1lIjoiUGxheWVyIDEiLCJ0aGVtZUluZGV4IjowLCJjb250cm9sbGVyIjoibG9jYWwtdXNlciIsImFwcHJvdmFsIjp7IjIiOi02LCIzIjotNDcsIjQiOi0xOCwiNSI6MjUsIjYiOjIyfSwicmVnaW9ucyI6Wzk3LDMsOTksMTAwLDEwMSwxMTksOTNdfSx7ImlkIjoyLCJuYW1lIjoiUGxheWVyIDIiLCJ0aGVtZUluZGV4IjoxLCJjb250cm9sbGVyIjoiYWkiLCJhcHByb3ZhbCI6eyIxIjoxNTQuNSwiMiI6MTAsIjMiOi0xMjYsIjQiOi0yMTAsIjUiOjksIjYiOjEyfSwicmVnaW9ucyI6WzEzMywxMDUsNDcsMTEyLDExNywyOV19LHsiaWQiOjMsIm5hbWUiOiJQbGF5ZXIgMyIsInRoZW1lSW5kZXgiOjIsImNvbnRyb2xsZXIiOiJhaSIsImFwcHJvdmFsIjp7IjEiOjY2LCIyIjotMzAsIjQiOjEzLCI1Ijo1NiwiNiI6LTY5fSwicmVnaW9ucyI6WzEyOCwxMzYsNDYsMTEwLDIzLDI1XX0seyJpZCI6NCwibmFtZSI6IlBsYXllciA0IiwidGhlbWVJbmRleCI6MywiY29udHJvbGxlciI6ImFpIiwiYXBwcm92YWwiOnsiMSI6LTMwOCwiMiI6LTEwLCIzIjotMTksIjUiOjM3LCI2IjozMn0sInJlZ2lvbnMiOlsyMCwyMl19LHsiaWQiOjUsIm5hbWUiOiJQbGF5ZXIgNSIsInRoZW1lSW5kZXgiOjQsImNvbnRyb2xsZXIiOiJhaSIsImFwcHJvdmFsIjp7IjEiOjE4LCIyIjotODMsIjMiOi04NSwiNCI6LTEwNSwiNiI6LTgyfSwicmVnaW9ucyI6Wzk2LDk4LDEzNywxMTQsMTE4LDEyMyw5Ml19LHsiaWQiOjYsIm5hbWUiOiJQbGF5ZXIgNiIsInRoZW1lSW5kZXgiOjUsImNvbnRyb2xsZXIiOiJhaSIsImFwcHJvdmFsIjp7IjEiOi0zMiwiMiI6LTI4LCIzIjotNjcsIjQiOi00NSwiNSI6NX0sInJlZ2lvbnMiOls1NF19XSwicGF3bnMiOlt7ImlkIjoxLCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxNTEzfSx7ImlkIjoyLCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxNDEyfSx7ImlkIjo5LCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxNDE5fSx7ImlkIjoxMSwidHlwZSI6ImZvcmVzdCIsImhleCI6MzA4fSx7ImlkIjoxMiwidHlwZSI6ImZvcmVzdCIsImhleCI6MzA3fSx7ImlkIjoxMywidHlwZSI6ImZvcmVzdCIsImhleCI6MzA2fSx7ImlkIjoxNCwidHlwZSI6ImZvcmVzdCIsImhleCI6NDA1fSx7ImlkIjoxNSwidHlwZSI6ImZvcmVzdCIsImhleCI6NTA2fSx7ImlkIjoxNiwidHlwZSI6ImZvcmVzdCIsImhleCI6NjA2fSx7ImlkIjoxNywidHlwZSI6ImZvcmVzdCIsImhleCI6NzA2fSx7ImlkIjoxOSwidHlwZSI6ImZvcmVzdCIsImhleCI6MTcxNH0seyJpZCI6MjAsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjE4MTR9LHsiaWQiOjIxLCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxNDE4fSx7ImlkIjoyMiwidHlwZSI6ImZvcmVzdCIsImhleCI6MTMwNH0seyJpZCI6MjMsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjEwMDl9LHsiaWQiOjI0LCJ0eXBlIjoiZm9yZXN0IiwiaGV4Ijo2MTh9LHsiaWQiOjI1LCJ0eXBlIjoiZm9yZXN0IiwiaGV4Ijo2MTl9LHsiaWQiOjI3LCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxNDA1fSx7ImlkIjoyOCwidHlwZSI6ImZvcmVzdCIsImhleCI6MTQwNH0seyJpZCI6MjksInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjEwMTh9LHsiaWQiOjMwLCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxODEyfSx7ImlkIjozMSwidHlwZSI6ImZvcmVzdCIsImhleCI6MTgxMX0seyJpZCI6MzIsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjE4MTN9LHsiaWQiOjM0LCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjozMTl9LHsiaWQiOjM1LCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoyMTl9LHsiaWQiOjM2LCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoyMjB9LHsiaWQiOjM3LCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoyMjF9LHsiaWQiOjM4LCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjozMjF9LHsiaWQiOjM5LCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjozMTZ9LHsiaWQiOjQwLCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoyMTV9LHsiaWQiOjQzLCJ0eXBlIjoiZm9yZXN0IiwiaGV4Ijo3MTR9LHsiaWQiOjQ4LCJ0eXBlIjoiZm9yZXN0IiwiaGV4Ijo3MTF9LHsiaWQiOjUwLCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxMTEwfSx7ImlkIjo1MSwidHlwZSI6ImZvcmVzdCIsImhleCI6MTExMX0seyJpZCI6NTIsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjEwMTR9LHsiaWQiOjUzLCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxMTE0fSx7ImlkIjo1NSwidHlwZSI6ImZvcmVzdCIsImhleCI6MTAxM30seyJpZCI6NTYsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjExMTN9LHsiaWQiOjU3LCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxMDExfSx7ImlkIjo2MiwidHlwZSI6ImZvcmVzdCIsImhleCI6ODA5fSx7ImlkIjo2MywidHlwZSI6ImZvcmVzdCIsImhleCI6NjEwfSx7ImlkIjo2NCwidHlwZSI6ImZvcmVzdCIsImhleCI6NzEyfSx7ImlkIjo2NSwidHlwZSI6InRvd24iLCJoZXgiOjkxOX0seyJpZCI6NjcsInR5cGUiOiJ0b3duIiwiaGV4IjoxMTA0fSx7ImlkIjo2OCwidHlwZSI6InRvd24iLCJoZXgiOjIxMn0seyJpZCI6NjksInR5cGUiOiJ0b3duIiwiaGV4IjoxNjEzfSx7ImlkIjo3NSwidHlwZSI6InRvd24iLCJoZXgiOjkxMn0seyJpZCI6NzYsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjgxMn0seyJpZCI6NzcsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjgxNH0seyJpZCI6NzgsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjYxMX0seyJpZCI6NzksInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjcxNX0seyJpZCI6ODAsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjcxMH0seyJpZCI6ODEsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjEyMTJ9LHsiaWQiOjg1LCJ0eXBlIjoidG93biIsImhleCI6MTQwN30seyJpZCI6ODYsInR5cGUiOiJ0b3duIiwiaGV4Ijo2MDR9LHsiaWQiOjg4LCJ0eXBlIjoidG93biIsImhleCI6NDA2fSx7ImlkIjo5MSwidHlwZSI6ImNvaW5zIiwiaGV4Ijo2MDQsImNvdW50Ijo1fSx7ImlkIjo5NiwidHlwZSI6ImNvaW5zIiwiaGV4IjoxNDA3LCJjb3VudCI6NX0seyJpZCI6OTcsInR5cGUiOiJjb2lucyIsImhleCI6MTYxMywiY291bnQiOjV9LHsiaWQiOjEwNSwidHlwZSI6ImNhc3RsZSIsImhleCI6MTAxOX0seyJpZCI6MTA2LCJ0eXBlIjoiZm9yZXN0IiwiaGV4Ijo4MjJ9LHsiaWQiOjEwNywidHlwZSI6ImZvcmVzdCIsImhleCI6ODIzfSx7ImlkIjoxMDksInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjkyNH0seyJpZCI6MTEwLCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxMDIzfSx7ImlkIjoxMTEsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjExMjN9LHsiaWQiOjEyMiwidHlwZSI6ImZvcmVzdCIsImhleCI6MTAxMH0seyJpZCI6MTIzLCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxNDA5fSx7ImlkIjoxMjQsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjkwN30seyJpZCI6MTI1LCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxMDA2fSx7ImlkIjoxMjYsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjEwMTZ9LHsiaWQiOjEyNywidHlwZSI6ImZvcmVzdCIsImhleCI6NTE3fSx7ImlkIjoxNjAsInR5cGUiOiJiYW5kaXQiLCJoZXgiOjEyMDl9LHsiaWQiOjE4MSwidHlwZSI6ImNvaW5zIiwiaGV4Ijo5MTksImNvdW50Ijo1fSx7ImlkIjoxODIsInR5cGUiOiJjb2lucyIsImhleCI6MTEwNCwiY291bnQiOjV9LHsiaWQiOjIxMCwidHlwZSI6ImNvaW5zIiwiaGV4Ijo0MDYsImNvdW50Ijo1fSx7ImlkIjoyMTksInR5cGUiOiJjb2lucyIsImhleCI6MjEyLCJjb3VudCI6NX0seyJpZCI6MjUwLCJ0eXBlIjoiY29pbnMiLCJoZXgiOjkxMiwiY291bnQiOjd9LHsiaWQiOjI3MiwidHlwZSI6InRvd24iLCJoZXgiOjEzMTd9LHsiaWQiOjI3MywidHlwZSI6ImZvcmVzdCIsImhleCI6OTA1fSx7ImlkIjoyNzQsInR5cGUiOiJiYW5kaXQiLCJoZXgiOjE1MTl9LHsiaWQiOjI3NSwidHlwZSI6ImJhbmRpdCIsImhleCI6OTIxfSx7ImlkIjoyNzYsInR5cGUiOiJiYW5kaXQiLCJoZXgiOjkyM30seyJpZCI6Mjc3LCJ0eXBlIjoiYmFuZGl0IiwiaGV4IjozMjB9LHsiaWQiOjI3OCwidHlwZSI6ImJhbmRpdCIsImhleCI6NDE0fSx7ImlkIjoyNzksInR5cGUiOiJiYW5kaXQiLCJoZXgiOjcwOH0seyJpZCI6MjgwLCJ0eXBlIjoiYmFuZGl0IiwiaGV4Ijo4MDN9LHsiaWQiOjI4MSwidHlwZSI6ImJhbmRpdCIsImhleCI6MTgxMH0seyJpZCI6MjgyLCJ0eXBlIjoiYmFuZGl0IiwiaGV4IjoxMzA1fSx7ImlkIjoyODMsInR5cGUiOiJiYW5kaXQiLCJoZXgiOjQyMH0seyJpZCI6Mjg3LCJ0eXBlIjoiYmFuZGl0IiwiaGV4Ijo3MTh9LHsiaWQiOjI4OCwidHlwZSI6ImNvaW5zIiwiaGV4IjoxMzE3LCJjb3VudCI6NX0seyJpZCI6Mjg5LCJ0eXBlIjoidmlsbGFnZXIiLCJoZXgiOjkxM30seyJpZCI6MjkwLCJ0eXBlIjoidmlsbGFnZXIiLCJoZXgiOjIxM30seyJpZCI6MjkxLCJ0eXBlIjoidmlsbGFnZXIiLCJoZXgiOjgxOX0seyJpZCI6MjkyLCJ0eXBlIjoidmlsbGFnZXIiLCJoZXgiOjQwN30seyJpZCI6MjkzLCJ0eXBlIjoidmlsbGFnZXIiLCJoZXgiOjcwNX0seyJpZCI6Mjk0LCJ0eXBlIjoidmlsbGFnZXIiLCJoZXgiOjExMDV9LHsiaWQiOjI5NSwidHlwZSI6InZpbGxhZ2VyIiwiaGV4IjoxMzA4fSx7ImlkIjoyOTYsInR5cGUiOiJ2aWxsYWdlciIsImhleCI6MTYxMn0seyJpZCI6Mjk3LCJ0eXBlIjoidmlsbGFnZXIiLCJoZXgiOjE0MTd9LHsiaWQiOjMwMCwidHlwZSI6ImJhbmRpdCIsImhleCI6NjA5fSx7ImlkIjozMDEsInR5cGUiOiJjYW1wIiwiaGV4Ijo4MTB9LHsiaWQiOjMwMiwidHlwZSI6ImZvcmVzdCIsImhleCI6ODExfSx7ImlkIjozMDMsInR5cGUiOiJ2aWxsYWdlciIsImhleCI6OTExfV0sImN1cnJlbnRQaGFzZSI6eyJ0dXJuTnVtYmVyIjoxLCJmYWN0aW9uIjoxLCJ0eXBlIjoiZmFjdGlvbi10dXJuIiwidGFwcGVkVW5pdHMiOltdfSwiaGV4SGlzdG9yeSI6e319",
+        "decisions": [
+          {
+            "kind": "move",
+            "pawnId": 289,
+            "destinationHexId": 914
+          },
+          {
+            "kind": "move",
+            "pawnId": 303,
+            "destinationHexId": 915
+          },
+          {
+            "kind": "end-turn"
+          },
+          {
+            "kind": "move",
+            "pawnId": 303,
+            "destinationHexId": 1015
+          },
+          {
+            "kind": "move",
+            "pawnId": 289,
+            "destinationHexId": 1116
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 1115,
+            "buyerRegionId": 99
+          },
+          {
+            "kind": "end-turn"
+          },
+          {
+            "kind": "move",
+            "pawnId": 289,
+            "destinationHexId": 1115
+          },
+          {
+            "kind": "move",
+            "pawnId": 325,
+            "destinationHexId": 1216
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 1015,
+            "buyerRegionId": 99
+          },
+          {
+            "kind": "move",
+            "pawnId": 327,
+            "destinationHexId": 1317
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 910,
+            "buyerRegionId": 99
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 909,
+            "buyerRegionId": 99
+          },
+          {
+            "kind": "end-turn"
+          }
+        ],
+        "binding": {
+          "id": "sherwood-fixture-run",
+          "mapId": "sherwood",
+          "revisionId": "legacy-start",
+          "mapHash": "b812a3ebe3592644d5b46f0e73971226c1e846d0748a6b69e015a81d77ede7aa",
+          "engineHash": "29377f4e0a30607db86558af7f09cfe546dca5e9993fb87060fdb2eb160cd98a",
+          "adapterVersion": "konkr-node-1",
+          "difficulty": "hard",
+          "plugins": [],
+          "issuedAt": "2026-09-26T00:00:00Z",
+          "expiresAt": "2026-10-26T00:00:00Z"
+        }
+      },
+      "legacyFinalStateHash": "68eba4bdb59421d203b31815989dada09ba22286929b71a050164389bb6bf81b",
+      "expectedResult": {
+        "status": "non-winning",
+        "outcome": "unfinished",
+        "turns": 4
+      },
+      "syntheticSurrenderProbe": {
+        "note": "This extra acceptance is NOT in the supplied replay and must be rejected.",
+        "expectedResult": {
+          "status": "invalid",
+          "code": "surrender-not-offered",
+          "decisionIndex": 14
+        }
+      }
+    },
+    {
+      "id": "milk-and-honey",
+      "title": "Milk and Honey",
+      "sourceFilename": "13 milk_and_honey-6t HostileMein v2.35.30.konkr",
+      "sourceHash": "7da636d90aad9d37875a939a1e7dd6d756b2bef7a2762f6e4615e474395056a6",
+      "input": {
+        "canonicalMap": "konkrmap.v7.eyJtYXAiOnsid2lkdGgiOjI0LCJoZWlnaHQiOjE3LCJsZXZlbElkIjoibC1ib2hlbWlhIiwicGx1Z2lucyI6W10sIm5hbWUiOiJNaWxrIGFuZCBIb25leSJ9LCJ2ZXJzaW9uIjo3LCJyZWdpb25zIjpbeyJpZCI6NCwibmFtZSI6IkphZGVmbGludCIsImhleGVzIjpbOTE5LDkyMCwxMDE4LDEwMTksMTExOF19LHsiaWQiOjYsIm5hbWUiOiJMb2Noc2hpbmUiLCJoZXhlcyI6WzkwNiw5MDcsMTAwNSwxMDA2XX0seyJpZCI6NywibmFtZSI6IkVtZXJhbGRkZWxsIiwiaGV4ZXMiOlsxMjE2LDEzMTYsMTIxNV19LHsiaWQiOjgsIm5hbWUiOiJTYXBwaGlyZXdheSIsImhleGVzIjpbNTEzLDUxNCw0MTNdfSx7ImlkIjo5LCJuYW1lIjoiV2ludGVya3JhaWciLCJoZXhlcyI6WzE0MDksMTQxMCwxMzEwLDEzMTFdfSx7ImlkIjoxMCwibmFtZSI6IlNwcmluZ2JhY2siLCJoZXhlcyI6WzEwNiwxMDcsMjA1LDIwNl19LHsiaWQiOjExLCJuYW1lIjoiRmFpcmVzdG9uZSIsImhleGVzIjpbNjA4LDcwOCw3MDksNjA3XX0seyJpZCI6MTIsIm5hbWUiOiJFZGVuaGlsbCIsImhleGVzIjpbNjE3LDcxNyw3MTgsODE3XX0seyJpZCI6MTMsIm5hbWUiOiJPYWtmb3JkIiwiaGV4ZXMiOlsxNDA4LDE1MDcsMTUwOCwxMzA2LDEzMDgsMTQwNSwxNDA2LDE0MDddfSx7ImlkIjoxNCwibmFtZSI6IkZvZ3BvcnQiLCJoZXhlcyI6WzcwNCw4MDIsODAzLDUwMyw1MDQsNjAxLDYwMiw2MDQsNzAyXX0seyJpZCI6MTUsIm5hbWUiOiJBcmRkcmFrZSIsImhleGVzIjpbNjAzLDcwM119LHsiaWQiOjE3LCJuYW1lIjoiSmFkZWZsaW50IiwiaGV4ZXMiOlsxMzEyLDEzMTMsMTIxMSwxMjEyXX0seyJpZCI6MTgsIm5hbWUiOiJNdXJrd2ljaCIsImhleGVzIjpbMTEyMCwxMjE4LDEyMTksMTMxOSwxMDIwLDExMTldfSx7ImlkIjoxOSwibmFtZSI6IkxvY2hzaGluZSIsImhleGVzIjpbODEwLDgxMSw4MTIsOTEwLDkxMSw5MTIsOTEzXX0seyJpZCI6MjAsIm5hbWUiOiJFbWVyYWxkZGVsbCIsImhleGVzIjpbODIxLDkyMSw5MjJdfSx7ImlkIjoyMiwibmFtZSI6IldpbnRlcmtyYWlnIiwiaGV4ZXMiOlsxMDIxXX0seyJpZCI6MjUsIm5hbWUiOiJXb29kaXNsYW5kIiwiaGV4ZXMiOls4MTQsOTE0LDkxNV19LHsiaWQiOjI2LCJuYW1lIjoiV2ludGVyaGFuZCIsImhleGVzIjpbMTEwNiwxMTA3LDEyMDYsMTIwN119LHsiaWQiOjI4LCJuYW1lIjoiRWxkZXJjYXN0bGUiLCJoZXhlcyI6WzEwMTAsMTEwOSwxMTEwLDExMTEsMTIwOCwxMjA5LDEyMTAsMTMwOV19LHsiaWQiOjI5LCJuYW1lIjoiU2hpZWxkaGVhZCIsImhleGVzIjpbMTUwOV19LHsiaWQiOjMwLCJuYW1lIjoiQ2hhbWJlcm1lYWQiLCJoZXhlcyI6WzEwMDcsMTEwOF19LHsiaWQiOjMxLCJuYW1lIjoiU3RvbmVicmlkZ2UiLCJoZXhlcyI6WzEzMDddfSx7ImlkIjozMiwibmFtZSI6IkxpdmVyaGFuZCIsImhleGVzIjpbMTIxNywxMzE3LDEzMTgsMTQxNiwxNDE3LDE1MTddfSx7ImlkIjozNCwibmFtZSI6IlRhbmdsZXZhdWx0IiwiaGV4ZXMiOlsxMzE1LDE0MTQsMTQxNSwxNTE1LDE1MTZdfSx7ImlkIjozNiwibmFtZSI6IkZpcmV3YWtlIiwiaGV4ZXMiOlsxMzE0LDEwMTQsMTExNCwxMTE1LDEyMTMsMTIxNF19LHsiaWQiOjM4LCJuYW1lIjoiTGF3ZmlyZSIsImhleGVzIjpbOTE2LDkxNywxMDE1LDEwMTYsMTAxNywxMTE2LDExMTddfSx7ImlkIjozOSwibmFtZSI6Ikxpb25mYWxsIiwiaGV4ZXMiOlsxMDExLDEwMTIsMTAxMywxMTEyLDExMTNdfSx7ImlkIjo0MCwibmFtZSI6Ik1lYWR3aGFyZiIsImhleGVzIjpbODA0LDgwNSw5MDQsOTA1LDEwMDRdfSx7ImlkIjo0MSwibmFtZSI6IkJlbGxlbW9ycmEiLCJoZXhlcyI6WzExMDQsMTIwNF19LHsiaWQiOjQzLCJuYW1lIjoiU3VtbWVyYnVyZyIsImhleGVzIjpbMTExLDExMiwyMDksMjEwLDIxMSwyMTJdfSx7ImlkIjo0NCwibmFtZSI6IkF1YnVybmdhdGUiLCJoZXhlcyI6WzUxMiw2MTEsNjEyLDcxMiw1MTFdfSx7ImlkIjo0NiwibmFtZSI6IlJhaW5wb29sIiwiaGV4ZXMiOlszMTEsMzEyLDQxMSw0MTJdfSx7ImlkIjo1MCwibmFtZSI6IlNrdWxsYmxhY2siLCJoZXhlcyI6WzUxNiw1MTcsNjE1LDYxNiw3MTYsODE1LDgxNl19LHsiaWQiOjUxLCJuYW1lIjoiR3JhbmRjYXN0bGUiLCJoZXhlcyI6WzUxOCw2MTgsNjE5LDcxOSw3MjAsODE4LDgxOSw4MjAsOTE4XX0seyJpZCI6NTMsIm5hbWUiOiJCcmFzc3NwZWFyIiwiaGV4ZXMiOls2MTAsNzExLDQwOSw0MTAsNTEwXX0seyJpZCI6NTQsIm5hbWUiOiJCcmlkZ2VzaGllbGQiLCJoZXhlcyI6WzcwNiw3MDcsODA2LDgwNyw2MDZdfSx7ImlkIjo1NiwibmFtZSI6Ik1hbnNtYXJzaCIsImhleGVzIjpbMjA3LDMwNiwzMDcsNDA1LDQwNiw0MDddfSx7ImlkIjo1NywibmFtZSI6IkVhc3Rtb25kIiwiaGV4ZXMiOls2MDksNzA1LDcxMCw4MDgsODA5LDkwOCw5MDksMTAwOCwxMDA5LDUwNSw1MDYsNTA3LDUwOCw1MDksNjA1XX0seyJpZCI6NTgsIm5hbWUiOiJTdGFuc2hpbmUiLCJoZXhlcyI6WzMwNSw0MDRdfSx7ImlkIjo2MCwibmFtZSI6IkhhcmRlbmQiLCJoZXhlcyI6WzkwMywxMDAzLDExMDMsMTEwNSwxMjAzLDEyMDUsMTMwNCwxMzA1XX0seyJpZCI6NjEsIm5hbWUiOiJSZWR3b29kcm90dCIsImhleGVzIjpbMjA4LDMwOCwzMDksMzEwLDQwOF19LHsiaWQiOjYyLCJuYW1lIjoiRGlyZWhlYXJ0IiwiaGV4ZXMiOls2MTMsNjE0LDcxMyw3MTQsNzE1LDgxM119XSwiZmFjdGlvbnMiOlt7ImlkIjowLCJuYW1lIjoibmF0dXJlIiwidGhlbWVJbmRleCI6MCwiY29udHJvbGxlciI6Im5vbmUiLCJyZWdpb25zIjpbNCwzOSw0MSw0MywxNSw1MywyMiw1OCwyOSwzMCwzMV19LHsiaWQiOjEsIm5hbWUiOiJQbGF5ZXIgMSIsInRoZW1lSW5kZXgiOjAsImNvbnRyb2xsZXIiOiJsb2NhbC11c2VyIiwicmVnaW9ucyI6WzYsNyw4LDEzLDE0LDE3LDE4LDUwLDE5XX0seyJpZCI6MiwibmFtZSI6IlBsYXllciAyIiwidGhlbWVJbmRleCI6MSwiY29udHJvbGxlciI6ImFpIiwicmVnaW9ucyI6WzMyLDM2LDQwLDksNDQsMjAsNTZdfSx7ImlkIjozLCJuYW1lIjoiUGxheWVyIDMiLCJ0aGVtZUluZGV4IjoyLCJjb250cm9sbGVyIjoiYWkiLCJyZWdpb25zIjpbMzQsMTAsNTEsNTQsMjUsMjZdfSx7ImlkIjo0LCJuYW1lIjoiUGxheWVyIDQiLCJ0aGVtZUluZGV4IjozLCJjb250cm9sbGVyIjoiYWkiLCJyZWdpb25zIjpbMzgsMTEsMjgsNjFdfSx7ImlkIjo1LCJuYW1lIjoiUGxheWVyIDUiLCJ0aGVtZUluZGV4Ijo0LCJjb250cm9sbGVyIjoiYWkiLCJyZWdpb25zIjpbMTIsNDYsNTcsNjAsNjJdfSx7ImlkIjo2LCJuYW1lIjoiUGxheWVyIDYiLCJ0aGVtZUluZGV4Ijo1LCJjb250cm9sbGVyIjoiYWkiLCJyZWdpb25zIjpbXX1dLCJwYXducyI6W3siaWQiOjEsInR5cGUiOiJ0b3duIiwiaGV4Ijo5MDZ9LHsiaWQiOjIsInR5cGUiOiJ0b3duIiwiaGV4IjoxMjE2fSx7ImlkIjozLCJ0eXBlIjoidG93biIsImhleCI6NDEzfSx7ImlkIjo0LCJ0eXBlIjoidG93biIsImhleCI6MTQxMH0seyJpZCI6NSwidHlwZSI6InRvd24iLCJoZXgiOjEwNn0seyJpZCI6NiwidHlwZSI6InRvd24iLCJoZXgiOjYwOH0seyJpZCI6NywidHlwZSI6InRvd24iLCJoZXgiOjcxOH0seyJpZCI6OCwidHlwZSI6ImZvcmVzdCIsImhleCI6MTMwN30seyJpZCI6OSwidHlwZSI6ImZvcmVzdCIsImhleCI6MTIwNH0seyJpZCI6MTAsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjExMDR9LHsiaWQiOjExLCJ0eXBlIjoiZm9yZXN0IiwiaGV4Ijo2MDN9LHsiaWQiOjEyLCJ0eXBlIjoiZm9yZXN0IiwiaGV4Ijo3MDN9LHsiaWQiOjIxLCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjozMDV9LHsiaWQiOjIyLCJ0eXBlIjoiZm9yZXN0IiwiaGV4Ijo0MDR9LHsiaWQiOjIzLCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxMDA3fSx7ImlkIjoyNCwidHlwZSI6ImZvcmVzdCIsImhleCI6MTEwOH0seyJpZCI6MjUsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjEwMTN9LHsiaWQiOjI2LCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxMTEzfSx7ImlkIjoyNywidHlwZSI6ImZvcmVzdCIsImhleCI6MTAxMn0seyJpZCI6MjgsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjcxMX0seyJpZCI6MjksInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjQwOX0seyJpZCI6MzAsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjQxMH0seyJpZCI6MzEsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjEwMTh9LHsiaWQiOjMyLCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxMTE4fSx7ImlkIjozMywidHlwZSI6ImZvcmVzdCIsImhleCI6MTAxOX0seyJpZCI6MzQsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjkyMH0seyJpZCI6MzUsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjkxOX0seyJpZCI6MzYsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjExMX0seyJpZCI6MzcsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjExMn0seyJpZCI6MzgsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjIxMn0seyJpZCI6MzksInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjIxMH0seyJpZCI6NDAsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjIwOX0seyJpZCI6NDEsInR5cGUiOiJmb3Jlc3QiLCJoZXgiOjE1MDl9LHsiaWQiOjQyLCJ0eXBlIjoiZm9yZXN0IiwiaGV4IjoxMDExfSx7ImlkIjo0MywidHlwZSI6ImZvcmVzdCIsImhleCI6MTExMn0seyJpZCI6NDQsInR5cGUiOiJ0b3duIiwiaGV4Ijo5MjJ9LHsiaWQiOjQ1LCJ0eXBlIjoidG93biIsImhleCI6ODE0fSx7ImlkIjo0NiwidHlwZSI6ImZvcmVzdCIsImhleCI6NTEwfSx7ImlkIjo0NywidHlwZSI6ImZvcmVzdCIsImhleCI6NjEwfSx7ImlkIjo0OCwidHlwZSI6ImNvaW5zIiwiaGV4IjoxMDYsImNvdW50Ijo1fSx7ImlkIjo0OSwidHlwZSI6ImNvaW5zIiwiaGV4Ijo0MTMsImNvdW50IjoyfSx7ImlkIjo1MCwidHlwZSI6ImNvaW5zIiwiaGV4Ijo2MDgsImNvdW50Ijo1fSx7ImlkIjo1MSwidHlwZSI6ImNvaW5zIiwiaGV4Ijo3MTgsImNvdW50Ijo1fSx7ImlkIjo1MywidHlwZSI6ImNvaW5zIiwiaGV4Ijo5MDYsImNvdW50Ijo3fSx7ImlkIjo1NSwidHlwZSI6ImNvaW5zIiwiaGV4IjoxMjE2LCJjb3VudCI6Mn0seyJpZCI6NTYsInR5cGUiOiJjb2lucyIsImhleCI6MTQxMCwiY291bnQiOjV9LHsiaWQiOjU3LCJ0eXBlIjoiY2FtcCIsImhleCI6MjExfSx7ImlkIjo1OCwidHlwZSI6ImNvaW5zIiwiaGV4IjoyMTEsImNvdW50IjozfSx7ImlkIjo1OSwidHlwZSI6InZpbGxhZ2VyIiwiaGV4IjoxMDA2fSx7ImlkIjo2MCwidHlwZSI6InZpbGxhZ2VyIiwiaGV4IjoyMDZ9LHsiaWQiOjYxLCJ0eXBlIjoidmlsbGFnZXIiLCJoZXgiOjcwOH1dLCJjdXJyZW50UGhhc2UiOnsidHVybk51bWJlciI6MSwiZmFjdGlvbiI6MSwidHlwZSI6ImZhY3Rpb24tdHVybiIsInRhcHBlZFVuaXRzIjpbXX0sImhleEhpc3RvcnkiOnt9fQ==",
+        "decisions": [
+          {
+            "kind": "move",
+            "pawnId": 59,
+            "destinationHexId": 806
+          },
+          {
+            "kind": "end-turn"
+          },
+          {
+            "kind": "move",
+            "pawnId": 59,
+            "destinationHexId": 706
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 705,
+            "buyerRegionId": 6
+          },
+          {
+            "kind": "end-turn"
+          },
+          {
+            "kind": "move",
+            "pawnId": 59,
+            "destinationHexId": 1107
+          },
+          {
+            "kind": "move",
+            "pawnId": 66,
+            "destinationHexId": 1207
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 605,
+            "buyerRegionId": 6
+          },
+          {
+            "kind": "end-turn"
+          },
+          {
+            "kind": "move",
+            "pawnId": 59,
+            "destinationHexId": 908
+          },
+          {
+            "kind": "move",
+            "pawnId": 72,
+            "destinationHexId": 909
+          },
+          {
+            "kind": "move",
+            "pawnId": 66,
+            "destinationHexId": 813
+          },
+          {
+            "kind": "buy",
+            "pawnType": "pikeman",
+            "destinationHexId": 814,
+            "buyerRegionId": 6
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 614,
+            "buyerRegionId": 8
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 1217,
+            "buyerRegionId": 7
+          },
+          {
+            "kind": "buy",
+            "pawnType": "villager",
+            "destinationHexId": 715,
+            "buyerRegionId": 6
+          },
+          {
+            "kind": "end-turn"
+          },
+          {
+            "kind": "move",
+            "pawnId": 79,
+            "destinationHexId": 706
+          },
+          {
+            "kind": "move",
+            "pawnId": 59,
+            "destinationHexId": 606
+          },
+          {
+            "kind": "buy",
+            "pawnType": "pikeman",
+            "destinationHexId": 607,
+            "buyerRegionId": 6
+          },
+          {
+            "kind": "move",
+            "pawnId": 66,
+            "destinationHexId": 715
+          },
+          {
+            "kind": "move",
+            "pawnId": 86,
+            "destinationHexId": 1409
+          },
+          {
+            "kind": "move",
+            "pawnId": 72,
+            "destinationHexId": 614
+          },
+          {
+            "kind": "move",
+            "pawnId": 87,
+            "destinationHexId": 1410
+          },
+          {
+            "kind": "buy",
+            "pawnType": "pikeman",
+            "destinationHexId": 608,
+            "buyerRegionId": 6
+          },
+          {
+            "kind": "move",
+            "pawnId": 81,
+            "destinationHexId": 1115
+          },
+          {
+            "kind": "end-turn"
+          },
+          {
+            "kind": "accept-surrender"
+          }
+        ],
+        "binding": {
+          "id": "milk-and-honey-fixture-run",
+          "mapId": "milk-and-honey",
+          "revisionId": "legacy-start",
+          "mapHash": "5f88971762794c159d57b25f67dbfeb65eccf408655e3093f814b56862d40993",
+          "engineHash": "29377f4e0a30607db86558af7f09cfe546dca5e9993fb87060fdb2eb160cd98a",
+          "adapterVersion": "konkr-node-1",
+          "difficulty": "hard",
+          "plugins": [],
+          "issuedAt": "2026-09-26T00:00:00Z",
+          "expiresAt": "2026-10-26T00:00:00Z"
+        }
+      },
+      "legacyFinalStateHash": "57b54ccc204673e278a059c472c3df2fbe60ca2e6caed5159791790c884dc12c",
+      "expectedResult": {
+        "status": "verified",
+        "outcome": "victory",
+        "turns": 6,
+        "finalStateHash": "57b54ccc204673e278a059c472c3df2fbe60ca2e6caed5159791790c884dc12c"
+      }
+    }
+  ]
+}
