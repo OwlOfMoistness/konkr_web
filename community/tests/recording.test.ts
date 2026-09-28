@@ -155,6 +155,7 @@ test('real browser records canonical undo/rewind branches, resumes across reload
   const external: string[] = [];
   await context.route('**/*', route => { if (new URL(route.request().url()).origin !== origin) { external.push(route.request().url()); return route.abort(); } return route.continue(); });
   const page = await context.newPage(); const failures: string[] = []; page.on('pageerror', error => failures.push(error.message));
+  page.on('console', message => { if (message.type() === 'error') t.diagnostic(message.text()); });
   const url = `${origin}/?recording=1#constant`;
   await page.goto(url); await page.waitForFunction(() => !!window.recordingTest);
   const start = async (id: string) => { await page.evaluate(async id => { const test = window.recordingTest; const fixture = test.fixtures.find(item => item.id === id)!; await test.bridge.start(test.entries.find(entry => entry.map.id === id)!, fixture.difficulty); window.communityReference.act('SetSpectatingPlayBackSpeed', 3); }, id); };
