@@ -24,7 +24,7 @@ jobs:
           POSTGRES_DB: community_test
         ports: ['5432:5432']
         options: >-
-          --health-cmd 'pg_isready -U community_test -d community_test'
+          --health-cmd "pg_isready -U community_test -d community_test"
           --health-interval 5s --health-timeout 5s --health-retries 12
     defaults:
       run:
