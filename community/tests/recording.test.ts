@@ -167,7 +167,12 @@ test('real browser records canonical undo/rewind branches, resumes across reload
       switch (decision.kind) {
         case 'move': window.communityReference.play('MovePawn', { pawnId: decision.pawnId, destinationHexId: decision.destinationHexId, tapUnit: false }); break;
         case 'buy': window.communityReference.play('BuyPawn', { pawnType: decision.pawnType, destinationHexId: decision.destinationHexId, buyerRegionId: decision.buyerRegionId, tapUnit: false }); break;
-        case 'end-turn': window.communityReference.act('EndTurn', { force: true }); break;
+        case 'end-turn':
+          window.communityReference.act('EndTurn', { force: true });
+          // Exercise native AI and recording without tying this test to the
+          // original pawn-animation deadline on software-rendered CI runners.
+          window.communityReference.act('SkipSpectating');
+          break;
         case 'accept-surrender': window.communityReference.act('AcceptSurrender'); break;
       }
     }, decision);
