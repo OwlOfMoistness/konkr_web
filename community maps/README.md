@@ -1,5 +1,5 @@
 # Community maps
-
+test
 Maps in this folder ship with the website. Curators add or update them through
 pull requests; approved changes appear after the next deployment.
 
