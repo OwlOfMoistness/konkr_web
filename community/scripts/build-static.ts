@@ -10,10 +10,15 @@ export const staticRoot = path.join(communityRoot, 'dist');
 const hash = (text: string) => createHash('sha256').update(text).digest('hex');
 
 /** Only public, generated files are copied. No server, admin, database or profiles. */
-export async function buildStatic(options: { votingApiOrigin?: string; basePath?: string; mapsDirectory?: string; outputDirectory?: string } = {}): Promise<string> {
+export async function buildStatic(options: { votingApiOrigin?: string; siteOrigin?: string; basePath?: string; mapsDirectory?: string; outputDirectory?: string } = {}): Promise<string> {
   const outputRoot = options.outputDirectory ?? staticRoot;
   const basePath = options.basePath ?? '/';
   if (!/^\/(?:[A-Za-z0-9_-]+\/)*$/.test(basePath)) throw new Error('STATIC_BASE_PATH must be / or a path such as /konkr_web/');
+  const siteOrigin = options.siteOrigin ?? '';
+  if (siteOrigin) {
+    const url = new URL(siteOrigin);
+    if (url.origin !== siteOrigin || url.protocol !== 'https:' || url.username || url.password) throw new Error('STATIC_SITE_ORIGIN must be an HTTPS origin without a path or trailing slash');
+  }
   const votingApiOrigin = options.votingApiOrigin ?? '';
   if (votingApiOrigin) {
     const url = new URL(votingApiOrigin);
@@ -51,6 +56,7 @@ export async function buildStatic(options: { votingApiOrigin?: string; basePath?
   const preview = outputFor('runtime/live-preview.ts');
   if (!player.css) throw new Error('Missing static catalogue stylesheet');
   const template = (await readFile(path.join(communityRoot, 'web/index.html'), 'utf8'))
+    .replace('</title>', `</title>${siteOrigin ? `\n  <link rel="canonical" href="${siteOrigin}${basePath}">\n  <meta property="og:url" content="${siteOrigin}${basePath}">` : ''}`)
     .replace('<link rel="icon" href="data:,">', [16, 32].map(size => `<link rel="icon" type="image/png" sizes="${size}x${size}" href="${basePath}img/favicon-${size}.png">`).join('\n  '))
     .replace('<head>', `<head><base href="${basePath}">`)
     .replace('<main id="admin-root" hidden></main>', '')
@@ -68,5 +74,5 @@ export async function buildStatic(options: { votingApiOrigin?: string; basePath?
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  console.log(await buildStatic({ votingApiOrigin: process.env.VOTING_API_ORIGIN, basePath: process.env.STATIC_BASE_PATH }));
+  console.log(await buildStatic({ votingApiOrigin: process.env.VOTING_API_ORIGIN, siteOrigin: process.env.STATIC_SITE_ORIGIN, basePath: process.env.STATIC_BASE_PATH }));
 }
