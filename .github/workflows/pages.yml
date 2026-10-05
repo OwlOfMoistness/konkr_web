@@ -2,7 +2,7 @@ name: Deploy community game
 on:
   push:
     branches: [master]
-    paths: ['community/**', 'community maps/**', '_site/releases/2.35.30/**', '.github/workflows/**', 'compose.yaml']
+    paths: ['community/**', 'community maps/**', 'img/favicon-*.png', '_site/releases/2.35.30/**', '.github/workflows/**', 'compose.yaml']
   workflow_dispatch:
 permissions: {}
 concurrency:
@@ -35,6 +35,7 @@ jobs:
         working-directory: community
         env:
           PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          STATIC_SITE_ORIGIN: ${{ steps.pages.outputs.origin }}
           VOTING_API_ORIGIN: ${{ vars.VOTING_API_ORIGIN }}
         run: STATIC_BASE_PATH="${PAGES_BASE_PATH%/}/" npm run build:static
       - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4

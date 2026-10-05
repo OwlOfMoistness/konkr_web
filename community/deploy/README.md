@@ -19,6 +19,11 @@ changing game navigation. No tunnel token, database secret or server source is
 included in the Pages artifact. Map drafts are excluded from both the site
 and the API's accepted map list. Their source files remain in the repository.
 
+Link previews reuse the original game's title, description and theme color.
+The workflow sets `STATIC_SITE_ORIGIN` from the configured Pages origin, so the
+canonical and sharing URLs point to this fork. Set that HTTPS origin when
+building for another public host; local builds can leave it unset.
+
 Local preview of the same layout:
 
 ```sh
