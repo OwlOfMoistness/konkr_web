@@ -2,7 +2,7 @@ name: Deploy community game
 on:
   push:
     branches: [master]
-    paths: ['community/**', 'community maps/**', '_site/releases/2.35.30/**', '.github/workflows/**', 'compose.yaml']
+    paths: ['community/**', 'community maps/**', 'img/favicon-*.png', '_site/releases/2.35.30/**', '.github/workflows/**', 'compose.yaml']
   workflow_dispatch:
 permissions: {}
 concurrency:
