@@ -10,7 +10,7 @@ export function ratingControls(visitor:VisitorClient,onChanged:()=>void=()=>{}) 
   const request = visitor.request ?? fetch;
   // A second play/return can remount this widget while a previous vote is saving.
   const writes=new Map<string,Promise<void>>();
-  return (root:HTMLElement,entry:CatalogEntry)=>{
+  return (root:HTMLElement,entry:CatalogEntry,onSaved?:()=>void)=>{
     root.classList.add('community-rating');
     const heading=document.createElement('h2');heading.textContent=`How was ${entry.map.metadata.title}?`;
     const stars=document.createElement('div');stars.className='community-rating-stars';stars.setAttribute('role','radiogroup');stars.setAttribute('aria-label','Your rating');
@@ -32,7 +32,10 @@ export function ratingControls(visitor:VisitorClient,onChanged:()=>void=()=>{}) 
           const response=await request(endpoint,{method:'PUT',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({revisionId:entry.revision.id,rating})});
           const data=await response.json();if(!response.ok)throw new Error(data.error??'Could not save rating');
           updateCatalogRating(root,entry,data.rating);
-          if(choice===version)status.textContent=`Saved. ${data.rating.average.toFixed(1)} average from ${data.rating.count} ${data.rating.count===1?'rating':'ratings'}.`;
+          if(choice===version){
+            status.textContent=`Saved. ${data.rating.average.toFixed(1)} average from ${data.rating.count} ${data.rating.count===1?'rating':'ratings'}.`;
+            onSaved?.();
+          }
           onChanged();
         }catch(error){if(choice===version)status.textContent=`${error instanceof Error?error.message:'Could not save rating'}. Choose a star to retry.`;}
       });

@@ -35,7 +35,7 @@ export interface CustomMapsOptions extends Omit<CatalogBridgeOptions, 'loader' |
   completionSortEnabled?: boolean;
   progressEnabled?: boolean;
   renderDetailActions?: (container: HTMLElement, entry: CatalogEntry) => void;
-  renderPostPlay?: (container: HTMLElement, entry: CatalogEntry) => void;
+  renderPostPlay?: (container: HTMLElement, entry: CatalogEntry, onSaved: () => void) => void;
   renderPreview?: Parameters<typeof mountCatalog>[1]['renderPreview'];
   renderExtras?: (container: HTMLElement) => { refresh?(): void; destroy?(): void } | void;
 }
@@ -51,7 +51,11 @@ export async function installCustomMaps(options: CustomMapsOptions) {
   let extras: { refresh?(): void; destroy?(): void } | void;
   const hasFooter = !!(options.renderExtras || options.renderPostPlay);
   const catalogRoot = hasFooter ? document.createElement('div') : root;
-  const postPlay = document.createElement('section'); postPlay.className = 'community-postplay'; postPlay.hidden = true;
+  const postPlay = document.createElement('dialog'); postPlay.className = 'community-postplay';
+  postPlay.setAttribute('aria-label', 'Rate this map');
+  postPlay.addEventListener('close', () => {
+    if (!root.hidden && !root.inert) catalogRoot.querySelector<HTMLButtonElement>('.catalog-primary')?.focus({ preventScroll: true });
+  });
   if (hasFooter) {
     const footer = document.createElement('div'); footer.className = 'community-catalog-footer';
     const extraRoot = document.createElement('section');
@@ -86,6 +90,7 @@ export async function installCustomMaps(options: CustomMapsOptions) {
       extras?.refresh?.(); await catalog.resume();
     },
     hide() {
+      postPlay.close();
       catalog.suspend(); root.hidden = true; if (hasFooter) root.style.display = 'none';
     },
     animateIn: () => catalog.animateIn(), animateOut: () => catalog.animateOut(),
@@ -108,14 +113,18 @@ export async function installCustomMaps(options: CustomMapsOptions) {
   });
   const bridge = createCatalogBridge({ ...options, loader, loadMap: presentation.loadMap, onReturn() {}, async navigateOnReturn(context) {
     if (options.renderPostPlay) {
-      postPlay.replaceChildren(); postPlay.hidden = false;
+      postPlay.close(); postPlay.replaceChildren();
       const rating = document.createElement('div'); postPlay.append(rating);
-      options.renderPostPlay(rating, context.entry);
+      options.renderPostPlay(rating, context.entry, () => {
+        // A previous widget's delayed save must not close a newer rating prompt.
+        if (postPlay.contains(rating)) postPlay.close();
+      });
       const dismiss = createNativeButton('Not now');
-      dismiss.onclick = () => { postPlay.hidden = true; }; postPlay.append(dismiss);
+      dismiss.onclick = () => postPlay.close(); postPlay.append(dismiss);
     }
     catalog.select(context.entry.map.id);
     await sequence(() => presentation.returnFromPlay(context.entry));
+    if (options.renderPostPlay && !root.hidden) postPlay.showModal();
   }, onError: error });
   const stopProgress = bridge.subscribe(event => {
     if (options.progressEnabled !== false && event.type === 'outcome' && event.outcome === 'Victory') {
@@ -152,6 +161,8 @@ export async function installCustomMaps(options: CustomMapsOptions) {
   const inactive = () => { try { bridge.save(); } catch (failure) { error(failure as Error); } };
   window.addEventListener('pagehide', inactive);
   const keydown = (event: KeyboardEvent) => {
+    // Let the browser dismiss the modal instead of navigating out of Custom Maps.
+    if (postPlay.open) return;
     if (event.key === 'Escape' && !root.hidden && !root.inert && !(event.target instanceof HTMLElement && event.target.matches('input, textarea, select'))) {
       event.preventDefault(); void exit().catch(error);
     }
@@ -160,6 +171,6 @@ export async function installCustomMaps(options: CustomMapsOptions) {
   return {
     bridge, catalog, open: show,
     async resumeSaved(save: CatalogSave) { await launch(() => bridge.resume(save.context.entry, save.context.difficulty)); },
-    destroy() { window.removeEventListener('pagehide', inactive); window.removeEventListener('keydown', keydown); root.removeEventListener('community:rating-updated', forwardRating); stopProgress(); bridge.destroy(); controls.destroy(); presentation.destroy(); catalog.destroy(); extras?.destroy?.(); removeMenu(); restoreUrl(); },
+    destroy() { postPlay.close(); window.removeEventListener('pagehide', inactive); window.removeEventListener('keydown', keydown); root.removeEventListener('community:rating-updated', forwardRating); stopProgress(); bridge.destroy(); controls.destroy(); presentation.destroy(); catalog.destroy(); extras?.destroy?.(); removeMenu(); restoreUrl(); },
   };
 }
