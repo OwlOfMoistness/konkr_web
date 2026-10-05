@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
-import { test } from 'node:test';
+import { test, type TestContext } from 'node:test';
 import { chromium } from 'playwright';
 import { buildStatic, staticRoot } from '../scripts/build-static.ts';
 import { createStaticServer } from '../scripts/serve-static.ts';
 import type { StaticCatalog } from '../shared/static-catalog.ts';
 import { runtimeLevelId } from '../shared/runtime-identity.ts';
 
-test('the static release imports every map and its catalogue plays without APIs or statistics', { timeout: 1_800_000 }, async t => {
+async function openRelease(t: TestContext) {
   await buildStatic();
   const files = await readdir(staticRoot);
   const catalog: StaticCatalog = JSON.parse(await readFile(path.join(staticRoot, files.find(file => /^maps-.*\.json$/.test(file))!), 'utf8'));
@@ -33,10 +33,15 @@ test('the static release imports every map and its catalogue plays without APIs 
   const failures: string[] = []; page.on('pageerror', error => failures.push(error.message));
   const badResponses: string[] = []; page.on('response', response => { if (response.status() >= 400) badResponses.push(response.url()); });
   await page.goto(origin + '/');
+  return { page, origin, catalog, failures, badResponses, forbidden };
+}
+
+test('every published map imports in both difficulties through the original game', { timeout: 1_800_000 }, async t => {
+  const { page, catalog, failures, badResponses, forbidden } = await openRelease(t);
   await page.waitForFunction(() => window.communityReference?.ready);
   // Check every published map in both modes through the original importer. Disable
   // animation only during this data sweep; the actual UI flows below use defaults.
-  const transitionDuration = await page.evaluate(() => window.communityReference.withEngine(load => {
+  await page.evaluate(() => window.communityReference.withEngine(load => {
     const config = load(56876).config; const previous = config.screenTransitionDuration; config.screenTransitionDuration = 0; return previous;
   }));
   let checked = 0;
@@ -55,7 +60,11 @@ test('the static release imports every map and its catalogue plays without APIs 
     }
     if (++checked % 50 === 0) t.diagnostic(`Imported ${checked}/${catalog.entries.length} maps in both difficulties`);
   }
-  await page.evaluate(duration => window.communityReference.withEngine(load => { load(56876).config.screenTransitionDuration = duration; }), transitionDuration);
+  assert.deepEqual(failures, []); assert.deepEqual(badResponses, []); assert.deepEqual(forbidden, []);
+});
+
+test('the static catalogue browses, previews and plays without APIs or statistics', { timeout: 240_000 }, async t => {
+  const { page, origin, catalog, failures, badResponses, forbidden } = await openRelease(t);
   await page.getByRole('button', { name: 'Custom Maps', exact: true }).click();
   await page.getByRole('heading', { name: 'Custom Maps', exact: true }).waitFor();
   const settled = (screen: string) => page.waitForFunction(name => window.communityReference.withEngine(load => {
