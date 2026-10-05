@@ -1,5 +1,6 @@
 import './theme.css';
 import './catalog.css';
+import './results.css';
 import type { StaticCatalog } from '../shared/static-catalog.ts';
 import { installCustomMaps } from './custom-maps.ts';
 import { LocalRunStore } from './local-runs.ts';
