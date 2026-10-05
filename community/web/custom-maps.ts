@@ -32,6 +32,7 @@ export interface CustomMapsOptions extends Omit<CatalogBridgeOptions, 'loader' |
   supportedDifficulties?: (entry: CatalogEntry) => Difficulty[];
   verifiedResultsEnabled?: boolean;
   statisticsEnabled?: boolean;
+  completionSortEnabled?: boolean;
   progressEnabled?: boolean;
   renderDetailActions?: (container: HTMLElement, entry: CatalogEntry) => void;
   renderPostPlay?: (container: HTMLElement, entry: CatalogEntry) => void;
@@ -123,7 +124,7 @@ export async function installCustomMaps(options: CustomMapsOptions) {
     }
   });
   catalog = mountCatalog(catalogRoot, {
-    reader: options.reader, supportedDifficulties: options.supportedDifficulties, verifiedResultsEnabled: options.verifiedResultsEnabled, statisticsEnabled: options.statisticsEnabled,
+    reader: options.reader, supportedDifficulties: options.supportedDifficulties, verifiedResultsEnabled: options.verifiedResultsEnabled, statisticsEnabled: options.statisticsEnabled, completionSortEnabled: options.completionSortEnabled,
     onPlay: (entry, difficulty) => launch(() => bridge.start(entry, difficulty)),
     onExit: () => { void exit().catch(error); },
     sharedWorld: true,

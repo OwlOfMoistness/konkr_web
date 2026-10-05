@@ -1,0 +1,20 @@
+**
+!community/
+!community/**
+!community maps/
+!community maps/**
+**/node_modules
+**/.runtime
+**/.web
+**/.data
+**/.scratch
+**/dist
+**/coverage
+**/test-results
+**/playwright-report
+**/.env
+**/.env.*
+**/*.log
+**/*.dump
+community/**/*.konkr
+**/.DS_Store

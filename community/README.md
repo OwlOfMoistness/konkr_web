@@ -4,6 +4,11 @@ The current version ships the maps in [`../community maps/`](../community%20maps
 with the website. Curators add or update maps through reviewed pull requests.
 No application server, database, account or admin dashboard is needed to run it.
 
+Optional shared voting runs in a separate Docker deployment in this same repo.
+See [voting setup](deploy/voting/README.md) for the dedicated Cloudflare tunnel,
+database, backup commands and opt-in static build setting. The default build
+continues to work without a backend.
+
 ## Build and preview
 
 Use Node 26.4.0 (the CI version). From this directory:
@@ -18,10 +23,11 @@ npm run preview:static
 Open `http://127.0.0.1:8080/`. If another local service owns that port, stop it or
 use `PORT=8081 npm run preview:static`. Rebuild after changing maps or code.
 
-Deploy **only `community/dist/`**, with `index.html` at the site's root URL. A
+Deploy **only `community/dist/`**. A
 standard static host is sufficient; no API rewrites, SPA fallback, serverless
-functions or runtime environment variables are required. Assets currently use
-root-relative paths, so use a domain root rather than a project subdirectory.
+functions or runtime environment variables are required. For a project path,
+set `STATIC_BASE_PATH=/konkr_web/` for both build and local preview. It defaults
+to `/`. See the [Pages and Docker deployment guide](deploy/README.md).
 Do not deploy the repository or its original `_site` output as this build.
 This command prepares local artifacts; the existing distribution and release
 review requirements still apply before publishing the original game assets.
@@ -45,7 +51,7 @@ does not change when moving between menus and gameplay.
 
 ## Dormant features
 
-The static entry point does not include admin code or call `/api/*`. Ratings,
+Unless voting is explicitly enabled, the static entry point does not include admin code or call `/api/*`. Ratings,
 play/completion counts, completion trophies and replay submissions are hidden
 and no new catalogue completion progress or ratings are recorded. They remain
 implemented in the server edition for a future version. Ordinary game saves

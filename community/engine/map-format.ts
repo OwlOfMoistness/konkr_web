@@ -41,6 +41,10 @@ function text(value: Data | undefined, name: string, max: number, fallback = '')
 function allowed(value: ObjectData, names: string[], label: string): void {
   for (const key of Object.keys(value)) if (!names.includes(key)) fail(`Unsupported ${label} field: ${key}`);
 }
+function factionAmounts(value: Data, label: string, maxFactionId: number): void {
+  for (const [target, amount] of Object.entries(record(value, label)))
+    if (!/^\d+$/.test(target) || Number(target) > maxFactionId || typeof amount !== 'number' || Math.abs(amount) > 1_000_000) fail(`Invalid ${label}`);
+}
 function dataOnly(value: unknown, depth = 0): asserts value is Data {
   if (depth > 32) fail('Map nesting too deep');
   if (value === null || typeof value === 'boolean' || typeof value === 'string') return;
@@ -102,21 +106,34 @@ function parseMapData(encoded: string, curated: boolean): ParsedMap {
   allowed(state, ['version', 'map', 'regions', 'factions', 'pawns', 'currentPhase', 'hexHistory'], 'state');
   if (state.version !== 7) fail('Unsupported map schema');
   const map = record(state.map, 'map');
-  // Replay validation keeps its strict schema. Curated browser maps can name the
-  // reviewed native conditions below; neither path permits executable rule hooks.
-  allowed(map, ['width', 'height', 'plugins', 'levelId', 'name', 'author', 'description', 'introduction', 'theme', ...(curated ? ['descriptor', 'winConditions'] : [])], 'map');
+  // This is the PR-reviewed browser catalogue, not the public replay validator.
+  // Named scripts below resolve only to built-in modules in pinned release 2.35.30.
+  const annotations = ['louder than gods revolver', 'manditory-joke', 'gabagabagoolll', 'gekription'];
+  allowed(map, ['width', 'height', 'plugins', 'levelId', 'name', 'author', 'description', 'introduction', 'theme', ...(curated ? ['descriptor', 'winConditions', 'pluginOptions', 'script', 'fixedAIDifficulty', 'id', 'created', ...annotations] : [])], 'map');
   if (curated) {
     text(map.descriptor, 'descriptor', LIMITS.descriptionLength);
+    text(map.id, 'legacy map ID', 128);
+    for (const key of annotations) text(map[key], 'map annotation', LIMITS.descriptionLength);
+    if (map.created !== undefined) integer(map.created, 'creation time', 0, Number.MAX_SAFE_INTEGER);
+    if (map.script !== undefined && !['deadIslands1', 'deadIslands2'].includes(map.script as string)) fail('Unsupported map field: script');
+    if (map.fixedAIDifficulty !== undefined && !['normal', 'hard'].includes(map.fixedAIDifficulty as string)) fail('Unsupported fixed AI difficulty');
+    if (map.pluginOptions !== undefined) {
+      const options = record(map.pluginOptions, 'plugin options');
+      allowed(options, ['initialTreasury', 'landingSpotPicked'], 'plugin options');
+      if (options.initialTreasury !== undefined) integer(options.initialTreasury, 'initial treasury');
+      if (options.landingSpotPicked !== undefined && typeof options.landingSpotPicked !== 'boolean') fail('Invalid landing spot flag');
+    }
     if (map.winConditions !== undefined) for (const value of array(map.winConditions, 'win conditions', 2)) {
       const condition = record(value, 'win condition');
-      allowed(condition, ['type'], 'win condition');
-      if (!['destroy-haunted-towns', 'defeat-all-rivals'].includes(condition.type as string)) fail('Unsupported native win condition');
+      allowed(condition, condition.type === 'defeat-rival' ? ['type', 'factionId'] : ['type'], 'win condition');
+      if (!['destroy-haunted-towns', 'defeat-all-rivals', 'defeat-rival'].includes(condition.type as string)) fail('Unsupported native win condition');
+      if (condition.type === 'defeat-rival') integer(condition.factionId, 'rival faction', 1, 7);
     }
   }
   const width = integer(map.width, 'width', 3, 99);
   const height = integer(map.height, 'height', 3, 99);
   const levelId = text(map.levelId, 'level ID', 128);
-  if (!/^[A-Za-z0-9_-]+$/.test(levelId)) fail('Invalid level ID');
+  if (!levelId || (!curated && !/^[A-Za-z0-9_-]+$/.test(levelId))) fail('Invalid level ID');
   if (map.theme !== undefined && !['default', 'winter'].includes(map.theme as string)) fail('Unsupported theme');
   text(map.introduction, 'introduction', LIMITS.descriptionLength);
   const plugins = array(map.plugins ?? [], 'plugins', PLUGINS.size).map(value => text(value, 'plugin', 64));
@@ -129,7 +146,11 @@ function parseMapData(encoded: string, curated: boolean): ParsedMap {
   const hexes = new Set<number>();
   for (const value of regions) {
     const region = record(value, 'region');
-    allowed(region, ['id', 'name', 'hexes'], 'region');
+    allowed(region, ['id', 'name', 'hexes', ...(curated ? ['attrition', 'description', 'introduction'] : [])], 'region');
+    if (curated) {
+      for (const key of ['description', 'introduction']) text(region[key], 'region annotation', LIMITS.descriptionLength);
+      if (region.attrition !== undefined) factionAmounts(region.attrition, 'region attrition', maxFactionId);
+    }
     const id = integer(region.id, 'region ID');
     if (regionIds.has(id)) fail('Duplicate region ID');
     regionIds.add(id);
@@ -148,7 +169,7 @@ function parseMapData(encoded: string, curated: boolean): ParsedMap {
   let localPlayers = 0;
   for (const value of factions) {
     const faction = record(value, 'faction');
-    allowed(faction, ['id', 'name', 'themeIndex', 'controller', 'approval', 'credit', 'regions', 'aiPersonality', 'persona'], 'faction');
+    allowed(faction, ['id', 'name', 'themeIndex', 'controller', 'approval', 'credit', 'regions', 'aiPersonality', 'persona', ...(curated ? ['attrition'] : [])], 'faction');
     const id = integer(faction.id, 'faction ID', 0, maxFactionId);
     if (factionIds.has(id)) fail('Duplicate faction ID');
     factionIds.add(id);
@@ -157,20 +178,24 @@ function parseMapData(encoded: string, curated: boolean): ParsedMap {
     if (id > 1 && faction.controller !== 'ai') fail('Opponents must use the AI controller');
     if (faction.controller === 'local-user') { localPlayers++; if (id !== 1) fail('Unsupported player faction'); }
     text(faction.name, 'faction name', 256);
-    integer(faction.themeIndex, 'faction theme', 0, 64);
+    integer(faction.themeIndex, 'faction theme', 0, curated ? 100 : 64);
     for (const value of array(faction.regions, 'faction regions', regions.length)) {
       const regionId = integer(value, 'owned region');
       if (!regionIds.has(regionId) || ownedRegions.has(regionId)) fail('Invalid region ownership');
       ownedRegions.add(regionId);
     }
-    for (const field of ['approval', 'credit']) {
+    for (const field of ['approval', 'credit', ...(curated ? ['attrition'] : [])]) {
       if (faction[field] !== undefined && faction[field] !== null) {
-        const values = record(faction[field], field);
-        for (const [target, amount] of Object.entries(values))
-          if (!/^\d+$/.test(target) || Number(target) > maxFactionId || typeof amount !== 'number' || Math.abs(amount) > 1_000_000) fail(`Invalid ${field}`);
+        factionAmounts(faction[field], field, maxFactionId);
       }
     }
-    if (faction.aiPersonality !== undefined || faction.persona !== undefined && (!curated || !['king', 'goose', 'lich'].includes(faction.persona as string))) fail('Custom AI personalities require support review');
+    if (faction.aiPersonality !== undefined) {
+      if (!curated) fail('Custom AI personalities require support review');
+      const personality = record(faction.aiPersonality, 'AI personality');
+      allowed(personality, ['combative', 'daring', 'honorable', 'thrifty', 'ambitious', 'attackSkill', 'defenseSkill'], 'AI personality');
+      for (const value of Object.values(personality)) if (typeof value !== 'number' || value < 0 || value > 100) fail('Invalid AI personality');
+    }
+    if (faction.persona !== undefined && (!curated || !['king', 'goose', 'lich'].includes(faction.persona as string))) fail('Custom AI personalities require support review');
   }
   if (localPlayers !== 1 || !factionIds.has(0) || ownedRegions.size !== regionIds.size) fail('Invalid faction setup');
   const pawnIds = new Set<number>();
@@ -189,7 +214,16 @@ function parseMapData(encoded: string, curated: boolean): ParsedMap {
   allowed(phase, ['type', 'turnNumber', 'faction', 'tappedUnits'], 'phase');
   if (phase.type !== 'faction-turn' || phase.turnNumber !== 1 || phase.faction !== 1) fail('A published map must start on player turn 1');
   for (const value of array(phase.tappedUnits ?? [], 'tapped units', pawns.length)) if (!pawnIds.has(integer(value, 'tapped unit'))) fail('Unknown tapped unit');
-  if (Object.keys(record(state.hexHistory, 'hex history')).length) fail('A published map must have empty play history');
+  const history = record(state.hexHistory, 'hex history');
+  if (!curated && Object.keys(history).length) fail('A published map must have empty play history');
+  if (curated) for (const [hex, value] of Object.entries(history)) {
+    if (!/^\d+$/.test(hex) || Number(hex) > MAX_HEX_ID) fail('Invalid history hex');
+    const item = record(value, 'hex history entry');
+    allowed(item, ['capturedAt', 'spoils', 'previousFactionId'], 'hex history');
+    integer(item.capturedAt, 'hex capture turn');
+    integer(item.previousFactionId, 'previous faction', 0, maxFactionId);
+    if (!['liveHex', 'deadHex', ...PAWNS].includes(item.spoils as string)) fail('Invalid hex spoils');
+  }
   return {
     encoded, state, contentHash: createHash('sha256').update(encoded).digest('hex'), width, height, plugins, levelId,
     title: text(map.name, 'title', LIMITS.titleLength, levelId),

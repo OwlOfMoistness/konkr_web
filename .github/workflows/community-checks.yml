@@ -1,10 +1,10 @@
 name: Community checks
 'on':
   pull_request:
-    paths: ['community/**', 'community maps/**', '_site/releases/2.35.30/**', '.github/workflows/community-checks.yml']
-  push:
-    paths: ['community/**', 'community maps/**', '_site/releases/2.35.30/**', '.github/workflows/community-checks.yml']
+    paths: ['community/**', 'community maps/**', '_site/releases/2.35.30/**', '.github/workflows/**', 'compose.yaml']
+  # Master deployments call these same gates; feature branches run on their PR.
   workflow_dispatch:
+  workflow_call:
 permissions: {}
 concurrency:
   group: community-${{ github.workflow }}-${{ github.ref }}
@@ -12,7 +12,7 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     permissions:
       contents: read
     services:
@@ -175,3 +175,73 @@ jobs:
       - name: Delete disposable CI containers and volumes
         if: always()
         run: docker compose -f community/deploy/compose.yaml down --volumes --remove-orphans
+
+  voting-package:
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      COMPOSE_PROJECT_NAME: konkr-voting-ci
+      VOTING_IMAGE_TAG: ci
+      VOTING_API_ORIGIN: https://votes.example
+      VOTING_SITE_ORIGIN: https://game.example
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Generate disposable voting secrets
+        run: |
+          for name in VOTING_DATABASE_PASSWORD VOTING_SECRET; do
+            value=$(openssl rand -hex 32)
+            echo "::add-mask::$value"
+            echo "$name=$value" >> "$GITHUB_ENV"
+          done
+      - name: Build and start the private voting stack without a live tunnel
+        run: |
+          docker compose config --quiet
+          docker compose build voting
+          docker compose up -d --wait db voting
+      - name: Verify voting and isolation in the final image
+        run: |
+          docker compose exec -T voting node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { request } from 'node:http';
+          import { readFile, readdir } from 'node:fs/promises';
+          assert.notEqual(process.getuid(), 0);
+          assert.deepEqual((await readdir('.')).sort(), ['node_modules','package-lock.json','package.json','voting']);
+          const { maps } = JSON.parse(await readFile('voting/manifest.json', 'utf8'));
+          const map = maps[0];
+          const headers = { Origin: 'https://game.example', Host: 'votes.example', 'CF-Connecting-IP': '192.0.2.10', 'Content-Type': 'application/json' };
+          const call = (path, options = {}) => new Promise((resolve, reject) => {
+            const req = request('http://127.0.0.1:8080' + path, { method: options.method, headers }, response => {
+              const chunks = []; response.on('data', chunk => chunks.push(chunk)).on('end', () => resolve({ status: response.statusCode, json: () => JSON.parse(Buffer.concat(chunks)) }));
+            }); req.on('error', reject); req.end(options.body);
+          });
+          const session = await call('/v1/session', { method: 'POST', body: '{}' });
+          assert.equal(session.status, 200);
+          headers.Authorization = 'Bearer ' + (await session.json()).token;
+          for (const rating of [5, 2]) {
+            const vote = await call('/v1/maps/' + map.id + '/ratings', { method: 'PUT', body: JSON.stringify({ rating, revisionId: map.revisionId }) });
+            assert.equal(vote.status, 200);
+          }
+          assert.equal((await call('/api/admin/maps')).status, 404);
+          assert.equal((await call('/healthz')).status, 404);
+          assert.equal((await fetch('http://127.0.0.1:8080/healthz')).status, 200);
+          NODE
+          test -z "$(docker compose port voting 8080)"
+      - name: Verify persistence and backup restore
+        run: |
+          docker compose up -d --force-recreate --wait db voting
+          test "$(docker compose exec -T db psql -U voting -Atc 'SELECT count(*) || chr(58) || max(rating) FROM voting_votes')" = '1:2'
+          docker compose exec -T db pg_dump -U voting -Fc --no-owner --no-acl voting > "$RUNNER_TEMP/voting.dump"
+          docker compose exec -T db createdb -U voting voting_restore_check
+          docker compose exec -T db pg_restore -U voting --no-owner --no-acl --exit-on-error -d voting_restore_check < "$RUNNER_TEMP/voting.dump"
+          test "$(docker compose exec -T db psql -U voting -d voting_restore_check -Atc 'SELECT count(*) || chr(58) || max(rating) FROM voting_votes')" = '1:2'
+      - name: Report voting service status
+        if: failure()
+        run: docker compose ps -a
+      - name: Delete disposable voting containers and volumes
+        if: always()
+        run: docker compose down --volumes --remove-orphans

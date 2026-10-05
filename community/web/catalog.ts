@@ -27,6 +27,7 @@ export interface CatalogMountOptions {
   verifiedResultsEnabled?: boolean;
   /** Static releases can keep all rating/count features dormant. */
   statisticsEnabled?: boolean;
+  completionSortEnabled?: boolean;
   supportedDifficulties?: (entry: CatalogEntry) => Difficulty[];
   /** Optional map actions, such as resuming a saved game. */
   renderDetailActions?: (container: HTMLElement, entry: CatalogEntry) => void;
@@ -101,6 +102,7 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
   let state: CatalogUiState;
   try { state = restoreCatalogState(storage?.getItem(storageKey) ?? null); } catch { state = defaultCatalogState(); }
   if (options.statisticsEnabled === false && ['rating', 'completions'].includes(state.sort)) state.sort = 'name';
+  if (options.completionSortEnabled === false && state.sort === 'completions') state.sort = 'name';
   let generation = 0;
   let destroyed = false;
   let paused = false;
@@ -236,6 +238,7 @@ export function mountCatalog(root: HTMLElement, options: CatalogMountOptions) {
     const sort = el('select');
     for (const [value, label] of [['newest', 'Newest'], ['name', 'Name A–Z'], ['rating', 'Highest rating'], ['completions', 'Most finished']]) {
       if (options.statisticsEnabled === false && ['rating', 'completions'].includes(value)) continue;
+      if (options.completionSortEnabled === false && value === 'completions') continue;
       const option = el('option', '', label); option.value = value; sort.append(option);
     }
     sort.value = state.sort; sort.addEventListener('change', () => setQuery({ sort: sort.value as CatalogSort }));

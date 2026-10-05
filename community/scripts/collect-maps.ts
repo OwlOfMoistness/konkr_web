@@ -14,11 +14,17 @@ export async function collectMaps(directory: string, engineHash: string): Promis
     if (file.isSymbolicLink()) throw new Error(`Symlinks are not catalogue inputs: ${file.name}`);
     if (!file.name.endsWith('.konkr') || !file.isFile()) continue;
     try {
-      const encoded = await readFile(path.join(directory, file.name), 'utf8');
-      const map = parseCuratedMap(encoded);
       const sidecar = file.name.slice(0, -6) + '.json';
       const metadata = names.has(sidecar) ? JSON.parse(await readFile(path.join(directory, sidecar), 'utf8')) : {};
-      if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata) || Object.keys(metadata).some(key => !['id', 'title', 'creator', 'description', 'tags', 'added'].includes(key))) throw new Error('Unknown metadata field');
+      if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata) || Object.keys(metadata).some(key => !['id', 'title', 'creator', 'description', 'tags', 'added', 'draft', 'draftReason'].includes(key))) throw new Error('Unknown metadata field');
+      if (metadata.draft !== undefined && typeof metadata.draft !== 'boolean') throw new Error('Invalid metadata draft flag');
+      if (metadata.draft) {
+        if (typeof metadata.draftReason !== 'string' || !metadata.draftReason.trim() || metadata.draftReason.length > 1000) throw new Error('Drafts need a brief draftReason');
+        continue;
+      }
+      if (metadata.draftReason !== undefined) throw new Error('Remove draftReason when publishing a draft');
+      const encoded = await readFile(path.join(directory, file.name), 'utf8');
+      const map = parseCuratedMap(encoded);
       const string = (key: string, fallback: string, max: number): string => {
         const value = metadata[key] ?? fallback;
         if (typeof value !== 'string' || value.length > max) throw new Error(`Invalid metadata ${key}`);

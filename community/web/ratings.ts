@@ -1,12 +1,13 @@
 import type { CatalogEntry } from '../shared/contracts.ts';
 import { updateCatalogRating } from './catalog.ts';
-export interface VisitorClient { csrfToken():Promise<string> }
+export interface VisitorClient { csrfToken():Promise<string>; request?: typeof fetch }
 export function createVisitorClient():VisitorClient {
   let pending:Promise<string>|undefined;
   return {csrfToken(){return pending??=(async()=>{const response=await fetch('/api/visitor');if(!response.ok)throw new Error('Could not establish this browser session');return (await response.json()).csrfToken as string;})().catch(error=>{pending=undefined;throw error;});}};
 }
 /** A post-play, editable five-star vote. Later choices are serialized after an in-flight save. */
 export function ratingControls(visitor:VisitorClient,onChanged:()=>void=()=>{}) {
+  const request = visitor.request ?? fetch;
   // A second play/return can remount this widget while a previous vote is saving.
   const writes=new Map<string,Promise<void>>();
   return (root:HTMLElement,entry:CatalogEntry)=>{
@@ -28,7 +29,7 @@ export function ratingControls(visitor:VisitorClient,onChanged:()=>void=()=>{}) 
       const operation=(writes.get(key)??Promise.resolve()).then(async()=>{
         try {
           const csrf=await visitor.csrfToken();
-          const response=await fetch(endpoint,{method:'PUT',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({revisionId:entry.revision.id,rating})});
+          const response=await request(endpoint,{method:'PUT',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({revisionId:entry.revision.id,rating})});
           const data=await response.json();if(!response.ok)throw new Error(data.error??'Could not save rating');
           updateCatalogRating(root,entry,data.rating);
           if(choice===version)status.textContent=`Saved. ${data.rating.average.toFixed(1)} average from ${data.rating.count} ${data.rating.count===1?'rating':'ratings'}.`;
@@ -49,7 +50,7 @@ export function ratingControls(visitor:VisitorClient,onChanged:()=>void=()=>{}) 
       buttons.push(button);stars.append(button);
     }
     paint();
-    void visitor.csrfToken().then(async()=>{await writes.get(key);return fetch(endpoint);}).then(async response=>{
+    void visitor.csrfToken().then(async()=>{await writes.get(key);return request(endpoint);}).then(async response=>{
       if(response.ok){const data=await response.json();if(!edited&&data.revisionId===entry.revision.id&&Number.isInteger(data.mine)&&data.mine>=1&&data.mine<=5){selected=data.mine;paint();}}
     }).catch(()=>{});
   };

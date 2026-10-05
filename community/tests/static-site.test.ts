@@ -6,8 +6,9 @@ import { chromium } from 'playwright';
 import { buildStatic, staticRoot } from '../scripts/build-static.ts';
 import { createStaticServer } from '../scripts/serve-static.ts';
 import type { StaticCatalog } from '../shared/static-catalog.ts';
+import { runtimeLevelId } from '../shared/runtime-identity.ts';
 
-test('the static release browses, previews and plays every map without APIs or statistics', { timeout: 240_000 }, async t => {
+test('the static release imports every map and its catalogue plays without APIs or statistics', { timeout: 1_800_000 }, async t => {
   await buildStatic();
   const files = await readdir(staticRoot);
   const catalog: StaticCatalog = JSON.parse(await readFile(path.join(staticRoot, files.find(file => /^maps-.*\.json$/.test(file))!), 'utf8'));
@@ -32,6 +33,29 @@ test('the static release browses, previews and plays every map without APIs or s
   const failures: string[] = []; page.on('pageerror', error => failures.push(error.message));
   const badResponses: string[] = []; page.on('response', response => { if (response.status() >= 400) badResponses.push(response.url()); });
   await page.goto(origin + '/');
+  await page.waitForFunction(() => window.communityReference?.ready);
+  // Check every published map in both modes through the original importer. Disable
+  // animation only during this data sweep; the actual UI flows below use defaults.
+  const transitionDuration = await page.evaluate(() => window.communityReference.withEngine(load => {
+    const config = load(56876).config; const previous = config.screenTransitionDuration; config.screenTransitionDuration = 0; return previous;
+  }));
+  let checked = 0;
+  for (const entry of catalog.entries) {
+    for (const difficulty of ['normal', 'hard'] as const) {
+      const levelId = await runtimeLevelId({ mapId: entry.map.id, revisionId: entry.revision.id, engineHash: entry.revision.engineHash, difficulty });
+      const result = await page.evaluate(async ({ encoded, difficulty, levelId }) => {
+        const ref = window.communityReference;
+        // Match the catalogue bridge: embedded IDs are frequently shared by unrelated maps.
+        const isolated = ref.withEngine(load => { const codec = load(47067); const state = codec.decodeGameState(encoded); state.map.levelId = levelId; return codec.encodeGameState(state); });
+        const result = await ref.importMap(isolated, difficulty);
+        ref.act('ExitLevel'); return { width: result.state.map.width, height: result.state.map.height, difficulty: result.difficulty, errors: [...ref.errors] };
+      }, { encoded: catalog.maps[entry.revision.contentHash], difficulty, levelId });
+      assert.deepEqual(result, { width: entry.revision.width, height: entry.revision.height, difficulty, errors: [] }, entry.map.metadata.title);
+      await page.waitForFunction(() => window.communityReference.withEngine(load => load(55151).app.navigator.currentScreen.name === 'Title' && !load(55151).app.navigator.transitionInProgress));
+    }
+    if (++checked % 50 === 0) t.diagnostic(`Imported ${checked}/${catalog.entries.length} maps in both difficulties`);
+  }
+  await page.evaluate(duration => window.communityReference.withEngine(load => { load(56876).config.screenTransitionDuration = duration; }), transitionDuration);
   await page.getByRole('button', { name: 'Custom Maps', exact: true }).click();
   await page.getByRole('heading', { name: 'Custom Maps', exact: true }).waitFor();
   const settled = (screen: string) => page.waitForFunction(name => window.communityReference.withEngine(load => {
@@ -49,8 +73,11 @@ test('the static release browses, previews and plays every map without APIs or s
   await page.getByRole('button', { name: 'Clear filters', exact: true }).click();
   await page.waitForFunction(count => document.querySelectorAll('.catalog-card').length === count, Math.min(catalog.entries.length, 24));
   await page.getByRole('button', { name: 'List', exact: true }).click();
-  // Native import in each difficulty exercises the curated-only schema additions as well.
-  for (const entry of catalog.entries) {
+  // Exercise the UI with representative native features; the full data sweep
+  // above scales with the catalogue without repeating hundreds of UI animations.
+  const uiEntries = catalog.entries.filter(entry => ['Twin Continents', 'Prison', 'Oasis'].includes(entry.map.metadata.title));
+  assert.ok(uiEntries.length >= 2);
+  for (const entry of uiEntries) {
     await page.getByLabel('Map name', { exact: true }).fill(entry.map.metadata.title);
     await page.getByRole('button', { name: 'Search', exact: true }).click();
     for (const difficulty of ['Normal', 'Hard']) {

@@ -43,7 +43,7 @@ test('static search, tag filters, sorting and pagination need no backend or scor
 });
 
 test('curated native features do not widen the backend validator or allow executable fields', async () => {
-  for (const file of ['apocalypse now2.konkr', 'cosmic-rift-2.konkr', 'ankhten2-3(1).konkr']) {
+  for (const file of ['apocalypse now2.konkr', 'cosmic-rift-2.konkr', 'ankhten2-3(1).konkr', 'ends_arrival.konkr', 'hammer-of-faith.konkr', 'crackers.konkr', 'Time-to-Move-On-and.konkr', 'Art of Betrayal but there is no turtules.konkr', 'dissasterSave-spider.konkr']) {
     const encoded = await readFile(new URL(file, directory), 'utf8');
     assert.doesNotThrow(() => parseCuratedMap(encoded));
     assert.throws(() => parseMap(encoded));
@@ -57,6 +57,14 @@ test('curated native features do not widen the backend validator or allow execut
   delete state.factions[2].persona;
   state.map.script = 'alert(1)';
   assert.throws(() => parseCuratedMap(encode(state)), /Unsupported map field/);
+  state.map.script = 'deadIslands1.anything';
+  assert.throws(() => parseCuratedMap(encode(state)), /Unsupported map field/);
+  delete state.map.script;
+  state.map.winConditions = [{ type: 'defeat-rival', factionId: 999 }];
+  assert.throws(() => parseCuratedMap(encode(state)), /rival faction/);
+  delete state.map.winConditions;
+  state.factions[2].aiPersonality = { attackSkill: 'javascript' };
+  assert.throws(() => parseCuratedMap(encode(state)), /AI personality/);
 });
 
 test('metadata edits preserve revision identity; changed bytes, duplicate IDs and bad metadata are detected', async t => {
@@ -76,6 +84,13 @@ test('metadata edits preserve revision identity; changed bytes, duplicate IDs an
   await writeFile(path.join(temp, 'duplicate.konkr'), encoded);
   await assert.rejects(collectMaps(temp, 'engine'), /duplicate map ID/);
   await rm(path.join(temp, 'duplicate.konkr'));
+  await writeFile(path.join(temp, 'draft.konkr'), 'malformed community submission');
+  await assert.rejects(collectMaps(temp, 'engine'), /draft.konkr/);
+  await writeFile(path.join(temp, 'draft.json'), JSON.stringify({ draft: true, draftReason: 'Needs repair before publication' }));
+  assert.equal((await collectMaps(temp, 'engine')).entries.length, 1);
+  await writeFile(path.join(temp, 'draft.json'), JSON.stringify({ draft: true }));
+  await assert.rejects(collectMaps(temp, 'engine'), /draftReason/);
+  await rm(path.join(temp, 'draft.konkr')); await rm(path.join(temp, 'draft.json'));
   await writeFile(path.join(temp, 'map.json'), JSON.stringify({ script: 'unreviewed' }));
   await assert.rejects(collectMaps(temp, 'engine'), /Unknown metadata field/);
   await rm(path.join(temp, 'map.json'));

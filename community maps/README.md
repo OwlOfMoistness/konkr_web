@@ -29,3 +29,12 @@ Keep the map's embedded `levelId` stable when updating it. If two different maps
 share that ID, add a unique `"id"` to one JSON file and keep it unchanged.
 Files are discovered automatically during the build; no manual catalogue edit
 or admin dashboard is needed.
+
+Maps awaiting repair can stay in the folder with `"draft": true` and a brief
+`"draftReason"` in their matching JSON file. Drafts are excluded from both the
+website and voting service. Remove both fields after repairing and playtesting.
+The build still fails for any invalid map that is not explicitly a draft.
+
+Some community exports reuse embedded IDs or use spaces in them. Their JSON
+sidecars assign stable catalogue IDs without changing the original map bytes.
+Keep these IDs when editing metadata, so existing votes stay attached.
