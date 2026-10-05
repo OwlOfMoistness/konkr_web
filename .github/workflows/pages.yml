@@ -9,12 +9,7 @@ concurrency:
   group: github-pages
   cancel-in-progress: false
 jobs:
-  checks:
-    permissions:
-      contents: read
-    uses: ./.github/workflows/community-checks.yml
   build:
-    needs: checks
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -32,6 +27,9 @@ jobs:
       - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
         id: pages
       - run: npm ci --ignore-scripts
+        working-directory: community
+      - name: Type-check
+        run: npm run build
         working-directory: community
       - name: Build static game with the public API address
         working-directory: community

@@ -11,7 +11,7 @@ validation, trophies and completion counts remain dormant.
 GitHub Pages must use **GitHub Actions** as its publishing source. The
 `VOTING_API_ORIGIN` repository variable is the public API origin above; it is
 not a secret. The `Deploy community game` workflow publishes `community/dist`
-only after the full Community checks workflow succeeds. Pushes to `master`
+after type-checking and building. Tests run locally, not in GitHub Actions. Pushes to `master`
 deploy automatically; it can also be run manually on `master`.
 
 The workflow uses GitHub's configured base path, so `/konkr_web/` works without
@@ -31,6 +31,42 @@ STATIC_BASE_PATH=/konkr_web/ npm run preview:static
 Open `http://127.0.0.1:8080/konkr_web/`. The live voting API deliberately allows
 only the production website origin, so use the automated voting browser test
 for local write checks.
+
+## Local release checks
+
+Run the full suite before merging a release. It includes real game replays,
+all published maps in Normal and Hard, browser interactions and database checks,
+so it takes several minutes. CI does not repeat these tests or install browsers
+or test databases; PRs only type-check/build, and `master` builds and publishes.
+
+From the repository root, start a disposable local test database:
+
+```sh
+docker run --rm -d --name konkr-release-tests -p 127.0.0.1:55439:5432 -e POSTGRES_USER=community_test -e POSTGRES_PASSWORD=disposable-local-only -e POSTGRES_DB=community_test postgres:16.13-bookworm
+docker exec konkr-release-tests pg_isready -U community_test -d community_test
+cd community
+npm ci --ignore-scripts
+npx --no-install playwright install chromium
+CATALOG_TEST_DATABASE_URL=postgresql://community_test:disposable-local-only@127.0.0.1:55439/community_test npm run check:release
+```
+
+Wait for `pg_isready` to report accepting connections before running the checks.
+On Linux, install Chromium's OS dependencies with
+`npx --no-install playwright install --with-deps chromium` if needed.
+Use a disposable database, never the live voting database. The runner checks
+types, builds the static site, extracts committed map fixtures into a temporary
+folder, runs all tests serially to avoid shared runtime conflicts, and fails on
+skipped coverage. Existing focused `npm test -- tests/example.test.ts` commands
+remain available for development.
+
+After the run, remove only this disposable database:
+
+```sh
+docker stop konkr-release-tests
+```
+
+For voting image changes, also follow the local container health, restart and
+backup/restore checks in [voting operations](voting/README.md).
 
 ## Home server
 

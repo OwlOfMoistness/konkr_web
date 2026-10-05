@@ -77,4 +77,5 @@ These checks validate the catalogue and use an ordinary static file server to
 exercise native browser playback in both difficulties, navigation and disabled
 statistics. All API/external requests are blocked by the browser test. This is
 a loading/playback check, not a claim of verified completion or game balance.
-The existing full backend and browser suite remains in CI for the retained code.
+The full backend and browser suite runs locally with `npm run check:release`;
+CI only type-checks and builds. See [local release checks](deploy/README.md#local-release-checks).

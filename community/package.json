@@ -9,6 +9,7 @@
     "build:static": "node scripts/build-static.ts",
     "preview:static": "node scripts/serve-static.ts",
     "test": "node --test",
+    "check:release": "node scripts/check-release.ts",
     "start": "node api/server.ts",
     "prepare:runtime": "node scripts/prepare-runtime.ts"
   },
