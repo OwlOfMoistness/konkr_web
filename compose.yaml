@@ -1,4 +1,5 @@
 # From a fresh clone, configure community/deploy/voting/.env, then:
 # docker compose up -d
+name: konkr-voting
 include:
   - community/deploy/voting/compose.yaml
