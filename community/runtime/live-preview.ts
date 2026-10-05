@@ -38,7 +38,7 @@ function install(): void {
   const fetchOriginal = window.fetch.bind(window);
   window.fetch = (input, options) => {
     const url = new URL(input instanceof Request ? input.url : String(input), location.href);
-    if (url.origin !== location.origin || !url.pathname.startsWith('/assets/')) return Promise.reject(new Error('Preview network request blocked'));
+    if (url.origin !== location.origin || !url.pathname.startsWith(new URL('assets/', document.baseURI).pathname)) return Promise.reject(new Error('Preview network request blocked'));
     return fetchOriginal(input, { ...options, credentials: 'omit' });
   };
   let loader: ReferenceModuleLoader;

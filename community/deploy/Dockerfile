@@ -19,6 +19,7 @@ COPY community/runtime/ ./runtime/
 COPY community/shared/ ./shared/
 COPY community/web/ ./web/
 COPY community/worker/ ./worker/
+COPY community/voting/ ./voting/
 COPY community/db/ ./db/
 COPY community/scripts/ ./scripts/
 COPY community/tests/ ./tests/

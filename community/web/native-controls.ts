@@ -14,7 +14,8 @@ export function initializeNativeAssets(doc: Document = document): Promise<void> 
   const operation = (async () => {
     const view = doc.defaultView;
     if (!view) throw new Error('Native game controls need a browser document.');
-    const atlasRequest = view.fetch('/assets/atlas.json', { credentials: 'same-origin' }).then(async response => {
+    const asset = (name: string) => new URL(`assets/${name}`, doc.querySelector('base') ? doc.baseURI : view.location.origin + '/').href;
+    const atlasRequest = view.fetch(asset('atlas.json'), { credentials: 'same-origin' }).then(async response => {
       if (!response.ok) throw new Error('The original game controls could not be loaded. Please reload.');
       return response.json() as Promise<Atlas>;
     });
@@ -23,7 +24,7 @@ export function initializeNativeAssets(doc: Document = document): Promise<void> 
       image.onload = () => resolve();
       image.onerror = () => reject(new Error('The original game control artwork could not be loaded. Please reload.'));
     });
-    image.src = '/assets/atlas.png';
+    image.src = asset('atlas.png');
     const [atlas] = await Promise.all([atlasRequest, imageReady]);
     const texture = atlas.textures.find(texture => texture.image === 'atlas.png');
     if (!texture || image.naturalWidth !== texture.size.w || image.naturalHeight !== texture.size.h) throw new Error('The game control atlas does not match its metadata.');

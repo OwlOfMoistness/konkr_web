@@ -1,0 +1,111 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { request } from 'node:http';
+import { readFile, readdir, mkdtemp, copyFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { Pool } from 'pg';
+import { chromium } from 'playwright';
+import { buildStatic } from '../scripts/build-static.ts';
+import { createStaticServer } from '../scripts/serve-static.ts';
+import { createVotingServer } from '../voting/server.ts';
+import { initializeVoting } from '../voting/store.ts';
+import type { StaticCatalog } from '../shared/static-catalog.ts';
+
+const database = process.env.CATALOG_TEST_DATABASE_URL;
+test('static game uses the real voting API after play, keeps votes on reload and works during an API outage', { skip: !database, timeout: 120000 }, async t => {
+  const serverRoot = await mkdtemp(path.join(tmpdir(), 'konkr-voting-site-'));
+  const staticRoot = path.join(serverRoot, 'konkr_web');
+  t.after(() => rm(serverRoot, { recursive: true, force: true }));
+  const mapsDirectory = await mkdtemp(path.join(tmpdir(), 'konkr-voting-maps-'));
+  t.after(() => rm(mapsDirectory, { recursive: true, force: true }));
+  await copyFile(new URL('../../community maps/twin-continents.konkr', import.meta.url), path.join(mapsDirectory, 'twin-continents.konkr'));
+  await writeFile(path.join(mapsDirectory, 'twin-continents.json'), JSON.stringify({ title: 'Twin Continents' }));
+  await buildStatic({ votingApiOrigin: 'https://votes.example', basePath: '/konkr_web/', mapsDirectory, outputDirectory: staticRoot });
+  const html = await readFile(path.join(staticRoot, 'index.html'), 'utf8');
+  assert.match(html, /connect-src 'self' https:\/\/votes\.example/);
+  const files = await readdir(staticRoot);
+  const catalog: StaticCatalog = JSON.parse(await readFile(path.join(staticRoot, files.find(name => /^maps-.*\.json$/.test(name))!), 'utf8'));
+  const staticServer = createStaticServer(serverRoot); await new Promise<void>(resolve => staticServer.listen(0, '127.0.0.1', resolve));
+  t.after(() => { staticServer.closeAllConnections(); staticServer.close(); });
+  const address = staticServer.address(); assert(address && typeof address !== 'string'); const site = `http://127.0.0.1:${address.port}`;
+  const siteURL = site + '/konkr_web/';
+  const admin = new Pool({ connectionString: database }), schema = `voting_browser_${process.pid}`;
+  await admin.query(`CREATE SCHEMA ${schema}`);
+  const db = new Pool({ connectionString: database, options: `-c search_path=${schema}` }); await initializeVoting(db);
+  t.after(async () => { await db.end(); await admin.query(`DROP SCHEMA ${schema} CASCADE`); await admin.end(); });
+  const api = createVotingServer({ db, maps: new Map(catalog.entries.map(entry => [entry.map.id, entry.revision.id])), secret: 'c'.repeat(64), siteOrigin: site, apiOrigin: 'https://votes.example', trustCloudflare: true });
+  await new Promise<void>(resolve => api.server.listen(0, '127.0.0.1', resolve));
+  t.after(() => { api.server.closeAllConnections(); api.server.close(); });
+  const apiAddress = api.server.address(); assert(apiAddress && typeof apiAddress !== 'string');
+  const browser = await chromium.launch({ args: ['--enable-unsafe-swiftshader', '--use-angle=swiftshader'] }); t.after(() => browser.close());
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, serviceWorkers: 'block' });
+  let offline = false, sessions = 0;
+  // An HTTPS edge stand-in forwards to the actual private HTTP API, including real CORS headers.
+  await page.route('https://votes.example/**', async route => {
+    if (offline) return route.abort();
+    const inbound = route.request(); const url = new URL(inbound.url());
+    if (url.pathname === '/v1/session' && inbound.method() === 'POST') sessions++;
+    const result = await new Promise<{ status: number; headers: Record<string, string>; body: Buffer }>((resolve, reject) => {
+      const forwarded = request(`http://127.0.0.1:${apiAddress.port}${url.pathname}`, { method: inbound.method(), headers: { ...inbound.headers(), host: 'votes.example', 'cf-connecting-ip': '192.0.2.1' } }, response => {
+        const chunks: Buffer[] = []; response.on('data', chunk => chunks.push(chunk)).on('end', () => resolve({ status: response.statusCode!, headers: response.headers as Record<string, string>, body: Buffer.concat(chunks) }));
+      }); forwarded.on('error', reject); forwarded.end(inbound.postDataBuffer());
+    });
+    await route.fulfill(result);
+  });
+  const failures: string[] = []; page.on('pageerror', error => failures.push(error.message));
+  const badResponses: string[] = [];
+  page.on('response', response => { if (response.url().startsWith(site + '/') && !response.ok()) badResponses.push(response.url()); });
+  await page.goto(siteURL);
+  const settled = (name: string) => page.waitForFunction(screen => window.communityReference.withEngine(load => {
+    const { app } = load(55151); return app.navigator.currentScreen.name === screen && !app.navigator.transitionInProgress;
+  }) && !document.querySelector('#catalog-root')?.hasAttribute('inert'), name);
+  await page.getByRole('button', { name: 'Custom Maps', exact: true }).click(); await settled('CustomMaps');
+  assert.deepEqual(await page.getByLabel('Sort by', { exact: true }).locator('option').allTextContents(), ['Newest', 'Name A–Z', 'Highest rating']);
+  assert.equal(sessions, 0, 'Browsing must not create an identity');
+  await page.getByLabel('Map name', { exact: true }).fill('Twin Continents');
+  await page.getByRole('button', { name: 'Search', exact: true }).click();
+  await page.getByRole('button', { name: 'Twin Continents', exact: true }).click();
+  await page.getByRole('button', { name: 'Play map', exact: true }).click(); await settled('Play');
+  await page.evaluate(() => window.communityReference.act('ExitLevel')); await settled('CustomMaps');
+  await page.getByRole('radio', { name: '5 stars', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Saved. 5.0 average from 1 rating.' }).waitFor();
+  await page.getByRole('radio', { name: '3 stars', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Saved. 3.0 average from 1 rating.' }).waitFor();
+  await page.reload(); await page.getByRole('button', { name: 'Custom Maps', exact: true }).click(); await settled('CustomMaps');
+  await page.getByText('3.0 / 5 · 1 rating', { exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Play map', exact: true }).click(); await settled('Play');
+  await page.evaluate(() => window.communityReference.act('ExitLevel')); await settled('CustomMaps');
+  await page.waitForFunction(() => document.querySelector('[aria-label="3 stars"]')?.getAttribute('aria-checked') === 'true');
+  assert.equal(sessions, 1);
+  offline = true;
+  await page.reload(); await page.getByRole('button', { name: 'Custom Maps', exact: true }).click(); await settled('CustomMaps');
+  await page.getByRole('button', { name: 'Play map', exact: true }).click(); await settled('Play');
+  await page.evaluate(() => window.communityReference.act('ExitLevel')); await settled('CustomMaps');
+  await page.getByRole('radio', { name: '2 stars', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Choose a star to retry' }).waitFor();
+  assert.equal((await db.query('SELECT count(*) FROM voting_votes')).rows[0].count, '1');
+  assert.deepEqual(failures, []);
+  assert.equal(page.url(), siteURL);
+  assert.deepEqual(badResponses, []);
+  await page.close();
+  // The default build remains completely static even though the voting code is available.
+  await buildStatic({ basePath: '/konkr_web/', mapsDirectory, outputDirectory: staticRoot });
+  assert.doesNotMatch(await readFile(path.join(staticRoot, 'index.html'), 'utf8'), /votes\.example/);
+  const disabled = await browser.newPage(); const calls: string[] = [];
+  await disabled.route('**/*', route => {
+    if (new URL(route.request().url()).origin !== site) { calls.push(route.request().url()); return route.abort(); }
+    return route.continue();
+  });
+  await disabled.goto(siteURL);
+  await disabled.getByRole('button', { name: 'Custom Maps', exact: true }).click();
+  await disabled.getByRole('button', { name: 'Twin Continents', exact: true }).click();
+  assert.deepEqual(await disabled.getByLabel('Sort by', { exact: true }).locator('option').allTextContents(), ['Newest', 'Name A–Z']);
+  await disabled.getByRole('button', { name: 'Play map', exact: true }).click();
+  await disabled.waitForFunction(() => window.communityReference.withEngine(load => load(55151).app.navigator.currentScreen.name === 'Play' && !load(55151).app.navigator.transitionInProgress) && !document.querySelector('#catalog-root')?.hasAttribute('inert'));
+  await disabled.evaluate(() => window.communityReference.act('ExitLevel'));
+  await disabled.waitForFunction(() => window.communityReference.withEngine(load => load(55151).app.navigator.currentScreen.name === 'CustomMaps' && !load(55151).app.navigator.transitionInProgress) && !document.querySelector('#catalog-root')?.hasAttribute('inert'));
+  await disabled.locator('#catalog-root').waitFor({ state: 'visible' });
+  assert.equal(await disabled.locator('.community-rating, .catalog-rating').count(), 0);
+  assert.deepEqual(calls, []);
+});

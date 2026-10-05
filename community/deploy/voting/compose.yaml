@@ -1,0 +1,75 @@
+name: konkr-voting
+services:
+  db:
+    image: postgres:16.13-bookworm
+    environment:
+      POSTGRES_USER: voting
+      POSTGRES_DB: voting
+      POSTGRES_PASSWORD: ${VOTING_DATABASE_PASSWORD:?Set a random hexadecimal database password}
+    volumes:
+      - votes:/var/lib/postgresql/data
+    networks: [database]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U voting -d voting']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+    mem_limit: 256m
+    cpus: 1
+    pids_limit: 128
+    logging: &logging
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
+
+  voting:
+    image: konkr-voting:${VOTING_IMAGE_TAG:-local}
+    build:
+      context: ../../..
+      dockerfile: community/deploy/voting/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://voting:${VOTING_DATABASE_PASSWORD:?Set a random hexadecimal database password}@db:5432/voting
+      VOTING_SECRET: ${VOTING_SECRET:?Set a persistent random 64-character hexadecimal signing secret}
+      VOTING_API_ORIGIN: ${VOTING_API_ORIGIN:?Set the HTTPS API origin}
+      VOTING_SITE_ORIGIN: ${VOTING_SITE_ORIGIN:?Set the HTTPS website origin}
+      # No published port. Only cloudflared shares the ingress network.
+      VOTING_TRUST_CLOUDFLARE: '1'
+    depends_on:
+      db: {condition: service_healthy}
+    networks: [ingress, database]
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    stop_grace_period: 20s
+    mem_limit: 192m
+    cpus: 1
+    pids_limit: 64
+    logging: *logging
+
+  cloudflared:
+    image: cloudflare/cloudflared:2026.7.3
+    command: [tunnel, --no-autoupdate, run]
+    environment:
+      # Fill this in community/deploy/voting/.env before starting the stack.
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      voting: {condition: service_healthy}
+    networks: [ingress, outbound]
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+    cpus: 0.5
+    pids_limit: 64
+    logging: *logging
+
+networks:
+  ingress: {internal: true}
+  database: {internal: true}
+  outbound: {}
+volumes:
+  votes:

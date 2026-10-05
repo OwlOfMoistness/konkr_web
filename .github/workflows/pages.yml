@@ -1,0 +1,56 @@
+name: Deploy community game
+on:
+  push:
+    branches: [master]
+    paths: ['community/**', 'community maps/**', '_site/releases/2.35.30/**', '.github/workflows/**', 'compose.yaml']
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '26.4.0'
+          cache: npm
+          cache-dependency-path: community/package-lock.json
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+        id: pages
+      - run: npm ci --ignore-scripts
+        working-directory: community
+      - name: Type-check
+        run: npm run build
+        working-directory: community
+      - name: Build static game with the public API address
+        working-directory: community
+        env:
+          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          VOTING_API_ORIGIN: ${{ vars.VOTING_API_ORIGIN }}
+        run: STATIC_BASE_PATH="${PAGES_BASE_PATH%/}/" npm run build:static
+      - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: community/dist
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+        id: deployment

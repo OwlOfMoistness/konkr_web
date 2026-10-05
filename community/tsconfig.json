@@ -12,6 +12,6 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["api/**/*.ts", "engine/**/*.ts", "runtime/**/*.ts", "scripts/**/*.ts", "shared/**/*.ts", "tests/**/*.ts", "web/**/*.ts", "worker/**/*.ts"],
+  "include": ["api/**/*.ts", "engine/**/*.ts", "runtime/**/*.ts", "scripts/**/*.ts", "shared/**/*.ts", "tests/**/*.ts", "web/**/*.ts", "worker/**/*.ts", "voting/**/*.ts"],
   "exclude": ["node_modules", ".runtime", ".data", ".scratch"]
 }

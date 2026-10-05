@@ -6,8 +6,11 @@ import { LocalRunStore } from './local-runs.ts';
 import { initializeNativeAssets } from './native-controls.ts';
 import { createLivePreviewPool } from './live-preview.ts';
 import { createStaticCatalogReader } from './static-catalog.ts';
+import { createVotingClient } from './voting-client.ts';
+import { ratingControls } from './ratings.ts';
 
 declare const STATIC_CATALOG_URL: string;
+declare const VOTING_API_ORIGIN: string;
 
 async function boot(): Promise<void> {
   // The one catalogue request includes every map; previews remain lazy.
@@ -20,16 +23,18 @@ async function boot(): Promise<void> {
     }),
     initializeNativeAssets(document),
   ]);
-  const previews = createLivePreviewPool({ frameUrl: '/community-preview.html', layer: 21 });
+  const previews = createLivePreviewPool({ frameUrl: new URL('community-preview.html', document.baseURI).href, layer: 21 });
   const loadMap = async (entry: StaticCatalog['entries'][number]) => {
     const encoded = catalog.maps[entry.revision.contentHash];
     if (!encoded) throw new Error('This map is missing from the release. Reload to try again.');
     return encoded;
   };
+  const voting = VOTING_API_ORIGIN ? createVotingClient(VOTING_API_ORIGIN, catalog, localStorage) : undefined;
   await installCustomMaps({
-    root: document.getElementById('catalog-root')!, reader: createStaticCatalogReader(catalog),
+    root: document.getElementById('catalog-root')!, reader: voting?.reader ?? createStaticCatalogReader(catalog),
     store: new LocalRunStore(localStorage), engineHash: catalog.engineHash, loadMap,
-    statisticsEnabled: false, progressEnabled: false, verifiedResultsEnabled: false,
+    statisticsEnabled: !!voting, completionSortEnabled: false, progressEnabled: false, verifiedResultsEnabled: false,
+    renderPostPlay: voting ? ratingControls(voting.visitor) : undefined,
     supportedDifficulties: () => ['normal', 'hard'],
     async onStart(entry, difficulty) {
       // Local session binding only. Never submitted or represented as a validated result.
