@@ -100,6 +100,22 @@ test('boot failures stop the loading state and show a useful local error', async
   assert.equal(h.elements.get('status').classList.contains('hidden'), false);
   assert.equal(h.elements.get('loader').classList.contains('hidden'), true);
   assert.equal(h.elements.get('phaser-game').classList.contains('hidden'), true);
+  assert.deepEqual([...h.window.communityReference.errors], ['Missing texture']);
+});
+
+test('nonfatal storage diagnostics do not enter the startup error channel', async () => {
+  const h = await harness();
+  const handler = new h.modules[92703].SentryErrorHandler();
+  handler.handleNonFatalError({ message: 'Dangerously high local storage usage!', totalBytes: 2_100_000,
+    usageByKey: [['synthetic-save', 2_100_000]] }, 'userData.checkLocalStorage');
+  handler.handleNonFatalError(new Error('Optional diagnostic'), 'test');
+  assert.deepEqual([...h.window.communityReference.errors], []);
+  assert.deepEqual([...h.window.communityReference.warnings], [
+    'userData.checkLocalStorage: Dangerously high local storage usage!', 'test: Optional diagnostic',
+  ]);
+  assert.equal(handler.hadErrors, false);
+  assert.equal(h.elements.get('status').textContent, '');
+  assert.equal(h.toasts.length, 0);
 });
 
 test('uncaught errors use the same visible local handler and nonfatal diagnostics stay quiet', async () => {

@@ -22,6 +22,7 @@ declare global {
     communityReference: {
       ready: boolean;
       errors: string[];
+      warnings: string[];
       blockedRequests: string[];
       disabledServices: string[];
       importMap: (encoded: string, difficulty: Difficulty) => Promise<ReferenceState>;
@@ -35,15 +36,16 @@ declare global {
 }
 
 const errors: string[] = [];
+const warnings: string[] = [];
 const blockedRequests: string[] = [];
 const disabledServices: string[] = [];
 let requireModule: ReferenceModuleLoader;
 let prepared = false;
 let localErrors: { handleException(error: unknown): void } | undefined;
 const plain = <T>(value: T): T => JSON.parse(JSON.stringify(value));
-const diagnostic = (error: unknown) => {
-  errors.push(error instanceof Error ? error.message : String(error));
-};
+const diagnosticMessage = (error: unknown): string => error && typeof error === 'object' && 'message' in error && typeof error.message === 'string'
+  ? error.message : String(error);
+const diagnostic = (error: unknown) => { errors.push(diagnosticMessage(error)); };
 
 window.tStart = performance.now();
 window.setLoadingStatus = (message, loading) => {
@@ -91,6 +93,7 @@ async function waitForScreen(): Promise<void> {
 window.communityReference = {
   ready: false,
   errors,
+  warnings,
   blockedRequests,
   disabledServices,
   async importMap(encoded, difficulty) {
@@ -179,7 +182,11 @@ window.__konkrCommunityPrepare = (loader, config) => {
         correlationId: "community-local", message,
       }));
     }
-    handleNonFatalError(error: unknown, context: string) { diagnostic(`${context}: ${String(error)}`); }
+    handleNonFatalError(error: unknown, context: string) {
+      // The original storage-usage check is advisory. Startup waits inspect
+      // errors, so recording it there would prevent the catalogue from mounting.
+      warnings.push(`${context}: ${diagnosticMessage(error)}`);
+    }
   };
   const login = loader(65358).LoginService.prototype;
   login.initialize = function () { this.state.set("Disabled"); disabled("auth"); };
