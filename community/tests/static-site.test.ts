@@ -8,7 +8,7 @@ import { createStaticServer } from '../scripts/serve-static.ts';
 import type { StaticCatalog } from '../shared/static-catalog.ts';
 import { runtimeLevelId } from '../shared/runtime-identity.ts';
 
-async function openRelease(t: TestContext) {
+async function openRelease(t: TestContext, initialStorage: Record<string, string> = {}) {
   await buildStatic();
   const files = await readdir(staticRoot);
   const catalog: StaticCatalog = JSON.parse(await readFile(path.join(staticRoot, files.find(file => /^maps-.*\.json$/.test(file))!), 'utf8'));
@@ -23,6 +23,11 @@ async function openRelease(t: TestContext) {
   const browser = await chromium.launch({ args: ['--enable-unsafe-swiftshader', '--use-angle=swiftshader'] });
   t.after(() => browser.close());
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, serviceWorkers: 'block' });
+  await context.addInitScript(entries => {
+    if (window === window.top) for (const [key, value] of Object.entries(entries)) {
+      if (localStorage.getItem(key) === null) localStorage.setItem(key, value);
+    }
+  }, initialStorage);
   const forbidden: string[] = [];
   await context.route('**/*', route => {
     const url = new URL(route.request().url());
@@ -35,6 +40,39 @@ async function openRelease(t: TestContext) {
   await page.goto(origin + '/');
   return { page, origin, catalog, failures, badResponses, forbidden };
 }
+
+test('storage usage warnings allow catalogue startup and preserve resumable games across reloads', { timeout: 90_000 }, async t => {
+  // Trigger the original engine's 2 MB diagnostic while remaining below the
+  // browser quota. Use an unrelated synthetic key, never a player's profile.
+  const key = 'konkr.test.storage-fill', value = 'x'.repeat(2_100_000);
+  const { page, catalog, failures, badResponses, forbidden } = await openRelease(t, { [key]: value });
+  const entry = catalog.entries[0];
+  const settled = (screen: string) => page.waitForFunction(name => window.communityReference.withEngine(load => {
+    const { app } = load(55151); return app.navigator.currentScreen.name === name && !app.navigator.transitionInProgress;
+  }) && !document.querySelector('#catalog-root')?.hasAttribute('inert'), screen);
+  for (const reload of [false, true]) {
+    if (reload) await page.reload();
+    // Readiness alone used to pass even when the warning aborted the catalogue.
+    await page.waitForFunction(() => window.communityReference?.ready);
+    assert.equal(await page.locator('#community-alert').isVisible(), false);
+    await page.getByRole('button', { name: 'Custom Maps', exact: true }).click();
+    await settled('CustomMaps');
+    await page.getByLabel('Map name', { exact: true }).fill(entry.map.metadata.title);
+    await page.getByRole('button', { name: 'Search', exact: true }).click();
+    await page.locator(`button[data-map-id="${entry.map.id}"]`).click();
+    await page.locator('.catalog-preview-large[data-live-preview-ready="true"]').waitFor();
+    await page.getByRole('button', { name: reload ? 'Resume Normal game' : 'Play map', exact: true }).click();
+    await settled('Play');
+    await page.evaluate(() => window.communityReference.act('ExitLevel'));
+    await settled('CustomMaps');
+    assert.equal(await page.evaluate(key => localStorage.getItem(key), key), value);
+    assert.equal(await page.locator('#community-alert').isVisible(), false);
+    const diagnostics = await page.evaluate(() => ({ errors: window.communityReference.errors, warnings: window.communityReference.warnings }));
+    assert.deepEqual(diagnostics.errors, []);
+    assert.ok(diagnostics.warnings.includes('userData.checkLocalStorage: Dangerously high local storage usage!'));
+  }
+  assert.deepEqual(failures, []); assert.deepEqual(badResponses, []); assert.deepEqual(forbidden, []);
+});
 
 test('every published map imports in both difficulties through the original game', { timeout: 1_800_000 }, async t => {
   const { page, catalog, failures, badResponses, forbidden } = await openRelease(t);
