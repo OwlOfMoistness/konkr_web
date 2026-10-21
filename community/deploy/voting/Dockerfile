@@ -1,5 +1,5 @@
 # Build from the repository root. The final API image contains no game engine or browser.
-FROM node:26.4.0-bookworm-slim AS build
+FROM node:26.12.1-bookworm-slim AS build
 WORKDIR /app/community
 COPY community/package.json community/package-lock.json ./
 RUN npm ci --ignore-scripts
@@ -7,7 +7,7 @@ COPY community/ ./
 COPY ["community maps/", "/app/community maps/"]
 RUN npm run build && node scripts/build-voting-manifest.ts voting/manifest.json
 
-FROM node:26.4.0-bookworm-slim AS application
+FROM node:26.12.1-bookworm-slim AS application
 WORKDIR /app/community
 ENV NODE_ENV=production
 COPY community/package.json community/package-lock.json ./

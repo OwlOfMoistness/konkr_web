@@ -11,7 +11,8 @@ continues to work without a backend.
 
 ## Build and preview
 
-Use Node 26.4.0 (the CI version). From this directory:
+Use Node 26.12.1, pinned in `.nvmrc` and used by CI. With nvm installed, run
+`nvm install` and `nvm use` from this directory. Then:
 
 ```sh
 npm ci --ignore-scripts

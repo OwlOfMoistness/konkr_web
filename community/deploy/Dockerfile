@@ -2,7 +2,7 @@
 # Build from the repository root: docker build -f community/deploy/Dockerfile .
 # Exact version tags are intentional; verified image digests are a public-release gate.
 # https://docs.docker.com/build/building/multi-stage/
-FROM node:26.4.0-bookworm-slim AS dependencies
+FROM node:26.12.1-bookworm-slim AS dependencies
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
 WORKDIR /app/community
 COPY community/package.json community/package-lock.json ./

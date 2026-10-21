@@ -153,11 +153,27 @@ References: [tunnel routing](https://developers.cloudflare.com/tunnel/concepts/r
 
 ## Updates, checks and rollback
 
-Rebuild the API and site from the same map release. The GitHub Pages workflow
-requires the full Community checks workflow before publishing. Deploy the API first, then
+Rebuild the API and site from the same map release. Tests run locally with
+`npm run check:release`; GitHub Actions checks types and builds the static site.
+Deploy the API first, then
 the site. During the brief mismatch, old revisions cannot receive votes but
 remain playable. Removed maps' old votes stay in the database; they disappear
 from the current public totals.
+
+Node is pinned to 26.12.1 in the Dockerfiles and `community/.nvmrc`, including
+the [October 2026 security fixes](https://nodejs.org/en/blog/vulnerability/october-2026-security-releases).
+After a runtime update, rebuild and recreate the API from the repository root:
+
+```sh
+git pull --ff-only
+docker compose build --pull voting
+docker compose up -d --no-deps --wait voting
+docker compose exec -T voting node --version
+```
+
+The last command should report `v26.12.1` for this release. A plain container
+restart keeps the old image; rebuilding and recreating the API is required.
+This leaves the database, its votes volume and the tunnel running.
 
 The image has a readiness health check that verifies the database table is
 reachable. Inspect `docker compose ps` and `docker compose logs voting`; the
