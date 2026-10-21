@@ -12,7 +12,7 @@ intentionally refuses a public origin and `NODE_ENV=production`.
 ## What is packaged
 
 Use the repository root as the Docker build context. The
-[Dockerfile](../deploy/Dockerfile) installs the lockfile with Node 26.4.0 and
+[Dockerfile](../deploy/Dockerfile) installs the lockfile with Node 26.12.1 and
 Playwright 1.63.0, type checks the addon, and verifies/prepares release 2.35.30.
 Its final stage contains the addon runtime and the manifest-pinned original
 bundles/assets. It excludes test corpora, profiles, docs, environment files and
@@ -90,7 +90,7 @@ export COMMUNITY_VERIFIED_RESULTS=1
 docker compose -f community/deploy/compose.yaml up -d --force-recreate --wait app
 ```
 
-Without Docker, use Node 26.4.0, PostgreSQL 16 and a private local database:
+Without Docker, use Node 26.12.1, PostgreSQL 16 and a private local database:
 `npm --prefix community ci --ignore-scripts`, install Chromium with
 `npx --no-install playwright install --with-deps chromium` from `community/`,
 then set `DATABASE_URL`, the three `COMMUNITY_*` identity/CSRF variables above,
@@ -338,14 +338,13 @@ closed under [supported configurations](../shared/supported-configurations.json)
 ## CI and release evidence
 
 [Community checks](../../.github/workflows/community-checks.yml) uses immutable
-GitHub Action revisions, locked npm dependencies, Node 26.4.0, Chromium from
-Playwright 1.63.0 and disposable PostgreSQL 16.13. It obtains supplied-map bytes
-from the committed reference corpus, runs tests serially, and fails on any skip.
-It verifies unchanged original release files. The package job builds without
-publishing, checks final image contents and private-route denial, starts the
-original preview renderer inside the hardened app container, applies migrations
-twice, restores disposable data and restarts the local service.
-No production secrets, publishing token or deployment permission are needed.
+GitHub Action revisions, locked npm dependencies and the Node version pinned in
+`community/.nvmrc`. CI checks types, builds the static catalogue and verifies
+unchanged original release files; it does not run tests. Run `npm run check:release`
+locally with Playwright Chromium and disposable PostgreSQL before release, as
+described in the [deployment guide](../deploy/README.md). This command obtains
+supplied-map bytes from the committed reference corpus, runs tests serially and
+fails on any skip. Container build and smoke checks are also local checks.
 
 The optional [Jekyll exclusion overlay](../deploy/jekyll-excludes.yml) preserves
 the original exclusion list and excludes all addon/docs/tooling data. Apply it

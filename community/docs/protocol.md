@@ -5,7 +5,8 @@ generated copies and integration patches must not alter the original files.
 
 ## Runtime and tooling
 
-Use Node 24 or later, erasable TypeScript and ES modules. Node executes `.ts`
+Use Node 26.12.1 or a newer Node 26 patch, erasable TypeScript and ES modules.
+The tested version is pinned in `community/.nvmrc`. Node executes `.ts`
 directly; `npm run build` separately checks types. See the official
 [Node TypeScript documentation](https://nodejs.org/learn/typescript/run-natively).
 `npm test -- tests/contracts.test.ts` runs one suite. `package-lock.json` pins
